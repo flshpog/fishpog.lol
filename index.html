@@ -148,6 +148,75 @@
             color: white;
         }
 
+        /* Cursor gradient inversion effect */
+        .cursor-effect {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .cursor-effect.active {
+            opacity: 1;
+        }
+
+        /* Falling particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+        }
+
+        /* Gradient inversion effect */
+        .gradient-inversion {
+            position: fixed;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            filter: invert(1) hue-rotate(180deg);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .gradient-inversion.active {
+            opacity: 1;
+        }
+
 
     </style>
 </head>
@@ -190,5 +259,58 @@
         <a href="https://bsky.app/profile/p0g.bsky.social" target="_blank">bluesky</a> ~ 
         <a href="https://gdbrowser.com/u/fishpog" target="_blank">gd</a>
     </div>
+
+    <!-- Cursor effects -->
+    <div class="cursor-effect"></div>
+    <div class="gradient-inversion"></div>
+    
+    <!-- Falling particles -->
+    <div class="particles"></div>
+
+    <script>
+        // Cursor gradient inversion effect
+        const cursorEffect = document.querySelector('.cursor-effect');
+        const gradientInversion = document.querySelector('.gradient-inversion');
+        
+        document.addEventListener('mousemove', (e) => {
+            cursorEffect.style.left = e.clientX + 'px';
+            cursorEffect.style.top = e.clientY + 'px';
+            cursorEffect.classList.add('active');
+            
+            gradientInversion.style.left = e.clientX + 'px';
+            gradientInversion.style.top = e.clientY + 'px';
+            gradientInversion.classList.add('active');
+        });
+        
+        document.addEventListener('mouseleave', () => {
+            cursorEffect.classList.remove('active');
+            gradientInversion.classList.remove('active');
+        });
+
+        // Falling particles
+        const particlesContainer = document.querySelector('.particles');
+        
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            particle.style.animationDelay = Math.random() * 2 + 's';
+            particlesContainer.appendChild(particle);
+            
+            // Remove particle after animation
+            setTimeout(() => {
+                particle.remove();
+            }, 5000);
+        }
+        
+        // Create particles periodically
+        setInterval(createParticle, 200);
+        
+        // Initial particles
+        for (let i = 0; i < 10; i++) {
+            setTimeout(createParticle, i * 100);
+        }
+    </script>
 </body>
 </html>
