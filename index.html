@@ -166,6 +166,30 @@
             opacity: 1;
         }
 
+        /* Cursor trail effect */
+        .cursor-trail {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9997;
+            transform: translate(-50%, -50%);
+            animation: trailFade 0.8s ease-out forwards;
+        }
+
+        @keyframes trailFade {
+            0% {
+                opacity: 0.8;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.3);
+            }
+        }
+
         /* Falling particles */
         .particles {
             position: fixed;
@@ -211,10 +235,20 @@
             filter: invert(1) hue-rotate(180deg);
             opacity: 0;
             transition: opacity 0.2s ease;
+            mix-blend-mode: difference;
         }
 
         .gradient-inversion.active {
             opacity: 1;
+        }
+
+        /* Text inversion effect */
+        .logo, .footer a, .footer {
+            transition: filter 0.2s ease;
+        }
+
+        .text-inverted {
+            filter: invert(1) hue-rotate(180deg) !important;
         }
 
 
@@ -271,6 +305,7 @@
         // Cursor gradient inversion effect
         const cursorEffect = document.querySelector('.cursor-effect');
         const gradientInversion = document.querySelector('.gradient-inversion');
+        let trailTimeout;
         
         document.addEventListener('mousemove', (e) => {
             cursorEffect.style.left = e.clientX + 'px';
@@ -280,12 +315,78 @@
             gradientInversion.style.left = e.clientX + 'px';
             gradientInversion.style.top = e.clientY + 'px';
             gradientInversion.classList.add('active');
+            
+            // Create trail effect
+            createTrail(e.clientX, e.clientY);
+            
+            // Invert text when cursor is near
+            invertTextNearCursor(e.clientX, e.clientY);
         });
         
         document.addEventListener('mouseleave', () => {
             cursorEffect.classList.remove('active');
             gradientInversion.classList.remove('active');
+            removeTextInversion();
         });
+        
+        // Trail effect function
+        function createTrail(x, y) {
+            const trail = document.createElement('div');
+            trail.className = 'cursor-trail';
+            trail.style.left = x + 'px';
+            trail.style.top = y + 'px';
+            document.body.appendChild(trail);
+            
+            // Remove trail after animation
+            setTimeout(() => {
+                trail.remove();
+            }, 800);
+        }
+        
+        // Text inversion function
+        function invertTextNearCursor(x, y) {
+            const logo = document.querySelector('.logo');
+            const footer = document.querySelector('.footer');
+            const footerLinks = document.querySelectorAll('.footer a');
+            
+            // Check distance to logo
+            const logoRect = logo.getBoundingClientRect();
+            const logoCenterX = logoRect.left + logoRect.width / 2;
+            const logoCenterY = logoRect.top + logoRect.height / 2;
+            const logoDistance = Math.sqrt((x - logoCenterX) ** 2 + (y - logoCenterY) ** 2);
+            
+            // Check distance to footer
+            const footerRect = footer.getBoundingClientRect();
+            const footerCenterX = footerRect.left + footerRect.width / 2;
+            const footerCenterY = footerRect.top + footerRect.height / 2;
+            const footerDistance = Math.sqrt((x - footerCenterX) ** 2 + (y - footerCenterY) ** 2);
+            
+            const inversionRadius = 150; // Distance for text inversion
+            
+            if (logoDistance < inversionRadius) {
+                logo.classList.add('text-inverted');
+            } else {
+                logo.classList.remove('text-inverted');
+            }
+            
+            if (footerDistance < inversionRadius) {
+                footer.classList.add('text-inverted');
+                footerLinks.forEach(link => link.classList.add('text-inverted'));
+            } else {
+                footer.classList.remove('text-inverted');
+                footerLinks.forEach(link => link.classList.remove('text-inverted'));
+            }
+        }
+        
+        function removeTextInversion() {
+            const logo = document.querySelector('.logo');
+            const footer = document.querySelector('.footer');
+            const footerLinks = document.querySelectorAll('.footer a');
+            
+            logo.classList.remove('text-inverted');
+            footer.classList.remove('text-inverted');
+            footerLinks.forEach(link => link.classList.remove('text-inverted'));
+        }
 
         // Falling particles
         const particlesContainer = document.querySelector('.particles');
