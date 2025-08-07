@@ -228,27 +228,28 @@
             width: 200px;
             height: 200px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 50%, transparent 70%);
             pointer-events: none;
             z-index: 9998;
             transform: translate(-50%, -50%);
-            filter: invert(1) hue-rotate(180deg);
+            filter: hue-rotate(180deg) brightness(1.5);
             opacity: 0;
             transition: opacity 0.2s ease;
-            mix-blend-mode: difference;
+            mix-blend-mode: overlay;
         }
 
         .gradient-inversion.active {
             opacity: 1;
         }
 
-        /* Text inversion effect */
-        .logo, .footer a, .footer {
-            transition: filter 0.2s ease;
+        /* Gradient overlay effect */
+        .logo, .footer a, .footer, .image-container svg {
+            transition: filter 0.3s ease;
+            mix-blend-mode: difference;
         }
 
-        .text-inverted {
-            filter: invert(1) hue-rotate(180deg) !important;
+        .gradient-overlay {
+            filter: hue-rotate(180deg) brightness(1.2) contrast(1.1);
         }
 
 
@@ -319,14 +320,14 @@
             // Create trail effect
             createTrail(e.clientX, e.clientY);
             
-            // Invert text when cursor is near
-            invertTextNearCursor(e.clientX, e.clientY);
+            // Apply gradient overlay when cursor is near
+            applyGradientOverlay(e.clientX, e.clientY);
         });
         
         document.addEventListener('mouseleave', () => {
             cursorEffect.classList.remove('active');
             gradientInversion.classList.remove('active');
-            removeTextInversion();
+            removeGradientOverlay();
         });
         
         // Trail effect function
@@ -343,11 +344,12 @@
             }, 800);
         }
         
-        // Text inversion function
-        function invertTextNearCursor(x, y) {
+        // Gradient overlay effect function
+        function applyGradientOverlay(x, y) {
             const logo = document.querySelector('.logo');
             const footer = document.querySelector('.footer');
             const footerLinks = document.querySelectorAll('.footer a');
+            const svg = document.querySelector('.image-container svg');
             
             // Check distance to logo
             const logoRect = logo.getBoundingClientRect();
@@ -361,31 +363,46 @@
             const footerCenterY = footerRect.top + footerRect.height / 2;
             const footerDistance = Math.sqrt((x - footerCenterX) ** 2 + (y - footerCenterY) ** 2);
             
-            const inversionRadius = 150; // Distance for text inversion
+            // Check distance to SVG
+            const svgRect = svg.getBoundingClientRect();
+            const svgCenterX = svgRect.left + svgRect.width / 2;
+            const svgCenterY = svgRect.top + svgRect.height / 2;
+            const svgDistance = Math.sqrt((x - svgCenterX) ** 2 + (y - svgCenterY) ** 2);
             
-            if (logoDistance < inversionRadius) {
-                logo.classList.add('text-inverted');
+            const overlayRadius = 120; // Distance for gradient overlay effect
+            
+            // Apply gradient overlay based on proximity
+            if (logoDistance < overlayRadius) {
+                logo.classList.add('gradient-overlay');
             } else {
-                logo.classList.remove('text-inverted');
+                logo.classList.remove('gradient-overlay');
             }
             
-            if (footerDistance < inversionRadius) {
-                footer.classList.add('text-inverted');
-                footerLinks.forEach(link => link.classList.add('text-inverted'));
+            if (footerDistance < overlayRadius) {
+                footer.classList.add('gradient-overlay');
+                footerLinks.forEach(link => link.classList.add('gradient-overlay'));
             } else {
-                footer.classList.remove('text-inverted');
-                footerLinks.forEach(link => link.classList.remove('text-inverted'));
+                footer.classList.remove('gradient-overlay');
+                footerLinks.forEach(link => link.classList.remove('gradient-overlay'));
+            }
+            
+            if (svgDistance < overlayRadius) {
+                svg.classList.add('gradient-overlay');
+            } else {
+                svg.classList.remove('gradient-overlay');
             }
         }
         
-        function removeTextInversion() {
+        function removeGradientOverlay() {
             const logo = document.querySelector('.logo');
             const footer = document.querySelector('.footer');
             const footerLinks = document.querySelectorAll('.footer a');
+            const svg = document.querySelector('.image-container svg');
             
-            logo.classList.remove('text-inverted');
-            footer.classList.remove('text-inverted');
-            footerLinks.forEach(link => link.classList.remove('text-inverted'));
+            logo.classList.remove('gradient-overlay');
+            footer.classList.remove('gradient-overlay');
+            footerLinks.forEach(link => link.classList.remove('gradient-overlay'));
+            svg.classList.remove('gradient-overlay');
         }
 
         // Falling particles
