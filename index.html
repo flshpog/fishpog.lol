@@ -275,6 +275,35 @@
             animation: slide 1.5s ease-out forwards;
         }
 
+        /* Audio controls */
+        .audio-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10001;
+            display: none;
+        }
+
+        .audio-controls.visible {
+            display: block;
+        }
+
+        .audio-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 2px;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+        }
+
+        .audio-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
         /* Pulsing effect for main page */
         @keyframes pulse {
             0% {
@@ -331,6 +360,18 @@
         </div>
     </div>
 
+    <!-- Audio Elements -->
+    <audio id="loudSound" src="loudsound.mp3"></audio>
+    <audio id="noClickLoop" src="noclickloop.wav" loop></audio>
+    <audio id="transition" src="transition.MP3"></audio>
+    <audio id="mainLoop" src="mainloop.wav" loop></audio>
+
+    <!-- Audio Controls -->
+    <div class="audio-controls" id="audioControls">
+        <button class="audio-btn" id="muteBtn">Mute</button>
+        <button class="audio-btn" id="volumeBtn">Volume</button>
+    </div>
+
     <div class="container">
         <header>
             <div class="logo">fishpog</div>
@@ -378,18 +419,94 @@
     <div class="particles"></div>
 
     <script>
+        // Audio system variables
+        const loudSound = document.getElementById('loudSound');
+        const noClickLoop = document.getElementById('noClickLoop');
+        const transition = document.getElementById('transition');
+        const mainLoop = document.getElementById('mainLoop');
+        const audioControls = document.getElementById('audioControls');
+        const muteBtn = document.getElementById('muteBtn');
+        const volumeBtn = document.getElementById('volumeBtn');
+
+        let isMuted = false;
+        let isTransitioning = false;
+        let syncDelay = 0; // This will be adjusted for perfect sync
+
+        // Audio control functions
+        function muteAll() {
+            isMuted = !isMuted;
+            const volume = isMuted ? 0 : 1;
+            loudSound.volume = volume;
+            noClickLoop.volume = volume;
+            transition.volume = volume;
+            mainLoop.volume = volume;
+            muteBtn.textContent = isMuted ? 'Unmute' : 'Mute';
+        }
+
+        function setVolume(volume) {
+            if (!isMuted) {
+                loudSound.volume = volume;
+                noClickLoop.volume = volume;
+                transition.volume = volume;
+                mainLoop.volume = volume;
+            }
+        }
+
+        // Event listeners for audio controls
+        muteBtn.addEventListener('click', muteAll);
+        volumeBtn.addEventListener('click', () => {
+            const volume = prompt('Enter volume (0-1):', '0.7');
+            if (volume !== null && !isNaN(volume)) {
+                setVolume(Math.max(0, Math.min(1, parseFloat(volume))));
+            }
+        });
+
+        // Initialize audio system
+        function startAudioSystem() {
+            // Start with loud sound
+            loudSound.play();
+            
+            // When loud sound ends, start no-click loop
+            loudSound.addEventListener('ended', () => {
+                noClickLoop.play();
+                audioControls.classList.add('visible');
+            });
+        }
+
         // Loading screen cube animation
         const loadingScreen = document.getElementById('loadingScreen');
         const cubeImage = document.getElementById('cubeImage');
         
         cubeImage.addEventListener('click', () => {
+            if (isTransitioning) return; // Prevent multiple clicks
+            
+            isTransitioning = true;
             cubeImage.classList.add('cube-animate');
             
-            // Hide loading screen after animation completes
+            // Wait for current no-click loop iteration to end, then play transition
+            const currentTime = noClickLoop.currentTime;
+            const duration = noClickLoop.duration;
+            const timeUntilEnd = duration - currentTime;
+            
             setTimeout(() => {
-                loadingScreen.classList.add('hidden');
-            }, 1500);
+                noClickLoop.pause();
+                transition.play();
+                
+                // After transition ends, start main loop
+                transition.addEventListener('ended', () => {
+                    mainLoop.play();
+                }, { once: true });
+                
+                // Hide loading screen with sync delay
+                setTimeout(() => {
+                    loadingScreen.classList.add('hidden');
+                }, 1500 + syncDelay);
+                
+            }, timeUntilEnd * 1000);
         });
+
+        // Start audio system when page loads
+        window.addEventListener('load', startAudioSystem);
 
         // Cursor gradient inversion effect
         const cursorEffect = document.querySelector('.cursor-effect');
