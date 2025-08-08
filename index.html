@@ -473,14 +473,17 @@
 
         // Initialize audio system
         function startAudioSystem() {
-            // Start with loud sound
-            loudSound.play();
-            
-            // When loud sound ends, start no-click loop
-            loudSound.addEventListener('ended', () => {
-                noClickLoop.play();
-                audioControls.classList.add('visible');
-            });
+            // Add a small delay to ensure audio context is ready
+            setTimeout(() => {
+                // Start with loud sound
+                loudSound.play().catch(e => console.log('Audio play failed:', e));
+                
+                // When loud sound ends, start no-click loop
+                loudSound.addEventListener('ended', () => {
+                    noClickLoop.play().catch(e => console.log('No-click loop play failed:', e));
+                    audioControls.classList.add('visible');
+                });
+            }, 100);
         }
 
         // Load main loop with Web Audio API
@@ -540,7 +543,7 @@
             
             setTimeout(() => {
                 noClickLoop.pause();
-                transition.play();
+                transition.play().catch(e => console.log('Transition play failed:', e));
                 
                 // After transition ends, start main loop
                 transition.addEventListener('ended', () => {
@@ -558,7 +561,10 @@
         // Start audio system when page loads
         window.addEventListener('load', () => {
             loadMainLoop();
-            startAudioSystem();
+            // Start audio system immediately since user already interacted on intro page
+            setTimeout(() => {
+                startAudioSystem();
+            }, 100);
         });
 
         // Cursor gradient inversion effect
