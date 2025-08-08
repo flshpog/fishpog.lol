@@ -364,7 +364,7 @@
     <audio id="loudSound" src="loudsound.mp3"></audio>
     <audio id="noClickLoop" src="noclickloop.wav" loop></audio>
     <audio id="transition" src="transition.MP3"></audio>
-    <audio id="mainLoop" src="mainloop.wav" loop></audio>
+    <audio id="mainLoop" src="mainloop.wav"></audio>
 
     <!-- Audio Controls -->
     <div class="audio-controls" id="audioControls">
@@ -419,6 +419,12 @@
     <div class="particles"></div>
 
     <script>
+        // Web Audio API setup
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let mainLoopBuffer = null;
+        let mainLoopSource = null;
+        let isAudioLoaded = false;
+
         // Audio system variables
         const loudSound = document.getElementById('loudSound');
         const noClickLoop = document.getElementById('noClickLoop');
@@ -439,7 +445,9 @@
             loudSound.volume = volume;
             noClickLoop.volume = volume;
             transition.volume = volume;
-            mainLoop.volume = volume;
+            if (mainLoopSource) {
+                mainLoopSource.gain.value = isMuted ? 0 : 1;
+            }
             muteBtn.textContent = isMuted ? 'Unmute' : 'Mute';
         }
 
@@ -448,7 +456,9 @@
                 loudSound.volume = volume;
                 noClickLoop.volume = volume;
                 transition.volume = volume;
-                mainLoop.volume = volume;
+                if (mainLoopSource) {
+                    mainLoopSource.gain.value = volume;
+                }
             }
         }
 
@@ -473,6 +483,46 @@
             });
         }
 
+        // Load main loop with Web Audio API
+        function loadMainLoop() {
+            const audioRequest = new XMLHttpRequest();
+            audioRequest.open("GET", "mainloop.wav", true);
+            audioRequest.responseType = "arraybuffer";
+            audioRequest.onload = function () {
+                audioContext.decodeAudioData(audioRequest.response, function (decodedBuffer) {
+                    mainLoopBuffer = decodedBuffer;
+                    isAudioLoaded = true;
+                });
+            };
+            audioRequest.send();
+        }
+
+        // Play main loop with proper looping
+        function playMainLoop() {
+            if (!mainLoopBuffer || !isAudioLoaded) return;
+            
+            if (mainLoopSource) {
+                mainLoopSource.stop(0);
+                mainLoopSource.disconnect();
+            }
+            
+            mainLoopSource = audioContext.createBufferSource();
+            mainLoopSource.buffer = mainLoopBuffer;
+            
+            // Create gain node for volume control
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = isMuted ? 0 : 1;
+            
+            mainLoopSource.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            mainLoopSource.loop = true;
+            mainLoopSource.loopStart = 0; // Adjust this for perfect loop point
+            mainLoopSource.loopEnd = mainLoopBuffer.duration;
+            
+            mainLoopSource.start(0);
+        }
+
         // Loading screen cube animation
         const loadingScreen = document.getElementById('loadingScreen');
         const cubeImage = document.getElementById('cubeImage');
@@ -494,7 +544,7 @@
                 
                 // After transition ends, start main loop
                 transition.addEventListener('ended', () => {
-                    mainLoop.play();
+                    playMainLoop();
                 }, { once: true });
                 
                 // Hide loading screen with sync delay
@@ -506,7 +556,10 @@
         });
 
         // Start audio system when page loads
-        window.addEventListener('load', startAudioSystem);
+        window.addEventListener('load', () => {
+            loadMainLoop();
+            startAudioSystem();
+        });
 
         // Cursor gradient inversion effect
         const cursorEffect = document.querySelector('.cursor-effect');
