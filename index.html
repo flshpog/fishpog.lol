@@ -275,6 +275,29 @@
             animation: slide 1.5s ease-out forwards;
         }
 
+        /* Pulsing effect for main page */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+            50% {
+                transform: scale(1.02);
+                filter: brightness(1.1);
+            }
+            100% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            animation: pulse 0.4s ease-in-out infinite;
+        }
+
         /* Gradient inversion effect */
         .gradient-inversion {
             position: fixed;
