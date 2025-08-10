@@ -271,12 +271,16 @@
 
         /* Status.cafe Widget Styles */
         #statuscafe {
+            position: fixed;
+            top: 20px;
+            left: 20px;
             padding: .5em;
             background-color: azure;
             border: 1px solid midnightblue;
-            margin-top: 2rem;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-width: 300px;
         }
         #statuscafe-username {
             margin-bottom: .5em;
@@ -295,6 +299,12 @@
 </head>
 <body>
 
+
+    <!-- Status.cafe Widget -->
+    <div id="statuscafe">
+        <div id="statuscafe-username"></div>
+        <div id="statuscafe-content"></div>
+    </div>
 
     <div class="container">
         <header>
@@ -325,12 +335,6 @@
                         <path d="M491 128 c-1 -10 6 -17 17 -16 9 0 141 -3 292 -6 179 -5 270 -4 260 2 -27 18 -492 35 -517 19 -8 -5 -13 -3 -13 4 0 9 -3 9 -14 0 -11 -9 -15 -9 -19 1 -4 9 -6 7 -6 -4z"/>
                     </g>
                 </svg>
-            </div>
-            
-            <!-- Status.cafe Widget -->
-            <div id="statuscafe">
-                <div id="statuscafe-username"></div>
-                <div id="statuscafe-content"></div>
             </div>
         </main>
     </div>
