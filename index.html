@@ -222,87 +222,9 @@
             }
         }
 
-        /* Loading screen styles */
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            cursor: pointer;
-        }
 
-        .loading-screen.hidden {
-            display: none;
-        }
 
-        .cube-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
 
-        .cube-image {
-            max-width: 200px;
-            max-height: 200px;
-            transition: transform 0.2s ease;
-        }
-
-        .cube-image:hover {
-            transform: scale(1.1);
-        }
-
-        /* Cube slide animation */
-        @keyframes slide {
-            0% {
-                transform: translateY(0) rotateX(0) scale(1);
-                transform-origin: 50% -500px;
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(-600px) rotateX(20deg) scale(6);
-                transform-origin: 50% 200%;
-                opacity: 0;
-            }
-        }
-
-        .cube-animate {
-            animation: slide 1.5s ease-out forwards;
-        }
-
-        /* Audio controls */
-        .audio-controls {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10001;
-            display: none;
-        }
-
-        .audio-controls.visible {
-            display: block;
-        }
-
-        .audio-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 2px;
-            font-family: 'Inter', sans-serif;
-            font-size: 12px;
-        }
-
-        .audio-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
 
         /* Pulsing effect for main page */
         @keyframes pulse {
@@ -347,30 +269,32 @@
             opacity: 1;
         }
 
+        /* Status.cafe Widget Styles */
+        #statuscafe {
+            padding: .5em;
+            background-color: azure;
+            border: 1px solid midnightblue;
+            margin-top: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        #statuscafe-username {
+            margin-bottom: .5em;
+            font-weight: 600;
+            color: midnightblue;
+        }
+        #statuscafe-content {
+            margin: 0 1em 0.5em 1em;
+            color: #333;
+        }
+
 
 
 
     </style>
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div class="loading-screen" id="loadingScreen">
-        <div class="cube-container">
-            <img src="cube_49 (1).png" alt="Cube" class="cube-image" id="cubeImage">
-        </div>
-    </div>
 
-    <!-- Audio Elements -->
-    <audio id="loudSound" src="loudsound.mp3"></audio>
-    <audio id="noClickLoop" src="noclickloop.wav" loop></audio>
-    <audio id="transition" src="transition.MP3"></audio>
-    <audio id="mainLoop" src="mainloop.wav"></audio>
-
-    <!-- Audio Controls -->
-    <div class="audio-controls" id="audioControls">
-        <button class="audio-btn" id="muteBtn">Mute</button>
-        <button class="audio-btn" id="volumeBtn">Volume</button>
-    </div>
 
     <div class="container">
         <header>
@@ -402,6 +326,12 @@
                     </g>
                 </svg>
             </div>
+            
+            <!-- Status.cafe Widget -->
+            <div id="statuscafe">
+                <div id="statuscafe-username"></div>
+                <div id="statuscafe-content"></div>
+            </div>
         </main>
     </div>
     <div class="footer">
@@ -419,153 +349,6 @@
     <div class="particles"></div>
 
     <script>
-        // Web Audio API setup
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        let mainLoopBuffer = null;
-        let mainLoopSource = null;
-        let isAudioLoaded = false;
-
-        // Audio system variables
-        const loudSound = document.getElementById('loudSound');
-        const noClickLoop = document.getElementById('noClickLoop');
-        const transition = document.getElementById('transition');
-        const mainLoop = document.getElementById('mainLoop');
-        const audioControls = document.getElementById('audioControls');
-        const muteBtn = document.getElementById('muteBtn');
-        const volumeBtn = document.getElementById('volumeBtn');
-
-        let isMuted = false;
-        let isTransitioning = false;
-        let syncDelay = 0; // This will be adjusted for perfect sync
-
-        // Audio control functions
-        function muteAll() {
-            isMuted = !isMuted;
-            const volume = isMuted ? 0 : 1;
-            loudSound.volume = volume;
-            noClickLoop.volume = volume;
-            transition.volume = volume;
-            if (mainLoopSource) {
-                mainLoopSource.gain.value = isMuted ? 0 : 1;
-            }
-            muteBtn.textContent = isMuted ? 'Unmute' : 'Mute';
-        }
-
-        function setVolume(volume) {
-            if (!isMuted) {
-                loudSound.volume = volume;
-                noClickLoop.volume = volume;
-                transition.volume = volume;
-                if (mainLoopSource) {
-                    mainLoopSource.gain.value = volume;
-                }
-            }
-        }
-
-        // Event listeners for audio controls
-        muteBtn.addEventListener('click', muteAll);
-        volumeBtn.addEventListener('click', () => {
-            const volume = prompt('Enter volume (0-1):', '0.7');
-            if (volume !== null && !isNaN(volume)) {
-                setVolume(Math.max(0, Math.min(1, parseFloat(volume))));
-            }
-        });
-
-        // Initialize audio system
-        function startAudioSystem() {
-            // Add a small delay to ensure audio context is ready
-            setTimeout(() => {
-                // Start with loud sound
-                loudSound.play().catch(e => console.log('Audio play failed:', e));
-                
-                // When loud sound ends, start no-click loop
-                loudSound.addEventListener('ended', () => {
-                    noClickLoop.play().catch(e => console.log('No-click loop play failed:', e));
-                    audioControls.classList.add('visible');
-                });
-            }, 100);
-        }
-
-        // Load main loop with Web Audio API
-        function loadMainLoop() {
-            const audioRequest = new XMLHttpRequest();
-            audioRequest.open("GET", "mainloop.wav", true);
-            audioRequest.responseType = "arraybuffer";
-            audioRequest.onload = function () {
-                audioContext.decodeAudioData(audioRequest.response, function (decodedBuffer) {
-                    mainLoopBuffer = decodedBuffer;
-                    isAudioLoaded = true;
-                });
-            };
-            audioRequest.send();
-        }
-
-        // Play main loop with proper looping
-        function playMainLoop() {
-            if (!mainLoopBuffer || !isAudioLoaded) return;
-            
-            if (mainLoopSource) {
-                mainLoopSource.stop(0);
-                mainLoopSource.disconnect();
-            }
-            
-            mainLoopSource = audioContext.createBufferSource();
-            mainLoopSource.buffer = mainLoopBuffer;
-            
-            // Create gain node for volume control
-            const gainNode = audioContext.createGain();
-            gainNode.gain.value = isMuted ? 0 : 1;
-            
-            mainLoopSource.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            mainLoopSource.loop = true;
-            mainLoopSource.loopStart = 0; // Adjust this for perfect loop point
-            mainLoopSource.loopEnd = mainLoopBuffer.duration;
-            
-            mainLoopSource.start(0);
-        }
-
-        // Loading screen cube animation
-        const loadingScreen = document.getElementById('loadingScreen');
-        const cubeImage = document.getElementById('cubeImage');
-        
-        cubeImage.addEventListener('click', () => {
-            if (isTransitioning) return; // Prevent multiple clicks
-            
-            isTransitioning = true;
-            cubeImage.classList.add('cube-animate');
-            
-            // Wait for current no-click loop iteration to end, then play transition
-            const currentTime = noClickLoop.currentTime;
-            const duration = noClickLoop.duration;
-            const timeUntilEnd = duration - currentTime;
-            
-            setTimeout(() => {
-                noClickLoop.pause();
-                transition.play().catch(e => console.log('Transition play failed:', e));
-                
-                // After transition ends, start main loop
-                transition.addEventListener('ended', () => {
-                    playMainLoop();
-                }, { once: true });
-                
-                // Hide loading screen with sync delay
-                setTimeout(() => {
-                    loadingScreen.classList.add('hidden');
-                }, 1500 + syncDelay);
-                
-            }, timeUntilEnd * 1000);
-        });
-
-        // Start audio system when page loads
-        window.addEventListener('load', () => {
-            loadMainLoop();
-            // Start audio system immediately since user already interacted on intro page
-            setTimeout(() => {
-                startAudioSystem();
-            }, 100);
-        });
 
         // Cursor gradient inversion effect
         const cursorEffect = document.querySelector('.cursor-effect');
@@ -633,5 +416,8 @@
             setTimeout(createParticle, i * 100);
         }
     </script>
+    
+    <!-- Status.cafe Widget Script -->
+    <script src="https://status.cafe/current-status.js?name=ohthatsgore" defer></script>
 </body>
 </html>
