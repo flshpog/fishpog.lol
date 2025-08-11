@@ -372,8 +372,108 @@
             color: #333;
         }
 
-
-
+        /* Hue Menu (bottom left) */
+        .hue-menu {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        .hue-toggle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .hue-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+        .hue-toggle.active {
+            transform: rotate(180deg);
+        }
+        .hue-panel {
+            position: absolute;
+            bottom: 60px;
+            left: 0;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+        .hue-panel.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        #hueSlider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #ff0080, #7928ca, #00cfff, #ff0080);
+            outline: none;
+            transition: background 0.3s;
+        }
+        #hueSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        #hueSlider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        #hueSlider::-ms-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        #hueSlider:focus {
+            outline: none;
+        }
+        #hueSlider::-webkit-slider-runnable-track {
+            height: 6px;
+            border-radius: 4px;
+        }
+        #hueSlider::-ms-fill-lower {
+            background: transparent;
+        }
+        #hueSlider::-ms-fill-upper {
+            background: transparent;
+        }
 
     </style>
 </head>
@@ -446,6 +546,20 @@
                     <span>Steam</span>
                 </a>
             </div>
+        </div>
+    </div>
+
+    <!-- Hue Slider Menu -->
+    <div class="hue-menu">
+        <button class="hue-toggle" id="hueToggle">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                <path d="M12 2a10 10 0 0 1 0 20" stroke="currentColor" stroke-width="2" fill="none"/>
+            </svg>
+        </button>
+        <div class="hue-panel" id="huePanel">
+            <label for="hueSlider" style="color:white; font-size:14px;">Background Hue</label>
+            <input type="range" id="hueSlider" min="0" max="360" value="0" style="width: 100%; margin-top: 8px;">
         </div>
     </div>
 
@@ -582,6 +696,37 @@
                 socialPanel.classList.remove('active');
                 socialToggle.classList.remove('active');
             }
+        });
+
+        // Hue Menu Toggle and Slider
+        const hueToggle = document.getElementById('hueToggle');
+        const huePanel = document.getElementById('huePanel');
+        const hueSlider = document.getElementById('hueSlider');
+        let isHueMenuOpen = false;
+
+        hueToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isHueMenuOpen = !isHueMenuOpen;
+            if (isHueMenuOpen) {
+                huePanel.classList.add('active');
+                hueToggle.classList.add('active');
+            } else {
+                huePanel.classList.remove('active');
+                hueToggle.classList.remove('active');
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!hueToggle.contains(e.target) && !huePanel.contains(e.target)) {
+                isHueMenuOpen = false;
+                huePanel.classList.remove('active');
+                hueToggle.classList.remove('active');
+            }
+        });
+
+        hueSlider.addEventListener('input', (e) => {
+            const hue = e.target.value;
+            document.body.style.filter = `hue-rotate(${hue}deg)`;
         });
     </script>
     
