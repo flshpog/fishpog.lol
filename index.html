@@ -304,29 +304,6 @@
 
 
 
-
-        /* Pulsing effect for main page */
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                filter: brightness(1);
-            }
-            50% {
-                transform: scale(1.05);
-                filter: brightness(1.3);
-            }
-            100% {
-                transform: scale(1);
-                filter: brightness(1);
-            }
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
         /* Gradient inversion effect */
         .gradient-inversion {
             position: fixed;
@@ -363,7 +340,7 @@
         #statuscafe-username {
             margin-bottom: .5em;
             font-weight: 600;
-            color: midnightblue;
+            color: green;
         }
         #statuscafe-content {
             margin: 0 1em 0.5em 1em;
@@ -506,20 +483,6 @@
             gradientInversion.classList.remove('active');
         });
         
-        // Trail effect function
-        function createTrail(x, y) {
-            const trail = document.createElement('div');
-            trail.className = 'cursor-trail';
-            trail.style.left = x + 'px';
-            trail.style.top = y + 'px';
-            document.body.appendChild(trail);
-            
-            // Remove trail after animation
-            setTimeout(() => {
-                trail.remove();
-            }, 800);
-        }
-        
 
 
         // Falling particles
@@ -573,36 +536,7 @@
             }
         });
 
-        // Hue Menu Toggle and Slider
-        const hueToggle = document.getElementById('hueToggle');
-        const huePanel = document.getElementById('huePanel');
-        const hueSlider = document.getElementById('hueSlider');
-        let isHueMenuOpen = false;
 
-        hueToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            isHueMenuOpen = !isHueMenuOpen;
-            if (isHueMenuOpen) {
-                huePanel.classList.add('active');
-                hueToggle.classList.add('active');
-            } else {
-                huePanel.classList.remove('active');
-                hueToggle.classList.remove('active');
-            }
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!hueToggle.contains(e.target) && !huePanel.contains(e.target)) {
-                isHueMenuOpen = false;
-                huePanel.classList.remove('active');
-                hueToggle.classList.remove('active');
-            }
-        });
-
-        hueSlider.addEventListener('input', (e) => {
-            const hue = e.target.value;
-            document.body.style.filter = `hue-rotate(${hue}deg)`;
-        });
     </script>
     
     <!-- Status.cafe Widget Script -->
