@@ -12,10 +12,9 @@
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      align-items: center;
-    }
+      align-items: center; 
+    } /* the hawk tuah meme is still MASSIVE */
 
-    /* Status.cafe Widget */
     #statuscafe {
       position: fixed;
       top: 20px;
@@ -38,7 +37,6 @@
       color: #333;
     }
 
-    /* Social Media Menu */
     .social-menu {
       position: fixed;
       bottom: 20px;
@@ -112,7 +110,6 @@
       flex-shrink: 0;
     }
 
-    /* Tilt Image */
     .card {
       width: 300px;
       perspective: 1000px;
@@ -128,13 +125,11 @@
 </head>
 <body>
 
-  <!-- Status.cafe Widget -->
   <div id="statuscafe">
     <div id="statuscafe-username"></div>
     <div id="statuscafe-content"></div>
   </div>
 
-  <!-- Main Image -->
   <div class="card">
     <img src="images/pogger.png">
   </div>
@@ -203,7 +198,6 @@
 
 
   <script>
-    // Tilt Effect (inverted)
     const card = document.querySelector('.card');
     const img = card.querySelector('img');
 
@@ -215,7 +209,7 @@
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
 
-      const rotateX = ((y - centerY) / centerY) * 10;
+      const rotateX = ((y - centerY) / centerY) * 10; // 41 but i got 41 gold :joy:
       const rotateY = ((x - centerX) / centerX) * 10;
 
       img.style.transform = `rotateX(${rotateX}deg) rotateY(${-rotateY}deg) scale(1.05)`;
@@ -227,7 +221,6 @@
       img.style.boxShadow = '0 10px 20px rgba(0,0,0,0.25)';
     });
 
-    // Social menu toggle
     const socialToggle = document.getElementById('socialToggle');
     const socialPanel = document.getElementById('socialPanel');
     let isSocialMenuOpen = false;
@@ -247,7 +240,6 @@
     });
   </script>
 
-  <!-- Status.cafe Script -->
   <script src="https://status.cafe/current-status.js?name=ohthatsgore" defer></script>
 </body>
 </html>
