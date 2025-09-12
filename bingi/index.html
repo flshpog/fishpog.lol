@@ -172,7 +172,7 @@
 
   <!-- Hidden audio element -->
   <audio id="audioElement" crossorigin="anonymous" autoplay loop>
-    <source src="bingiaudio.mp3" type="audio/mpeg">
+    <source src="bingiaudio.mp3.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
 
@@ -224,6 +224,8 @@
     // Initialize Audio Context and start
     async function startExperience() {
       try {
+        console.log('Starting experience...');
+        
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         analyser = audioContext.createAnalyser();
         analyser.fftSize = 256;
@@ -234,20 +236,37 @@
         source.connect(analyser);
         analyser.connect(audioContext.destination);
 
+        console.log('Audio context set up, attempting to play...');
+        
         // Start audio and visualization
         await audioElement.play();
+        console.log('Audio started playing');
+        
         visualize();
         
         // Hide overlay and show visualizer
         startupOverlay.classList.add('fade-out');
         visualizer.classList.add('active');
         
+        console.log('Overlay should be fading...');
+        
         // Remove overlay completely after fade
         setTimeout(() => {
-          startupOverlay.remove();
+          if (startupOverlay && startupOverlay.parentNode) {
+            startupOverlay.remove();
+            console.log('Overlay removed');
+          }
         }, 500);
       } catch (error) {
         console.error('Error starting audio experience:', error);
+        
+        // Even if audio fails, hide the overlay so user isn't stuck
+        startupOverlay.classList.add('fade-out');
+        setTimeout(() => {
+          if (startupOverlay && startupOverlay.parentNode) {
+            startupOverlay.remove();
+          }
+        }, 500);
       }
     }
 
