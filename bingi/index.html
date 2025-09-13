@@ -50,6 +50,40 @@
       }
     }
 
+    .stream-message {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .stream-message:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .stream-message a {
+      color: #a8e6a3;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .stream-message a:hover {
+      color: white;
+      text-decoration: underline;
+    }
+
     .card {
       width: 300px;
       perspective: 1000px;
@@ -162,8 +196,12 @@
     <div class="play-button" id="playButton"></div>
   </div>
 
+  <div class="stream-message">
+    ‼️ Stream BINGITRON now! <a href="https://v.gd/bingi" target="_blank">https://v.gd/bingi</a>
+  </div>
+
   <div class="card" id="audioCard">
-    <img src="bingi.png" alt="Audio Reactive Card">
+    <img src="bingi.jpg" alt="Audio Reactive Card">
   </div>
 
   <div class="visualizer" id="visualizer">
