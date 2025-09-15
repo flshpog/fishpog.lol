@@ -5,10 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>day 1</title>
 </head>
+<style>
+.color{
+    color: blue;
+}
+.color2{
+    color: red;
+}
+
+
+</style>
+
+<h1 class="color", id="demo">hello</h1>
+<p class="color2", id="demo1">hello paragraph</p>
+
 <body>
     <p>test</p>
 
 
+<form action="index.html" method="get">
+  <label for="fname">First name:</label><br>
+  <input type="text" id="fname" name="fname" value="John"><br>
+  <label for="lname">Last name:</label><br>
+  <input type="text" id="lname" name="lname" value="Doe"><br><br>
+  <input type="submit" value="Submit">
+<br>
+<form action="google.com/search" method="get">
+  <label for="q">Search Google:</label><br>
+  <input type="text" id="q" name="q" value=""><br><br>
+  <input type="submit" value="Search">
+
+
+
+
+<script>
+document.getElementById("demo").innerHTML = "awesome"
+alert("ALERT!")
+document.getElementById("demo1").innerHTML = "awesome2"
+
+
+
+
+</script>
 
 
 
