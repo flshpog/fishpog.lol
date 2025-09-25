@@ -7,25 +7,46 @@
 </head>
 <body>
     <!-- input boxes to collect data -->
-    <label>Input Value of A: </label><input id="inputA" value=""></input>
-    <label>Input Value of B: </label><input id="inputB" value=""></input>
-    <label>Input Value of C: </label><input id="inputC" value=""></input>
+    <label>Input Value of A: </label><input id="inputA" value=""><br><br>
+    <label>Input Value of B: </label><input id="inputB" value=""><br><br>
+    <label>Input Value of C: </label><input id="inputC" value=""><br><br>
+    <!-- button -->
+    <button onclick="calculateRoots()">Calculate Roots</button>
 
 <script>
-    // take values of textboxes
-    let one = document.getElementById("inputA").value;
-    let two = document.getElementById("inputB").value;
-    let three = document.getElementById("inputC").value;
+    function calculateRoots() {
+        // take values of textboxes
+        let one = document.getElementById("inputA").value;
+        let two = document.getElementById("inputB").value;
+        let three = document.getElementById("inputC").value;
 
-    // parse
-    a = parseFloat(one);
-    b = parseFloat(two);
-    c = parseFloat(three);
+        // parse
+        let a = parseFloat(one);
+        let b = parseFloat(two);
+        let c = parseFloat(three);
 
-    // math
-    let underroot = b**2-4*a*c;
-    let sqRoot = Math.sqrt(underRoot);
+        // check if a is zero
+        if (a === 0) {
+            alert("This is not a quadratic equation (a cannot be 0)");
+            return;
+        }
 
+        // math
+        let discriminant = b**2 - 4*a*c;
+        
+        if (discriminant > 0) {
+            let root1 = (-b + Math.sqrt(discriminant)) / (2*a);
+            let root2 = (-b - Math.sqrt(discriminant)) / (2*a);
+            alert("Two real roots: " + root1 + " and " + root2);
+        } else if (discriminant === 0) {
+            let root = -b / (2*a);
+            alert("One repeated root: " + root);
+        } else {
+            let realPart = -b / (2*a);
+            let imaginaryPart = Math.sqrt(-discriminant) / (2*a);
+            alert("Two complex roots: " + realPart + " + " + imaginaryPart + "i and " + realPart + " - " + imaginaryPart + "i");
+        }
+    }
 </script>
 </body>
 </html>
