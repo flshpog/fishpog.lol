@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mark Program</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        input {
+            padding: 5px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 5px 15px;
+        }
+        #result {
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>Grade Calculator</h2>
+    <input type="number" id="mark" placeholder="Enter mark (0-100)" min="0" max="100">
+    <button onclick="calculateGrade()">Mark</button>
+    <div id="result"></div>
+
+    <script>
+        function calculateGrade() {
+            let mark = parseInt(document.getElementById('mark').value);
+            let grade;
+            
+            if (mark === 100) {
+                grade = 'Perfect';
+            } else if (mark >= 90 && mark <= 99) {
+                grade = 'A+';
+            } else if (mark >= 80 && mark <= 89) {
+                grade = 'A';
+            } else if (mark >= 70 && mark <= 79) {
+                grade = 'B';
+            } else if (mark >= 60 && mark <= 69) {
+                grade = 'C';
+            } else if (mark >= 50 && mark <= 59) {
+                grade = 'D';
+            } else {
+                grade = 'F';
+            }
+            
+            document.getElementById('result').textContent = 'Grade: ' + grade;
+        }
+    </script>
+</body>
+</html>
