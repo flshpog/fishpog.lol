@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ticket Price (dropdown)</title>
+    <title>Ticket Price (radiobutton)</title>
 
 <style>
     body {
@@ -20,14 +20,16 @@
         margin-bottom: 15px;
     }
 
-    
+    .gender-option {
+        display: inline-block;
+        margin-right: 10px;
+    }
 
 </style>
 
-
 </head>
 <body>
-    
+
 <br>
 
 <div>
@@ -38,35 +40,33 @@
     <option value="teen">Teen (13-19)</option>
     <option value="adult">Adult (20-64)</option>
     <option value="senior">Senior (65+)</option>
-
 </select>
 <br>
-<label for="gender">Gender:</label>
-<select id="gender" name="gender">
-    <option value="" disabled selected>Select your gender</option>
-    <option value="male">Male</option>
-    <option value="female">Female</option>
-    <option value="other">Other</option>
-</select>
+<label>Gender:</label>
+<div class="gender-option">
+    <input type="radio" id="male" name="gender" value="male">
+    <label for="male">Male</label>
+</div>
+<div class="gender-option">
+    <input type="radio" id="female" name="gender" value="female">
+    <label for="female">Female</label>
+</div>
 </div>
 <br><br>
 
 <input type="number" id="quantity" name="quantity" placeholder="Number of tickets">
 <br><br>
 
-
 <button onclick="calculatePrice()">Calculate Price</button>
-
 
 <br><br><br>
 
-
 <script>
-
 
 function calculatePrice() {
     const age = document.getElementById('age').value;
-    const gender = document.getElementById('gender').value;
+    const genderRadio = document.querySelector('input[name="gender"]:checked');
+    const gender = genderRadio ? genderRadio.value : '';
     const quantity = parseInt(document.getElementById('quantity').value);
     let pricePerTicket = 21; 
     let discount = 0;
