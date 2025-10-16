@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 EXTREME High-Low 🔥</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(45deg, #000000, #1a0033, #330066, #000033);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            text-align: center;
+            z-index: 10;
+            padding: 40px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 30px;
+            box-shadow: 0 0 100px rgba(138, 43, 226, 0.8), 0 0 200px rgba(75, 0, 130, 0.6);
+            border: 3px solid rgba(255, 0, 255, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 4em;
+            background: linear-gradient(45deg, #ff00ff, #00ffff, #ff00ff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: textShine 3s ease infinite;
+            text-shadow: 0 0 30px rgba(255, 0, 255, 0.8);
+            margin-bottom: 20px;
+            letter-spacing: 5px;
+        }
+
+        @keyframes textShine {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .input-container {
+            margin: 30px 0;
+            position: relative;
+        }
+
+        input {
+            width: 300px;
+            padding: 20px;
+            font-size: 1.5em;
+            border: 3px solid #ff00ff;
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ffff;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 40px rgba(255, 0, 255, 1);
+            transform: scale(1.05);
+        }
+
+        button {
+            padding: 20px 60px;
+            font-size: 1.8em;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff00ff, #8b00ff, #ff00ff);
+            background-size: 200% 200%;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 10px 40px rgba(255, 0, 255, 0.6);
+            transition: all 0.3s;
+            animation: buttonPulse 2s ease infinite;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        @keyframes buttonPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); box-shadow: 0 10px 60px rgba(255, 0, 255, 1); }
+        }
+
+        button:hover {
+            transform: scale(1.1) !important;
+            box-shadow: 0 15px 80px rgba(255, 0, 255, 1) !important;
+        }
+
+        button:active {
+            transform: scale(0.95) !important;
+        }
+
+        .hype-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
+
+        .hype-text {
+            font-size: 6em;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff0000, #ff00ff, #00ffff, #00ff00, #ffff00, #ff0000);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: rainbow 2s linear infinite, bounce 0.5s ease infinite;
+            text-transform: uppercase;
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-30px) scale(1.1); }
+        }
+
+        .firework {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            animation: explode 1s ease-out;
+        }
+
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--x), var(--y));
+                opacity: 0;
+            }
+        }
+
+        #result {
+            margin-top: 30px;
+            min-height: 100px;
+        }
+
+        .result-line {
+            font-size: 1.8em;
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .too-low {
+            color: #00ffff;
+            background: rgba(0, 100, 255, 0.2);
+            border: 2px solid #00ffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        .too-high {
+            color: #ff6b6b;
+            background: rgba(255, 0, 0, 0.2);
+            border: 2px solid #ff6b6b;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .correct {
+            color: #00ff00;
+            background: rgba(0, 255, 0, 0.2);
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.8);
+            font-size: 2.2em !important;
+            animation: slideIn 0.5s ease, victory 1s ease infinite;
+        }
+
+        @keyframes victory {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .error {
+            color: #ffaa00;
+            background: rgba(255, 170, 0, 0.2);
+            border: 2px solid #ffaa00;
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.5);
+        }
+
+        .subtitle {
+            color: #00ffff;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+
+    <div class="container">
+        <h1>🔥 EXTREME HIGH-LOW 🔥</h1>
+        <div class="subtitle">⚡ GUESS THE NUMBER (1-100) ⚡</div>
+        <div class="input-container">
+            <input type="number" id="guess" placeholder="ENTER YOUR DESTINY">
+        </div>
+        <button onclick="checkGuess()">💥 SUBMIT 💥</button>
+        <div id="result"></div>
+    </div>
+
+    <div class="hype-screen" id="hypeScreen">
+        <div class="hype-text" id="hypeText">ANALYZING...</div>
+    </div>
+
+    <script>
+        const randomNumber = Math.floor(Math.random() * 100) + 1;
+        let attemptCount = 0;
+
+        // Create stars
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.width = Math.random() * 3 + 1 + 'px';
+            star.style.height = star.style.width;
+            star.style.animationDelay = Math.random() * 3 + 's';
+            starsContainer.appendChild(star);
+        }
+
+        function createFireworks() {
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const firework = document.createElement('div');
+                    firework.className = 'firework';
+                    firework.style.left = Math.random() * window.innerWidth + 'px';
+                    firework.style.top = Math.random() * window.innerHeight + 'px';
+                    firework.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                    
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 200 + 100;
+                    firework.style.setProperty('--x', Math.cos(angle) * distance + 'px');
+                    firework.style.setProperty('--y', Math.sin(angle) * distance + 'px');
+                    
+                    document.body.appendChild(firework);
+                    
+                    setTimeout(() => firework.remove(), 1000);
+                }, i * 20);
+            }
+        }
+
+        function showHypeScreen(callback) {
+            const hypeScreen = document.getElementById('hypeScreen');
+            const hypeText = document.getElementById('hypeText');
+            
+            hypeScreen.style.display = 'flex';
+            
+            const messages = ['ANALYZING...', 'CALCULATING...', 'PROCESSING...', 'REVEALING...'];
+            let messageIndex = 0;
+            
+            const messageInterval = setInterval(() => {
+                messageIndex++;
+                if (messageIndex < messages.length) {
+                    hypeText.textContent = messages[messageIndex];
+                }
+            }, 400);
+            
+            setTimeout(() => {
+                clearInterval(messageInterval);
+                hypeScreen.style.display = 'none';
+                callback();
+            }, 1800);
+        }
+
+        function checkGuess() {
+            const userGuess = parseInt(document.getElementById('guess').value);
+            const resultDiv = document.getElementById('result');
+
+            if (userGuess < 1 || userGuess > 100 || isNaN(userGuess)) {
+                const errorLine = document.createElement('div');
+                errorLine.className = 'result-line error';
+                errorLine.textContent = '⚠️ INVALID INPUT! ENTER 1-100! ⚠️';
+                resultDiv.appendChild(errorLine);
+                return;
+            }
+
+            showHypeScreen(() => {
+                attemptCount++;
+                let line = document.createElement('div');
+                line.className = 'result-line';
+
+                if (userGuess < randomNumber) {
+                    line.className += ' too-low';
+                    line.textContent = `❄️ ${userGuess} IS TOO LOW! GO HIGHER! ❄️`;
+                } else if (userGuess > randomNumber) {
+                    line.className += ' too-high';
+                    line.textContent = `🔥 ${userGuess} IS TOO HIGH! GO LOWER! 🔥`;
+                } else {
+                    line.className += ' correct';
+                    line.textContent = `🎉 VICTORY! ${userGuess} IS CORRECT! ${attemptCount} ATTEMPTS! 🎉`;
+                    createFireworks();
+                    setTimeout(createFireworks, 1000);
+                }
+                resultDiv.appendChild(line);
+                
+                // Clear input
+                document.getElementById('guess').value = '';
+            });
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('guess').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkGuess();
+            }
+        });
+    </script>
+</body>
+</html>
