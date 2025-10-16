@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Low</title>
+    <style>
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .centered {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="centered">
+        <input type="number" id="guess" placeholder="Enter your guess (1-100)">
+        <button onclick="checkGuess()">Submit Guess</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const randomNumber = Math.floor(Math.random() * 100) + 1;
+        let attemptCount = 0;
+
+        function checkGuess() {
+            const userGuess = parseInt(document.getElementById('guess').value);
+            const resultDiv = document.getElementById('result');
+
+            if (userGuess < 1 || userGuess > 100 || isNaN(userGuess)) {
+                const errorLine = document.createElement('div');
+                errorLine.textContent = 'Please enter a valid number between 1 and 100.';
+                resultDiv.appendChild(errorLine);
+                return;
+            }
+
+            attemptCount++;
+            let line = document.createElement('div');
+
+            if (userGuess < randomNumber) {
+                line.textContent = `${userGuess} was too low.`;
+            } else if (userGuess > randomNumber) {
+                line.textContent = `${userGuess} was too high.`;
+            } else {
+                line.textContent = `Congratulations! ${userGuess} was correct! You guessed the number in ${attemptCount} attempts!`;
+            }
+            resultDiv.appendChild(line);
+        }
+    </script>
+
+
+    <a href="https://fishpog.lol/testinggrounds/week5/day4/lol" 
+        style="position: fixed; bottom: 10px; right: 10px; 
+        background: rgba(255,255,255,0.8); padding: 5px 10px; 
+        border-radius: 4px; text-decoration: none; color: #007acc; 
+        font-family: sans-serif; font-size: 14px; z-index: 1000;">
+        check out the really over-the-top version i made of this
+    </a>
+</body>
+</html>

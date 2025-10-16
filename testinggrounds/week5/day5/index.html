@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Week 5 Day 5 - Image Viewer</title>
+	<style>
+		body {
+			min-height: 100vh;
+			margin: 0;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+		}
+		img {
+			max-width: 90vw;
+			max-height: 60vh;
+			margin-bottom: 16px;
+		}
+		button {
+			font-size: 16px;
+			padding: 6px 16px;
+			border-radius: 4px;
+			border: 1px solid #aaa;
+			background: #fff;
+			cursor: pointer;
+		}
+	</style>
+</head>
+<body>
+	<img id="picture" src="img1.png" alt="Picture 1">
+	<button onclick="nextPicture()">Next picture</button>
+
+	<script>
+		const images = ["img1.png", "img2.png", "img3.png", "img4.png"];
+		let current = 0;
+		function nextPicture() {
+			current = (current + 1) % images.length;
+			const img = document.getElementById('picture');
+			img.src = images[current];
+			img.alt = `Picture ${current + 1}`;
+		}
+	</script>
+</body>
+</html>

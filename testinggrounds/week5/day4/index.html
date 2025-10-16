@@ -3,67 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>High-Low</title>
-    <style>
-        body {
-            min-height: 100vh;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .centered {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-    </style>
+    <title>Week 5 Day 4 - Ticket Price (dropdown)</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f4f4f4;
+        background-size: 400px;
+        background-repeat: no-repeat;
+        background-position: center top;
+        text-align: center;
+    }
+
+    select, input {
+        margin-bottom: 15px;
+    }
+
+    
+
+</style>
+
+
 </head>
 <body>
-    <div class="centered">
-        <input type="number" id="guess" placeholder="Enter your guess (1-100)">
-        <button onclick="checkGuess()">Submit Guess</button>
-        <div id="result"></div>
-    </div>
+    
+<br>
 
-    <script>
-        const randomNumber = Math.floor(Math.random() * 100) + 1;
-        let attemptCount = 0;
+<div>
+<label for="age">Age:</label>
+<select id="age" name="age">
+    <option value="" disabled selected>Select your age group</option>
+    <option value="child">Child (0-12)</option>
+    <option value="teen">Teen (13-19)</option>
+    <option value="adult">Adult (20-64)</option>
+    <option value="senior">Senior (65+)</option>
 
-        function checkGuess() {
-            const userGuess = parseInt(document.getElementById('guess').value);
-            const resultDiv = document.getElementById('result');
+</select>
+<br>
+<label for="gender">Gender:</label>
+<select id="gender" name="gender">
+    <option value="" disabled selected>Select your gender</option>
+    <option value="male">Male</option>
+    <option value="female">Female</option>
+    <option value="other">Other</option>
+</select>
+</div>
+<br><br>
 
-            if (userGuess < 1 || userGuess > 100 || isNaN(userGuess)) {
-                const errorLine = document.createElement('div');
-                errorLine.textContent = 'Please enter a valid number between 1 and 100.';
-                resultDiv.appendChild(errorLine);
-                return;
-            }
-
-            attemptCount++;
-            let line = document.createElement('div');
-
-            if (userGuess < randomNumber) {
-                line.textContent = `${userGuess} was too low.`;
-            } else if (userGuess > randomNumber) {
-                line.textContent = `${userGuess} was too high.`;
-            } else {
-                line.textContent = `Congratulations! ${userGuess} was correct! You guessed the number in ${attemptCount} attempts!`;
-            }
-            resultDiv.appendChild(line);
-        }
-    </script>
+<input type="number" id="quantity" name="quantity" placeholder="Number of tickets">
+<br><br>
 
 
-    <a href="https://fishpog.lol/testinggrounds/week5/day4/lol" 
-        style="position: fixed; bottom: 10px; right: 10px; 
-        background: rgba(255,255,255,0.8); padding: 5px 10px; 
-        border-radius: 4px; text-decoration: none; color: #007acc; 
-        font-family: sans-serif; font-size: 14px; z-index: 1000;">
-        check out the really over-the-top version i made of this
-    </a>
+<button onclick="calculatePrice()">Calculate Price</button>
+
+
+<br><br><br>
+
+
+<script>
+
+
+function calculatePrice() {
+    const age = document.getElementById('age').value;
+    const gender = document.getElementById('gender').value;
+    const quantity = parseInt(document.getElementById('quantity').value);
+    let pricePerTicket = 21; 
+    let discount = 0;
+
+    if (age === 'child') {
+        discount += 0.5; 
+    } else if (age === 'senior') {
+        discount += 0.3; 
+    }
+
+    if (gender === 'female') {
+        discount += 0.25; 
+    }
+
+    pricePerTicket -= pricePerTicket * discount;
+    const totalPrice = pricePerTicket * quantity;
+    alert(`Total price: $${totalPrice.toFixed(2)}`);
+}
+
+</script>
+
 </body>
 </html>
