@@ -1,0 +1,19 @@
+{
+  "name": "godrick",
+  "version": "1.0.0",
+  "description": "AI chatbot with Claude.ai-inspired UI and chart generation capabilities",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["ai", "chatbot", "claude", "charts", "visualization"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.67.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0"
+  }
+}
