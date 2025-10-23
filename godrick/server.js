@@ -9,7 +9,6 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
@@ -84,11 +83,6 @@ app.post('/api/chat', async (req, res) => {
         console.error('Error:', error);
         res.status(500).json({ error: error.message });
     }
-});
-
-// Serve index.html for root route
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
 });
 
 app.listen(PORT, () => {

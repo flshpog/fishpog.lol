@@ -2,6 +2,8 @@
 
 An AI chatbot with a Claude.ai-inspired UI and intelligent chart generation capabilities. Godrick can understand requests for data visualizations and automatically generate beautiful charts using Chart.js.
 
+**Live at:** [fishpog.lol/godrick](https://fishpog.lol/godrick)
+
 ## Features
 
 - **Claude.ai-inspired UI**: Clean, modern interface with dark theme
@@ -11,42 +13,86 @@ An AI chatbot with a Claude.ai-inspired UI and intelligent chart generation capa
 - **Markdown Support**: Full markdown rendering for rich text formatting
 - **Conversation History**: Maintains chat context throughout the conversation
 
-## Prerequisites
+## Architecture
 
-- Node.js (v14 or higher)
-- An Anthropic API key (get one at https://console.anthropic.com/)
+This project has two parts:
 
-## Installation
+1. **Frontend** (GitHub Pages): Static HTML/CSS/JS served at fishpog.lol/godrick
+2. **Backend** (Separate server): Node.js API server that handles Anthropic API calls
 
-1. Clone this repository or download the files
+The frontend and backend can be deployed independently.
 
-2. Install dependencies:
+## Setup
+
+### Backend Setup (Required)
+
+The backend handles API calls to Anthropic Claude.
+
+1. **Install dependencies:**
 ```bash
 npm install
 ```
 
-3. Create a `.env` file from the example:
+2. **Configure environment variables:**
+Create a `.env` file (or edit the existing one):
 ```bash
-cp .env.example .env
-```
-
-4. Add your Anthropic API key to the `.env` file:
-```
-ANTHROPIC_API_KEY=your_actual_api_key_here
+ANTHROPIC_API_KEY=your_api_key_here
 PORT=3000
 ```
 
-## Running the Application
-
-Start the server:
+3. **Run locally for testing:**
 ```bash
 npm start
 ```
 
-Then open your browser and navigate to:
+The backend will run on http://localhost:3000
+
+### Frontend Setup
+
+The frontend is already configured for GitHub Pages at fishpog.lol/godrick.
+
+**For local testing:** Just open `index.html` in a browser (make sure backend is running on localhost:3000)
+
+**For production:** Update `js/config.js` with your deployed backend URL:
+```javascript
+const API_URL = 'https://your-backend-url.com';
 ```
-http://localhost:3000
+
+## Deployment
+
+### Deploy Backend (Choose one):
+
+#### Option 1: Render.com (Recommended - Free tier)
+1. Push this code to a GitHub repository
+2. Go to [render.com](https://render.com) and sign up
+3. Create a new "Web Service"
+4. Connect your GitHub repository
+5. Configure:
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+   - **Add Environment Variable:** `ANTHROPIC_API_KEY` = your key
+6. Deploy! You'll get a URL like `https://godrick.onrender.com`
+
+#### Option 2: Railway.app
+1. Push code to GitHub
+2. Go to [railway.app](https://railway.app)
+3. Create new project from GitHub repo
+4. Add environment variable `ANTHROPIC_API_KEY`
+5. Deploy automatically
+
+#### Option 3: Vercel
+```bash
+npm install -g vercel
+vercel
 ```
+Add `ANTHROPIC_API_KEY` in Vercel dashboard
+
+### Deploy Frontend (GitHub Pages)
+
+Already set up! Just:
+1. Update `js/config.js` with your backend URL
+2. Commit and push to your fishpog.lol repository
+3. Access at fishpog.lol/godrick
 
 ## How Chart Generation Works
 
@@ -97,15 +143,15 @@ Supported chart types:
 
 ```
 godrick/
-├── server.js              # Express server & Anthropic API integration
-├── public/
-│   ├── index.html        # Main HTML file
-│   ├── css/
-│   │   └── styles.css    # Claude.ai-inspired styling
-│   └── js/
-│       └── app.js        # Frontend logic & chart rendering
+├── server.js              # Express backend API server
+├── index.html            # Main HTML file (served by GitHub Pages)
+├── css/
+│   └── styles.css        # Claude.ai-inspired styling
+├── js/
+│   ├── config.js         # Backend URL configuration
+│   └── app.js            # Frontend logic & chart rendering
 ├── package.json
-├── .env.example
+├── .env                  # Environment variables (backend)
 └── README.md
 ```
 
@@ -113,15 +159,14 @@ godrick/
 
 - **Backend**: Node.js, Express
 - **AI**: Anthropic Claude API (Claude 3.5 Sonnet)
-- **Frontend**: Vanilla JavaScript, Chart.js
-- **Markdown**: Marked.js
-- **Styling**: Custom CSS with CSS variables for theming
+- **Frontend**: Vanilla JavaScript, Chart.js, Marked.js
+- **Hosting**: GitHub Pages (frontend) + Any Node.js host (backend)
 
 ## Customization
 
 ### Changing the Theme
 
-Edit the CSS variables in `public/css/styles.css`:
+Edit the CSS variables in `css/styles.css`:
 
 ```css
 :root {
@@ -132,7 +177,7 @@ Edit the CSS variables in `public/css/styles.css`:
 }
 ```
 
-### Modifying the AI Behavior
+### Modifying AI Behavior
 
 Edit the `SYSTEM_PROMPT` in `server.js` to change how Godrick responds or generates charts.
 
@@ -152,22 +197,36 @@ model: 'claude-3-5-sonnet-20241022',  // Current model
 - Ensure Chart.js library loaded (check network tab)
 
 **API errors?**
-- Verify your API key is correct in `.env`
-- Check you have API credits in your Anthropic account
-- Ensure `.env` file is in the root directory
+- Verify backend is running and accessible
+- Check `js/config.js` has correct backend URL
+- Verify API key in backend `.env` file
+- Check CORS is enabled on backend
+
+**CORS errors?**
+- Backend has CORS enabled, but make sure your hosting platform doesn't override it
+- Check that `config.js` points to the correct backend URL (including https://)
 
 **Server won't start?**
 - Check if port 3000 is already in use
-- Try changing the PORT in `.env`
+- Try changing PORT in `.env`
 - Verify all dependencies installed with `npm install`
+
+## Development Workflow
+
+1. **Local development:**
+   - Run backend: `npm start` (in godrick directory)
+   - Open `index.html` in browser
+   - Make changes to frontend files
+   - Refresh browser to see changes
+
+2. **Deploy to production:**
+   - Deploy backend to Render/Railway/Vercel
+   - Update `js/config.js` with backend URL
+   - Push to GitHub (auto-deploys to fishpog.lol/godrick)
 
 ## License
 
 ISC
-
-## Contributing
-
-Feel free to open issues or submit pull requests!
 
 ---
 

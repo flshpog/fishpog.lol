@@ -221,7 +221,7 @@ class GodrickChat {
     }
 
     async streamResponse(messageId) {
-        const response = await fetch('/api/chat', {
+        const response = await fetch(`${API_URL}/api/chat`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
