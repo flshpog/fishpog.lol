@@ -147,9 +147,38 @@
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       transform-style: preserve-3d;
     }
+
+    .help-button {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+    }
+
+    .help-button:hover {
+      background: rgba(255, 255, 255, 0.5);
+      transform: scale(1.1);
+    }
   </style>
 </head>
 <body>
+
+  <a href="https://fishpog.lol/slither" class="help-button">?</a>
 
   <!-- <div id="statuscafe">
     <div id="statuscafe-username"></div>
