@@ -3,11 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Slideshow</title>
+    <title>slither</title>
+    <!--hi! you found out how to view the code! good job.-->
+
+    <!--you're pretty determined to find something. if only there was anything to be determined for?-->
+
+    <!--because honestly youre gaining nothing from being here. -->
+
+
+
+
+
+
+
+
     <style>
         * {
             margin: 0;
-            padding: 0;
+            padding: 0; /* did you know i can put comments anywhere? */
             box-sizing: border-box;
         }
 
@@ -20,7 +33,7 @@
             font-family: Arial, sans-serif;
         }
 
-        .slideshow-container {
+        .slideshow-container { /* lol */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -32,14 +45,14 @@
             max-height: 80vh;
             object-fit: contain;
         }
-
+/* even in here */
         .controls {
             display: flex;
             gap: 20px;
         }
 
         button {
-            padding: 15px 30px;
+            padding: 15px 30px; /* this is so boring just leave why are you wasting your time */
             font-size: 18px;
             cursor: pointer;
             background-color: #4CAF50;
@@ -50,7 +63,7 @@
         }
 
         button:hover:not(:disabled) {
-            background-color: #45a049;
+            background-color: #45a049; 
         }
 
         button:disabled {
@@ -62,11 +75,24 @@
             color: white;
             font-size: 16px;
         }
+
+        #h {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            opacity: 0.01;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 9999;
+        }
     </style>
 </head>
 <body>
     <div class="slideshow-container">
-        <img id="slideImage" class="slide" src="img/1.png" alt="Slide">
+        <img id="slideImage" class="slide" src="img/1.png" alt="Slide"> <!-- or dont -->
         <div class="slide-counter">
             <span id="currentSlide">1</span> / <span id="totalSlides">26</span>
         </div>
@@ -75,45 +101,91 @@
             <button id="nextBtn" onclick="changeSlide(1)">Next &#10095;</button>
         </div>
     </div>
-
+    <button id="h"></button>
+<!--oz jzf vyzh esp wtmclcj zq mlmpw?+-->
     <script>
         let currentIndex = 1;
-        const totalSlides = 26;
+        const totalSlides = 26;  // aWYgeW91IHJlYWxseSB3YW50IGEgaGludA==
 
         const slides = [];
         for (let i = 1; i <= 25; i++) {
-            slides.push(`img/${i}.png`);
+            slides.push(`img/${i}.png`); // Y2xpY2sgdGhlIGhpZGRlbiBidXR0b24gb24gdGhlIGJvdHRvbSByaWdodCBvZiB0aGUgd2VicGFnZQ==
         }
         slides.push('img/end.png');
 
-        function updateSlide() {
-            const img = document.getElementById('slideImage');
-            img.src = slides[currentIndex - 1];
+        function updateSlide() { // dHlwZSBpbiB0aGUgc2Vjb25kIHdvcmQgb24gbGluZSAzOCwgcmV2ZXJzZWQ=
+            const img = document.getElementById('slideImage'); 
+            img.src = slides[currentIndex - 1]; 
 
             document.getElementById('currentSlide').textContent = currentIndex;
 
-            // Update button states
+            
             document.getElementById('prevBtn').disabled = currentIndex === 1;
             document.getElementById('nextBtn').disabled = currentIndex === totalSlides;
         }
 
-        function changeSlide(direction) {
+        function changeSlide(direction) { 
             currentIndex += direction;
 
-            if (currentIndex < 1) currentIndex = 1;
+            if (currentIndex < 1) currentIndex = 1; 
             if (currentIndex > totalSlides) currentIndex = totalSlides;
 
             updateSlide();
         }
 
-        // Keyboard navigation
+
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft') changeSlide(-1);
             if (e.key === 'ArrowRight') changeSlide(1);
         });
 
-        // Initialize
+
         updateSlide();
+
+        document.getElementById('h').onclick = () => {
+            const p1 = atob('ZmlzaHBvZy5sb2w=');
+            const p2 = atob('YWxtb3N0');
+            window.location.href = `https://${p1}/${p2}`;
+        };
     </script>
 </body>
 </html>
+
+<!--jzzszz! ozhy spcp!-->
+<!--jzf'ww yppo ez rz ez esp wtmclcj zq mlmpw, lyo aldep esp wtyp mpwzh ty esp dplcns.-->
+<!--3hcs7d1dsrmbrj28gdl6b430ryxxd3dgc6190w0f0027j3jn3mkun3qqv5bej382qenkqvq168nt0zlx1c5228bbr8j6rj
+2jt2hthtuhzgpls0vmiie3kakhbhfnug9l1y1nmdn85xivqfgckreghn8d1yb9qeoibe8sgtjn3c2e6lpx1y1m1lpfdx1yh4td
+39qhkkds95x35s2pxxfiphnpqkgyqgrwrmqkrg2h6l0wpycng3b6fkezia7hwhxa4vo3am9laynrfvvwega9nbepqhuxg8dqsb
+jo4iqp4velg4h14qwnbhjd68yhwf9pgua3h3arav7fg1n5xcbkdazavivsgybopgathpudgtkk9050n0p1c09yep1qs3x5hi0m
+990ybv8u73cca842as93b5gkccn3wwcnxkikusdc7vgdlk3zz28shci1sbmtnug8ilbnekj5yyqtwyeqqm2642mkctxb0f3hcx
+rs2yjf0aoutw683y4tpihukh6gesbak53mjk9rd0yt3ufhwl0h9pgb6v9a4xcdgni9g28zlihty118i122fio4b54urj5rskjp
+pd0u4oezvkhgz73hplp7hnl4dfn1ahiky93padozlozr77aa60vvts7di6zmfqxwkyj13pa43ofds4tcb5tforno3uytnqj7v8
+vyalyt8w5vk9axkd481oi0adyt8vrgrap6uw2ahqxmk4ls3cci3didguxxdb8rddk3uj6up1x230pvsuz467rjats9t8re8gy0
+tzmrg83kq6akvtpsmtnxqczhp2g3hie8z0sc3yeuii7q1p1pa5l5bvbzdjd8e9ls2k0qmbn27xnfg5wlgbfuhii8ikntag3mt1
+c2ymj47f3xjvlh0ke5c5gdnhxuwy3bur02vrlaa4398wjdcmbo4hoj8bgwyk42pny5jeykxkoxqlef6592h3x22gx59lcxdtz7
+mnftt1huilacqni9gqcmxdjf6b3ljl3mm5e4n7uz1ewqdlxsvmkc8ah9qrcrbxdzj6fkaazbxxjjf872jem2ex1qa4jst5d3bl
+jfvsc3yfr23ngkz97toplcwucqaaccj6wec9yk9isldx463z8rr01vpob52roeef95iqfj6lf6h2lbj0vy0sqm6swoq3eqjvv8
+07fz9ltda30t4s30u44d1505hzoztz1kor587gl7j7krerw9y4lydu4gcrt2iq3ivkq3ftdjksjfklieg26b4ttf987pzqez2i
+tvu3khnb3abfdijhi3xj5kashzwfwb82l7xz4rzxtt9phf8e7h5y97r48l2e74t37095ica8791t7qpewii72mxomr88ou3z45
+e84ctm4oxuxyr74do4lfo0vbf5ni1tvbm5aicuaxjc0ctzhm6b7ie4hsvlzjom2j2o8awmmit02mf0v5oja3odmx9qd7ymuoye
+2ru9v5belvhjx73kbggqs1efb3ze7g6z3d3hw772yyuezmynnop0drjzclmcjwzdvo9krbd50459wfevz7zomhvx0gluu8gtfe
+qx6ugv6a06vg3nzkfyeyh85qszm9t66qlys853wipk6p8529fu2e9u320nvh84rjk45xp8k8tau2k10neuaqjqmgeuj5vsitnu
+es41fm42867emeng6vhkzbp1ypag7xajqduyrdx26jj129n2yveg1enkx1ztaztl1bvcztbmb16x2stgjgqj5t29midhrxmosz
+7vkmxkszfkxy1t8exyj0koyhnf02zv2zh0wam44zsa7q4ifmyry8h62ayw0zp6z8z7iuwghpqgtyjlz3vv3svjzdydfw9ua4g7
+304ddcrhhcd41cqe7vn0rcdri24x378cefonwc2y923bmfgfgw8pulr5y967pclslyep8u8mdbmvlzorexteovr865idtpbbvx
+ilpun96qshxsc65xzu3wmvvtsveag9ng02ghgsxb4poe7847tzyn50d51ppnkv0b8bzvmfhvm2eo3eh0mrkq9m7hklblnglqey
+rphfouiug8t3w6oiq7v5beaztkc11mhp2fxdx4dsh9hpj0js9vyxmzmv4w29rsusib3oiulit63hvg0dio7yt7cf4ehjdnhmpi
+9s43cdjmdnl0cqmvfj2v0b4gbhinaw5jx10179nsp1zkncf7vfyjvbpdnyrgv246uim3sr0krlr04n5clx6sio9bbrrqqeyrbd
+6eg74arzs9en2hr1tqf4t3uce29yegj7yhlsda60z889t4hfv1p0kiwbxq9h1265zbdal48s0w2ebp00c13salj0i2uijdpw7b
+cgp4z5mnmaenuenert1dpir9z3n8j3f0t8id7t8qahslbdi23nf6anjp0uhnbklvt1w116jvw21a0mbbwv27i8ttm5yh8tf5q6
+77lgs3ow1x5ttxa7q99jxpfos84vanrz52iebrc9jhkhuwg7udvmmuiwpj12ebn0e2lhtz0hfni50l7l7iat7ha2v14sbusb5q
+5wcl07al8jre381s60c9cxji8ebzzhzzxn2bekc04qds9q4inonuq3j6z6zztb6gg6i33gjwpgtqfebf7kdtogygvjcuke4ncx
+h3vk68bpknbio1wm5r4w286svbaw3ko9vruru50w4y7kxb6u1iz1wo0qt2lfocnvoy4ogee88fqc871r0n1nsee734sqs12fh7
+nby8h07ji1lo0c3zz0cd5nxh6duu1uo9zwu93kbe2jc4mttttv0bhdts9447lyvv5cd6he3h6rdxnpg33zd2oncz0dx0hpt053
+i08oziqbnho8n67vwslqkgvuny1y0nivpg26gcm5vo8qh0uhv14c6jnw7vwzx9mrbvrf5zz0gc8obopyak9mhbdz374gfi4cxd
+tkdjzilvsfnfkgh3qn1xng1hyuxaiwwewksk2ok64brnrecwv3eg10hchedeb971aihb8dz3j8ajhy6dosos2t3ah02le8jij1
+i1qt6ribtqp3oq2lffhfxumq5nq7kgzpcvt9jtrs2y0ti385anqndjnnoc1vkp28ikgzks9p105dmwv0uz688uavamw89io52y
+1rjl7bsw4atb5mvo5vpa9wxqgktye7lib70nmftc2uzlw21jkv8f5vt332ykodljmi9vg8g1dab7868b33act06gu6hvpx312j
+nnrn4fbsdal0xlnxq164exo4-->
+<!--w3 s1 v25 p268-->
+<!-- <3 -->
