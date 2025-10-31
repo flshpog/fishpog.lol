@@ -71,14 +71,16 @@ function calculatePrice() {
     let pricePerTicket = 21; 
     let discount = 0;
 
-    if (age === 'child') {
-        discount += 0.5; 
-    } else if (age === 'senior') {
-        discount += 0.3; 
-    }
-
-    if (gender === 'female') {
-        discount += 0.25; 
+    if (age === 'child' && gender === 'female') {
+        discount = 0.75; // 50% + 25%
+    } else if (age === 'child' && gender !== 'female') {
+        discount = 0.5; // 50% only
+    } else if (age === 'senior' && gender === 'female') {
+        discount = 0.55; // 30% + 25%
+    } else if (age === 'senior' && gender !== 'female') {
+        discount = 0.3; // 30% only
+    } else if (gender === 'female') {
+        discount = 0.25; // 25% only
     }
 
     pricePerTicket -= pricePerTicket * discount;
