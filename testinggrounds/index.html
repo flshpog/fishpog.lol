@@ -255,15 +255,6 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
 
-        /* Floating particles */
-        .particle {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            pointer-events: none;
-            animation: float 6s ease-in-out infinite;
-        }
-
         @keyframes float {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
             50% { transform: translateY(-20px) rotate(180deg); }
@@ -416,7 +407,7 @@
                 </div>
             </div>
 
-              <div class="week-card" data-week="11">
+              <!-- <div class="week-card" data-week="11">
                 <div class="week-header">
                     <div class="week-title">Week 11</div>
                     <div class="dropdown-arrow">↓</div>
@@ -554,7 +545,7 @@
                     <a href="https://fishpog.lol/testinggrounds/week20/day4" class="day-link">Day 4</a>
                     <a href="https://fishpog.lol/testinggrounds/week20/day5" class="day-link">Day 5</a>
                 </div>
-            </div>
+            </div> -->
         </div>
     </div>
 
@@ -672,34 +663,6 @@
             }
         }, true);
 
-        // Create floating particles
-        function createParticle() {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            
-            const size = Math.random() * 4 + 2;
-            particle.style.width = size + 'px';
-            particle.style.height = size + 'px';
-            particle.style.left = Math.random() * window.innerWidth + 'px';
-            particle.style.top = window.innerHeight + 'px';
-            particle.style.animationDelay = Math.random() * 6 + 's';
-            particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
-            
-            document.body.appendChild(particle);
-            
-            // Remove particle after animation
-            setTimeout(() => {
-                particle.remove();
-            }, 25000);
-        }
-
-        // Generate particles periodically
-        setInterval(createParticle, 3000);
-        
-        // Initial particles
-        for (let i = 0; i < 5; i++) {
-            setTimeout(createParticle, i * 1000);
-        }
     </script>
 </body>
 </html>

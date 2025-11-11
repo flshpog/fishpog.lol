@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ticket Price (radiobutton)</title>
-
+    <title>Ticket Price (&& statement)</title>
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -15,23 +14,17 @@
         background-position: center top;
         text-align: center;
     }
-
     select, input {
         margin-bottom: 15px;
     }
-
     .gender-option {
         display: inline-block;
         margin-right: 10px;
     }
-
 </style>
-
 </head>
 <body>
-
 <br>
-
 <div>
 <label for="age">Age:</label>
 <select id="age" name="age">
@@ -53,16 +46,11 @@
 </div>
 </div>
 <br><br>
-
 <input type="number" id="quantity" name="quantity" placeholder="Number of tickets">
 <br><br>
-
 <button onclick="calculatePrice()">Calculate Price</button>
-
 <br><br><br>
-
 <script>
-
 function calculatePrice() {
     const age = document.getElementById('age').value;
     const genderRadio = document.querySelector('input[name="gender"]:checked');
@@ -70,23 +58,15 @@ function calculatePrice() {
     const quantity = parseInt(document.getElementById('quantity').value);
     let pricePerTicket = 21; 
     let discount = 0;
-
-    if (age === 'child') {
-        discount += 0.5; 
-    } else if (age === 'senior') {
-        discount += 0.3; 
-    }
-
-    if (gender === 'female') {
-        discount += 0.25; 
-    }
-
+    
+    age === 'child' && (discount += 0.5);
+    age === 'senior' && (discount += 0.3);
+    gender === 'female' && (discount += 0.25);
+    
     pricePerTicket -= pricePerTicket * discount;
     const totalPrice = pricePerTicket * quantity;
     alert(`Total price: $${totalPrice.toFixed(2)}`);
 }
-
 </script>
-
 </body>
 </html>

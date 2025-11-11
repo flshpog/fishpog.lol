@@ -12,6 +12,7 @@
 			flex-direction: column;
 			align-items: center;
 			justify-content: center;
+			font-family: Arial, sans-serif;
 		}
 		img {
 			max-width: 300px;
@@ -19,15 +20,24 @@
 			margin-bottom: 16px;
 			border: 1px solid #ccc;
 		}
+		label {
+			font-size: 16px;
+			margin-bottom: 8px;
+			font-weight: 500;
+		}
 		select {
 			font-size: 16px;
 			margin-bottom: 12px;
+			padding: 8px 12px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
 		}
 	</style>
 </head>
 <body>
 	<h2>Country Flag Viewer</h2>
-	<select id="countrySelect" onchange="showFlag()">
+	<label for="country">Select a country:</label>
+	<select id="country" name="country" onchange="showFlag()">
 		<option value="canada">Canada</option>
 		<option value="india">India</option>
 		<option value="china">China</option>
@@ -35,9 +45,7 @@
 		<option value="italy">Italy</option>
 	</select>
 	<img id="flagImg" src="" alt="Flag will appear here">
-
 	<script>
-		// Paste the image address for each flag below
 		const flagImages = {
 			canada: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Flag_of_Canada_%28Pantone%29.svg/1200px-Flag_of_Canada_%28Pantone%29.svg.png",
 			india: "https://upload.wikimedia.org/wikipedia/en/thumb/4/41/Flag_of_India.svg/1200px-Flag_of_India.svg.png",
@@ -45,16 +53,13 @@
 			usa: "https://cdn.britannica.com/33/4833-050-F6E415FE/Flag-United-States-of-America.jpg",
 			italy: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Flag_of_Italy_%28Pantone%2C_2003%E2%80%932006%29.svg/250px-Flag_of_Italy_%28Pantone%2C_2003%E2%80%932006%29.svg.png"
 		};
-
 		function showFlag() {
-			const select = document.getElementById('countrySelect');
+			const select = document.getElementById('country');
 			const img = document.getElementById('flagImg');
 			const country = select.value;
 			img.src = flagImages[country];
 			img.alt = country.charAt(0).toUpperCase() + country.slice(1) + " flag";
 		}
-
-		// Show the first flag on load
 		window.onload = showFlag;
 	</script>
 </body>
