@@ -18,7 +18,6 @@
         .calculator {
             background-color: #333;
             padding: 20px;
-            border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
@@ -30,7 +29,6 @@
             padding: 0 15px;
             margin-bottom: 15px;
             border: none;
-            border-radius: 5px;
             background-color: #222;
             color: white;
             box-sizing: border-box;
@@ -46,7 +44,6 @@
             height: 60px;
             font-size: 20px;
             border: none;
-            border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.2s;
         }
@@ -233,6 +230,28 @@
                 clearEntry();
             }
         });
+
+
+        (function() {
+            const clickAudio = document.createElement('audio');
+            clickAudio.id = 'click-sound';
+            clickAudio.src = 'click.wav';
+            clickAudio.preload = 'auto';
+            document.body.appendChild(clickAudio);
+
+            document.addEventListener('click', () => {
+
+                try {
+                    clickAudio.currentTime = 0;
+                    const p = clickAudio.play();
+                    if (p && typeof p.catch === 'function') p.catch(() => {});
+                } catch (err) {
+
+                    const a = new Audio('click.wav');
+                    a.play().catch(() => {});
+                }
+            }, { passive: true });
+        })();
     </script>
 </body>
 </html>
