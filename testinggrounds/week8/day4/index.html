@@ -3,9 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Week 8 Day 4</title>
+    <title>Week 8 Day 4 - ZeroTo99</title>
 </head>
 <body>
-Week 8 Day 4 — placeholder page. Add your code here.
+    <script>
+for (let i = 0; i < 10; i++) {
+    let row = "";
+    for (let j = 0; j < 10; j++) {
+        let num = i * 10 + j;
+        row += num.toString().padStart(2, "0") + " ";
+    }
+    document.writeln(row);
+}
+</script>
 </body>
 </html>
