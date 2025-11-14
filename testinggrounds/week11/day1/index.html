@@ -254,11 +254,24 @@
                 const config = this.difficulties[this.currentDifficulty];
                 let minesPlaced = 0;
                 
+                // Create a set of excluded positions (first click + all adjacent cells)
+                const excludedPositions = new Set();
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        const newRow = excludeRow + i;
+                        const newCol = excludeCol + j;
+                        if (newRow >= 0 && newRow < config.rows && 
+                            newCol >= 0 && newCol < config.cols) {
+                            excludedPositions.add(`${newRow},${newCol}`);
+                        }
+                    }
+                }
+                
                 while (minesPlaced < config.mines) {
                     const row = Math.floor(Math.random() * config.rows);
                     const col = Math.floor(Math.random() * config.cols);
                     
-                    if (this.board[row][col] !== -1 && (row !== excludeRow || col !== excludeCol)) {
+                    if (this.board[row][col] !== -1 && !excludedPositions.has(`${row},${col}`)) {
                         this.board[row][col] = -1;
                         minesPlaced++;
                         
