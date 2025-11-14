@@ -3,9 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Week 8 Day 3</title>
+    <title>Class Average Comparison</title>
 </head>
 <body>
-Week 8 Day 3 — placeholder page. Add your code here.
+ 
+  <script>
+  let gender = prompt("Please enter gender", "M or F or q to quit");
+  let tallyM = 0;
+  let tallyG = 0;
+  let mark = 0;
+  let countM = 0;
+  let countG = 0;
+
+  for (; gender != 'q' && gender != 'Q'; gender = prompt("Please enter gender", "M or F or q to quit")) {
+    mark = parseFloat(prompt("Please enter mark"));
+
+    if (gender == 'M' || gender == 'm') {
+      tallyM += mark;
+      countM++;
+    }
+    else if (gender == 'F' || gender == 'f') {
+      tallyG += mark;
+      countG++;
+    }
+    else {
+      alert("Invalid input. Please enter M, F, or q.");
+    }
+  }
+
+  let MAvg = countM > 0 ? (tallyM / countM) : 0;
+  let GAvg = countG > 0 ? (tallyG / countG) : 0;
+
+  document.write("Male Average: " + MAvg.toFixed(2) + "<br>");
+  document.write("Female Average: " + GAvg.toFixed(2) + "<br>");
+</script>
+
 </body>
 </html>
