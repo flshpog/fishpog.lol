@@ -3,9 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Week 12 Day 1</title>
+    <title>Document</title>
 </head>
 <body>
-Week 12 Day 1 — placeholder page. Add your code here.
+<h1>Student Information</h1>
+<h2>Input Student Information</h2>
+<input type="text" id="nameBox" placeholder="First Name">
+<input type="text" id="lastBox" placeholder="Last Name"><br><br>
+<input type="text" id="ageBox" placeholder="Age">
+<input type="text" id="emailBox" placeholder="Email"><br><br>
+<button onclick="addStudent()">Add Student</button>
+
+<div id="output"></div>
+ 
+<script>
+    function addStudent() {
+        
+        let students = { 
+            firstName: document.getElementById("nameBox").value, 
+            lastName: document.getElementById("lastBox").value, 
+            email: document.getElementById("emailBox").value, 
+            age: document.getElementById("ageBox").value 
+        }
+        
+        
+        let writing = `First Name: ${students.firstName}<br>
+        Last Name: ${students.lastName}<br>
+        Email: ${students.email}<br>
+        Age: ${students.age}`;
+        
+        document.getElementById("output").innerHTML = writing;
+    }
+</script>  
 </body>
 </html>
