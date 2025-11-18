@@ -127,6 +127,10 @@
             outline-offset: -3px;
         }
         
+        .cell.flagged {
+            background: #ffd700;
+        }
+        
         .cell[data-count="1"] { color: blue; }
         .cell[data-count="2"] { color: green; }
         .cell[data-count="3"] { color: red; }
@@ -186,6 +190,7 @@
                 this.currentDifficulty = 'easy';
                 this.board = [];
                 this.revealed = [];
+                this.flagged = [];
                 this.gameOver = false;
                 this.gameWon = false;
                 this.firstClick = true;
@@ -222,6 +227,14 @@
                         if (this.hoveredCell && !this.gameOver && !this.gameWon) {
                             this.revealCell(this.hoveredCell.row, this.hoveredCell.col);
                         }
+                    } else if (e.key === 'Shift') {
+                        e.preventDefault();
+                        if (this.hoveredCell && !this.gameOver && !this.gameWon) {
+                            this.toggleFlag(this.hoveredCell.row, this.hoveredCell.col);
+                        }
+                    } else if (e.key === 'r' || e.key === 'R') {
+                        e.preventDefault();
+                        this.initGame();
                     }
                 });
             }
@@ -235,6 +248,7 @@
                 
                 this.board = Array(config.rows).fill().map(() => Array(config.cols).fill(0));
                 this.revealed = Array(config.rows).fill().map(() => Array(config.cols).fill(false));
+                this.flagged = Array(config.rows).fill().map(() => Array(config.cols).fill(false));
                 this.gameOver = false;
                 this.gameWon = false;
                 this.firstClick = true;
@@ -321,7 +335,7 @@
             }
             
             revealCell(row, col) {
-                if (this.gameOver || this.gameWon || this.revealed[row][col]) return;
+                if (this.gameOver || this.gameWon || this.revealed[row][col] || this.flagged[row][col]) return;
                 
                 if (this.firstClick) {
                     this.placeMines(row, col);
@@ -383,6 +397,23 @@
                 const totalCells = config.rows * config.cols;
                 if (revealedCount === totalCells - config.mines) {
                     this.endGame(true);
+                }
+            }
+            
+            toggleFlag(row, col) {
+                if (this.gameOver || this.gameWon || this.revealed[row][col]) return;
+                
+                this.flagged[row][col] = !this.flagged[row][col];
+                const config = this.difficulties[this.currentDifficulty];
+                const index = row * config.cols + col;
+                const cell = this.boardEl.children[index];
+                
+                if (this.flagged[row][col]) {
+                    cell.classList.add('flagged');
+                    cell.textContent = '🚩';
+                } else {
+                    cell.classList.remove('flagged');
+                    cell.textContent = '';
                 }
             }
             

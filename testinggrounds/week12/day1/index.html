@@ -3,37 +3,292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Student Information</title>
+
 </head>
 <body>
 <h1>Student Information</h1>
+
 <h2>Input Student Information</h2>
 <input type="text" id="nameBox" placeholder="First Name">
 <input type="text" id="lastBox" placeholder="Last Name"><br><br>
 <input type="text" id="ageBox" placeholder="Age">
 <input type="text" id="emailBox" placeholder="Email"><br><br>
 <button onclick="addStudent()">Add Student</button>
+<button onclick="clearForm()" class="secondary-btn">Clear Form</button>
+
+<div class="controls">
+    <h3>Import/Export</h3>
+    <input type="file" id="fileInput" accept=".csv,.txt" style="width: auto;">
+    <button onclick="importFile()" class="secondary-btn">Import File</button><br><br>
+    <button onclick="exportCSV()">Export as CSV</button>
+    <button onclick="exportTXT()">Export as TXT</button>
+    <button onclick="clearAll()" class="secondary-btn">Clear All Students</button>
+</div>
 
 <div id="output"></div>
  
 <script>
+    // array to hold all the students we add
+    let studentsList = [];
+
+    // function to add a new student to the list
     function addStudent() {
+        // grab all the values from the input boxes
+        let firstName = document.getElementById("nameBox").value.trim();
+        let lastName = document.getElementById("lastBox").value.trim();
+        let email = document.getElementById("emailBox").value.trim();
+        let age = document.getElementById("ageBox").value.trim();
         
-        let students = { 
-            firstName: document.getElementById("nameBox").value, 
-            lastName: document.getElementById("lastBox").value, 
-            email: document.getElementById("emailBox").value, 
-            age: document.getElementById("ageBox").value 
+        // make sure they filled everything out
+        if (!firstName || !lastName || !email || !age) {
+            alert("Please fill in all fields");
+            return;
         }
         
+        // create a student object with all the info
+        let student = { 
+            firstName: firstName, 
+            lastName: lastName, 
+            email: email, 
+            age: age 
+        };
         
-        let writing = `First Name: ${students.firstName}<br>
-        Last Name: ${students.lastName}<br>
-        Email: ${students.email}<br>
-        Age: ${students.age}`;
-        
-        document.getElementById("output").innerHTML = writing;
+        // add this student to the list
+        studentsList.push(student);
+        // show all students on the page
+        displayStudents();
+        // clear out the input boxes
+        clearForm();
     }
+    
+    // function to display all students on the page
+    function displayStudents() {
+        // get the output div where we'll put everything
+        let output = document.getElementById("output");
+        
+        // if there's no students yet, say so
+        if (studentsList.length === 0) {
+            output.innerHTML = "<p>No students added yet.</p>";
+            return;
+        }
+        
+        // start building the html with a header showing how many students
+        let html = "<h3>Student List (" + studentsList.length + " students)</h3>";
+        
+        // loop through each student and add their info
+        studentsList.forEach((student, index) => {
+            html += `<div class="student-entry">
+                <strong>Student ${index + 1}</strong><br>
+                First Name: ${student.firstName}<br>
+                Last Name: ${student.lastName}<br>
+                Email: ${student.email}<br>
+                Age: ${student.age}
+            </div>`;
+        });
+        
+        // put all the html into the output div
+        output.innerHTML = html;
+    }
+    
+    // function to clear out the input form
+    function clearForm() {
+        document.getElementById("nameBox").value = "";
+        document.getElementById("lastBox").value = "";
+        document.getElementById("ageBox").value = "";
+        document.getElementById("emailBox").value = "";
+    }
+    
+    // function to delete all students from the list
+    function clearAll() {
+        // ask them if they're sure before deleting everything
+        if (studentsList.length === 0 || confirm("Are you sure you want to clear all students?")) {
+            // reset the list to empty
+            studentsList = [];
+            // refresh the display
+            displayStudents();
+        }
+    }
+    
+    // function to export students as a csv file
+    function exportCSV() {
+        // make sure there's actually students to export
+        if (studentsList.length === 0) {
+            alert("No students to export");
+            return;
+        }
+        
+        // start the csv with the header row
+        let csv = "First Name,Last Name,Email,Age\n";
+        
+        // add each student as a row in the csv
+        studentsList.forEach(student => {
+            csv += `${student.firstName},${student.lastName},${student.email},${student.age}\n`;
+        });
+        
+        // trigger the download
+        downloadFile(csv, "students.csv", "text/csv");
+    }
+    
+    // function to export students as a text file
+    function exportTXT() {
+        // make sure there's students to export
+        if (studentsList.length === 0) {
+            alert("No students to export");
+            return;
+        }
+        
+        // start with a title
+        let txt = "STUDENT INFORMATION\n";
+        txt += "===================\n\n";
+        
+        // add each student with nice formatting
+        studentsList.forEach((student, index) => {
+            txt += `Student ${index + 1}\n`;
+            txt += `First Name: ${student.firstName}\n`;
+            txt += `Last Name: ${student.lastName}\n`;
+            txt += `Email: ${student.email}\n`;
+            txt += `Age: ${student.age}\n`;
+            txt += `-------------------\n\n`;
+        });
+        
+        // trigger the download
+        downloadFile(txt, "students.txt", "text/plain");
+    }
+    
+    // helper function to download any file
+    function downloadFile(content, filename, contentType) {
+        // create a blob (file object) from the content
+        let blob = new Blob([content], { type: contentType });
+        // create a url for the blob
+        let url = URL.createObjectURL(blob);
+        // create a fake link element
+        let link = document.createElement("a");
+        // set the link to point to our file
+        link.href = url;
+        // set the filename
+        link.download = filename;
+        // click the link to trigger download
+        link.click();
+        // clean up the url to free memory
+        URL.revokeObjectURL(url);
+    }
+    
+    // function to import a file (csv or txt)
+    function importFile() {
+        // get the file input element
+        let fileInput = document.getElementById("fileInput");
+        // get the file they selected
+        let file = fileInput.files[0];
+        
+        // make sure they actually selected a file
+        if (!file) {
+            alert("Please select a file first");
+            return;
+        }
+        
+        // create a file reader to read the file
+        let reader = new FileReader();
+        
+        // when the file is loaded, parse it
+        reader.onload = function(e) {
+            // get the file content
+            let content = e.target.result;
+            // figure out if it's csv or txt based on extension
+            let extension = file.name.split('.').pop().toLowerCase();
+            
+            // call the right parser based on file type
+            if (extension === "csv") {
+                parseCSV(content);
+            } else if (extension === "txt") {
+                parseTXT(content);
+            }
+            
+            // clear the file input so they can import the same file again if needed
+            fileInput.value = "";
+        };
+        
+        // start reading the file as text
+        reader.readAsText(file);
+    }
+    
+    // function to parse a csv file and add students
+    function parseCSV(content) {
+        // split the file into lines
+        let lines = content.split('\n');
+        // counter for how many we imported
+        let imported = 0;
+        
+        // loop through lines starting at 1 (skip header row)
+        for (let i = 1; i < lines.length; i++) {
+            // clean up the line
+            let line = lines[i].trim();
+            // skip empty lines
+            if (line === "") continue;
+            
+            // split the line by commas
+            let parts = line.split(',');
+            // if we have all 4 fields, add the student
+            if (parts.length >= 4) {
+                studentsList.push({
+                    firstName: parts[0].trim(),
+                    lastName: parts[1].trim(),
+                    email: parts[2].trim(),
+                    age: parts[3].trim()
+                });
+                imported++;
+            }
+        }
+        
+        // refresh the display with new students
+        displayStudents();
+        // tell them how many we imported
+        alert(`Imported ${imported} students from CSV`);
+    }
+    
+    // function to parse a txt file and add students
+    function parseTXT(content) {
+        // split into lines
+        let lines = content.split('\n');
+        // counter for imports
+        let imported = 0;
+        // temp object to build each student
+        let currentStudent = {};
+        
+        // loop through each line
+        for (let line of lines) {
+            // clean up the line
+            line = line.trim();
+            
+            // check what field this line is and extract the value
+            if (line.startsWith("First Name:")) {
+                currentStudent.firstName = line.substring(11).trim();
+            } else if (line.startsWith("Last Name:")) {
+                currentStudent.lastName = line.substring(10).trim();
+            } else if (line.startsWith("Email:")) {
+                currentStudent.email = line.substring(6).trim();
+            } else if (line.startsWith("Age:")) {
+                currentStudent.age = line.substring(4).trim();
+                
+                // if we have all 4 fields, save this student
+                if (currentStudent.firstName && currentStudent.lastName && 
+                    currentStudent.email && currentStudent.age) {
+                    studentsList.push({...currentStudent});
+                    imported++;
+                    // reset for next student
+                    currentStudent = {};
+                }
+            }
+        }
+        
+        // refresh display
+        displayStudents();
+        // tell them how many we imported
+        alert(`Imported ${imported} students from TXT`);
+    }
+    
+    // show the initial empty state when page loads
+    displayStudents();
 </script>  
 </body>
 </html>
