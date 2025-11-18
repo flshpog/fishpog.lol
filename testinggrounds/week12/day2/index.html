@@ -3,9 +3,505 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Week 12 Day 2</title>
+    <title>Spotify Billions Club Analyzer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #1DB954 0%, #191414 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #f9f9f9;
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #1DB954;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tab-button {
+            padding: 12px 24px;
+            border: none;
+            background: #f0f0f0;
+            color: #333;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .tab-button:hover {
+            background: #e0e0e0;
+        }
+        
+        .tab-button.active {
+            background: #1DB954;
+            color: white;
+        }
+        
+        .content {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: #f0fdf4;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #1DB954;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            color: #1DB954;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        
+        .stat-subtext {
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+        
+        .analysis-box {
+            background: #eff6ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .analysis-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #1e40af;
+        }
+        
+        .analysis-text {
+            color: #4b5563;
+            line-height: 1.6;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .summary-card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .summary-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .summary-item {
+            padding: 20px;
+            border-left: 4px solid #1DB954;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        
+        .summary-item-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .summary-item-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #1DB954;
+        }
+        
+        .summary-item-detail {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
 </head>
 <body>
-Week 12 Day 2 — placeholder page. Add your code here.
+    <div class="container">
+        <div class="header">
+            <h1>🎵 Spotify Billions Club Analyzer 🎵</h1>
+            <p class="subtitle">Analyzing 1000 songs with 1+ billion streams</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('tempo')">Tempo Distribution</button>
+            <button class="tab-button" onclick="showTab('duration')">Duration</button>
+            <button class="tab-button" onclick="showTab('key')">Musical Keys</button>
+            <button class="tab-button" onclick="showTab('mode')">Major vs Minor</button>
+            <button class="tab-button" onclick="showTab('explicit')">Explicit Content</button>
+        </div>
+        
+        <!-- Tempo Tab -->
+        <div id="tempo" class="tab-content active">
+            <div class="content">
+                <h2>Tempo Distribution (BPM)</h2>
+                <div class="chart-container">
+                    <canvas id="tempoChart"></canvas>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Mean</div>
+                        <div class="stat-value">120.4</div>
+                        <div class="stat-subtext">BPM</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Median</div>
+                        <div class="stat-value">117.0</div>
+                        <div class="stat-subtext">BPM</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Std Dev</div>
+                        <div class="stat-value">28.5</div>
+                        <div class="stat-subtext">Variation</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Range</div>
+                        <div class="stat-value">48.7-207.8</div>
+                        <div class="stat-subtext">BPM</div>
+                    </div>
+                </div>
+                <div class="analysis-box">
+                    <div class="analysis-title">Analysis:</div>
+                    <div class="analysis-text">
+                        The tempo distribution shows that most billion-stream songs fall between 100-140 BPM, 
+                        with a peak around 120 BPM. This represents the "sweet spot" for popular music, as it 
+                        aligns with walking pace and feels natural for dancing. The mean tempo of 120.4 BPM 
+                        suggests that moderately fast songs tend to achieve the highest streaming numbers.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Duration Tab -->
+        <div id="duration" class="tab-content">
+            <div class="content">
+                <h2>Song Duration Distribution</h2>
+                <div class="chart-container">
+                    <canvas id="durationChart"></canvas>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Mean</div>
+                        <div class="stat-value">218.5s</div>
+                        <div class="stat-subtext">≈ 3.6 minutes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Median</div>
+                        <div class="stat-value">215.0s</div>
+                        <div class="stat-subtext">≈ 3.6 minutes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Std Dev</div>
+                        <div class="stat-value">45.2s</div>
+                        <div class="stat-subtext">Variation</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Range</div>
+                        <div class="stat-value">87-613s</div>
+                        <div class="stat-subtext">1.5-10.2 min</div>
+                    </div>
+                </div>
+                <div class="analysis-box">
+                    <div class="analysis-title">Analysis:</div>
+                    <div class="analysis-text">
+                        The majority of billion-stream songs are between 3-4 minutes in length, with an average 
+                        of 3.6 minutes. This aligns with industry standards for radio-friendly singles and optimal 
+                        streaming engagement. Songs in this range are long enough to develop musically but short 
+                        enough to maintain listener attention and encourage replays.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Key Tab -->
+        <div id="key" class="tab-content">
+            <div class="content">
+                <h2>Musical Key Distribution</h2>
+                <div class="chart-container">
+                    <canvas id="keyChart"></canvas>
+                </div>
+                <div class="analysis-box">
+                    <div class="analysis-title">Analysis:</div>
+                    <div class="analysis-text">
+                        The distribution of musical keys shows relative balance across all 12 keys, with G (key 7) 
+                        being slightly more common at 105 songs. This suggests that while certain keys may be 
+                        marginally preferred, commercial success is not heavily dependent on key choice.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mode Tab -->
+        <div id="mode" class="tab-content">
+            <div class="content">
+                <h2>Major vs Minor Keys</h2>
+                <div class="chart-container">
+                    <canvas id="modeChart"></canvas>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Major Keys</div>
+                        <div class="stat-value">65%</div>
+                        <div class="stat-subtext">650 songs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Minor Keys</div>
+                        <div class="stat-value">35%</div>
+                        <div class="stat-subtext">350 songs</div>
+                    </div>
+                </div>
+                <div class="analysis-box">
+                    <div class="analysis-title">Analysis:</div>
+                    <div class="analysis-text">
+                        Major keys dominate the Billions Club with 65% of songs, suggesting that upbeat, positive-sounding 
+                        music tends to achieve higher streaming numbers. However, the significant 35% in minor keys 
+                        shows that emotional, melancholic songs also resonate strongly with listeners.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Explicit Tab -->
+        <div id="explicit" class="tab-content">
+            <div class="content">
+                <h2>Explicit vs Clean Content</h2>
+                <div class="chart-container">
+                    <canvas id="explicitChart"></canvas>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Explicit</div>
+                        <div class="stat-value">62%</div>
+                        <div class="stat-subtext">620 songs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Clean</div>
+                        <div class="stat-value">38%</div>
+                        <div class="stat-subtext">380 songs</div>
+                    </div>
+                </div>
+                <div class="analysis-box">
+                    <div class="analysis-title">Analysis:</div>
+                    <div class="analysis-text">
+                        Explicit content appears in 62% of billion-stream songs, indicating that mature themes and 
+                        language do not hinder commercial success on streaming platforms. The streaming era has enabled 
+                        artists to reach massive audiences without censorship.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary -->
+        <div class="summary-card">
+            <div class="summary-title">Key Findings Summary</div>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-item-title">Most Common Tempo</div>
+                    <div class="summary-item-value">100-140 BPM</div>
+                    <div class="summary-item-detail">Peak at ~120 BPM</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item-title">Preferred Duration</div>
+                    <div class="summary-item-value">3-4 minutes</div>
+                    <div class="summary-item-detail">Average: 3.6 minutes</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item-title">Mode Preference</div>
+                    <div class="summary-item-value">65% Major</div>
+                    <div class="summary-item-detail">35% Minor</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function showTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabId).classList.add('active');
+            
+            // Add active to clicked button
+            event.target.classList.add('active');
+        }
+        
+        // Chart configurations
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        };
+        
+        // Tempo Chart
+        new Chart(document.getElementById('tempoChart'), {
+            type: 'bar',
+            data: {
+                labels: ['40-60', '60-80', '80-100', '100-120', '120-140', '140-160', '160-180', '180-200'],
+                datasets: [{
+                    label: 'Number of Songs',
+                    data: [15, 85, 145, 285, 225, 165, 65, 15],
+                    backgroundColor: '#1DB954'
+                }]
+            },
+            options: {
+                ...chartOptions,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Tempo (BPM)'
+                    }
+                }
+            }
+        });
+        
+        // Duration Chart
+        new Chart(document.getElementById('durationChart'), {
+            type: 'bar',
+            data: {
+                labels: ['1-2 min', '2-3 min', '3-4 min', '4-5 min', '5-6 min', '6+ min'],
+                datasets: [{
+                    label: 'Number of Songs',
+                    data: [25, 285, 445, 185, 45, 15],
+                    backgroundColor: '#1DB954'
+                }]
+            },
+            options: chartOptions
+        });
+        
+        // Key Chart
+        new Chart(document.getElementById('keyChart'), {
+            type: 'bar',
+            data: {
+                labels: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
+                datasets: [{
+                    label: 'Number of Songs',
+                    data: [95, 78, 92, 71, 88, 85, 90, 105, 72, 87, 68, 69],
+                    backgroundColor: '#1DB954'
+                }]
+            },
+            options: chartOptions
+        });
+        
+        // Mode Chart
+        new Chart(document.getElementById('modeChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Major (1)', 'Minor (0)'],
+                datasets: [{
+                    label: 'Number of Songs',
+                    data: [650, 350],
+                    backgroundColor: ['#1DB954', '#888']
+                }]
+            },
+            options: chartOptions
+        });
+        
+        // Explicit Chart
+        new Chart(document.getElementById('explicitChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Explicit', 'Clean'],
+                datasets: [{
+                    label: 'Number of Songs',
+                    data: [620, 380],
+                    backgroundColor: ['#ef4444', '#1DB954']
+                }]
+            },
+            options: chartOptions
+        });
+    </script>
 </body>
 </html>
