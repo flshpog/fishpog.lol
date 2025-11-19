@@ -222,6 +222,23 @@
                 });
                 
                 document.addEventListener('keydown', (e) => {
+                    if (e.key === 'a' || e.key === 'A') {
+                        e.preventDefault();
+                        if (this.hoveredCell && !this.gameOver && !this.gameWon) {
+                            this.revealCell(this.hoveredCell.row, this.hoveredCell.col);
+                        }
+                    } else if (e.key === 's' || e.key === 'S') {
+                        e.preventDefault();
+                        if (this.hoveredCell && !this.gameOver && !this.gameWon) {
+                            this.toggleFlag(this.hoveredCell.row, this.hoveredCell.col);
+                        }
+                    } else if (e.key === 'r' || e.key === 'R') {
+                        e.preventDefault();
+                        this.initGame();
+                    }
+                });
+
+                document.addEventListener('keydown', (e) => {
                     if (e.key === ' ') {
                         e.preventDefault();
                         if (this.hoveredCell && !this.gameOver && !this.gameWon) {
