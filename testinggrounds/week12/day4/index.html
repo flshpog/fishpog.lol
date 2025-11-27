@@ -3,9 +3,481 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Week 12 Day 4</title>
+    <title>Tetris Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #1a1a1a;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .title {
+            font-size: 48px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .info {
+            display: flex;
+            gap: 40px;
+            font-size: 20px;
+        }
+
+        .info-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .game-area {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+
+        .hold-box {
+            width: 150px;
+            border: 3px solid #00ff00;
+            padding: 10px;
+            background-color: #0a0a0a;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .hold-label {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #00ff00;
+        }
+
+        .hold-preview {
+            display: grid;
+            grid-template-columns: repeat(4, 30px);
+            gap: 2px;
+            justify-content: center;
+        }
+
+        .preview-cell {
+            width: 30px;
+            height: 30px;
+            background-color: #111;
+            border: 1px solid #222;
+        }
+
+        #gameBoard {
+            border: 4px solid white;
+            background-color: #000;
+            display: grid;
+            grid-template-columns: repeat(10, 30px);
+            gap: 1px;
+            padding: 2px;
+        }
+
+        .cell {
+            width: 30px;
+            height: 30px;
+            background-color: #111;
+            border: 1px solid #222;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-pause {
+            background-color: #0066cc;
+            color: white;
+        }
+
+        .btn-pause:hover {
+            background-color: #004499;
+        }
+
+        .btn-new {
+            background-color: #00aa00;
+            color: white;
+        }
+
+        .btn-new:hover {
+            background-color: #008800;
+        }
+
+        .instructions {
+            text-align: center;
+            font-size: 14px;
+            color: #aaa;
+            line-height: 1.6;
+        }
+
+        .game-over {
+            font-size: 28px;
+            color: #ff0000;
+            font-weight: bold;
+            display: none;
+        }
+
+        .game-over.show {
+            display: block;
+        }
+    </style>
 </head>
 <body>
-Week 12 Day 4 — placeholder page. Add your code here.
+    <div class="container">
+        <div class="title">TETRIS</div>
+        
+        <div class="info">
+            <div class="info-box">
+                <div>Score</div>
+                <div id="score" style="font-size: 28px;">0</div>
+            </div>
+            <div class="info-box">
+                <div>Lines</div>
+                <div id="lines" style="font-size: 28px;">0</div>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div class="hold-box">
+                <div class="hold-label">HOLD</div>
+                <div class="hold-preview" id="holdPreview"></div>
+            </div>
+            <div id="gameBoard"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-pause" onclick="togglePause()">Pause</button>
+            <button class="btn-new" onclick="newGame()">New Game</button>
+        </div>
+
+        <div class="game-over" id="gameOver">GAME OVER!</div>
+
+        <div class="instructions">
+            <p>← → Arrow Keys to Move</p>
+            <p>↓ Down Arrow to Drop</p>
+            <p>SPACE to Hold Piece</p>
+            <p>Z to Rotate CCW | X to Rotate CW</p>
+        </div>
+    </div>
+
+    <script>
+        const GRID_WIDTH = 10;
+        const GRID_HEIGHT = 20;
+
+        const TETRIS_PIECES = [
+            { shape: [[1,1],[1,1]], color: '#FFD700' }, // O
+            { shape: [[1,1,1,1]], color: '#00CED1' }, // I
+            { shape: [[1,1,1],[0,1,0]], color: '#9370DB' }, // T
+            { shape: [[1,1,0],[0,1,1]], color: '#FF6347' }, // S
+            { shape: [[0,1,1],[1,1,0]], color: '#32CD32' }, // Z
+            { shape: [[1,0,0],[1,1,1]], color: '#FFA500' }, // L
+            { shape: [[0,0,1],[1,1,1]], color: '#1E90FF' }, // J
+        ];
+
+        let grid = [];
+        let currentPiece = null;
+        let heldPiece = null;
+        let pos = { x: 3, y: 0 };
+        let score = 0;
+        let lines = 0;
+        let gameOver = false;
+        let paused = false;
+        let gameInterval = null;
+        let canHoldAgain = true;
+
+        function initGrid() {
+            grid = Array(GRID_HEIGHT).fill(null).map(() => Array(GRID_WIDTH).fill(0));
+        }
+
+        function getRandomPiece() {
+            const p = TETRIS_PIECES[Math.floor(Math.random() * TETRIS_PIECES.length)];
+            return { ...p, rotation: 0 };
+        }
+
+        function canMove(piece, newPos) {
+            if (!piece) return false;
+            for (let y = 0; y < piece.shape.length; y++) {
+                for (let x = 0; x < piece.shape[y].length; x++) {
+                    if (piece.shape[y][x]) {
+                        const nx = newPos.x + x;
+                        const ny = newPos.y + y;
+                        if (nx < 0 || nx >= GRID_WIDTH || ny >= GRID_HEIGHT) return false;
+                        if (ny >= 0 && grid[ny][nx]) return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function placePiece(piece, currentPos) {
+            for (let y = 0; y < piece.shape.length; y++) {
+                for (let x = 0; x < piece.shape[y].length; x++) {
+                    if (piece.shape[y][x]) {
+                        const ny = currentPos.y + y;
+                        const nx = currentPos.x + x;
+                        if (ny >= 0) grid[ny][nx] = piece.color;
+                    }
+                }
+            }
+        }
+
+        function clearLines() {
+            let clearedLines = 0;
+            for (let i = grid.length - 1; i >= 0; i--) {
+                if (grid[i].every(cell => cell)) {
+                    grid.splice(i, 1);
+                    grid.unshift(Array(GRID_WIDTH).fill(0));
+                    clearedLines++;
+                    i++;
+                }
+            }
+            return clearedLines;
+        }
+
+        function rotatePiece(clockwise) {
+            if (!currentPiece) return;
+            
+            const oldShape = currentPiece.shape;
+            let newShape = oldShape.map(row => [...row]);
+            
+            // Rotate 90 degrees
+            const n = newShape.length;
+            const m = newShape[0].length;
+            const rotated = Array(m).fill(null).map(() => Array(n).fill(0));
+            
+            if (clockwise) {
+                // CW: new[x][n-1-y] = old[y][x]
+                for (let y = 0; y < n; y++) {
+                    for (let x = 0; x < m; x++) {
+                        rotated[x][n - 1 - y] = newShape[y][x];
+                    }
+                }
+            } else {
+                // CCW: new[m-1-x][y] = old[y][x]
+                for (let y = 0; y < n; y++) {
+                    for (let x = 0; x < m; x++) {
+                        rotated[m - 1 - x][y] = newShape[y][x];
+                    }
+                }
+            }
+            
+            const testPiece = { ...currentPiece, shape: rotated };
+            
+            // Try to place at current position
+            if (canMove(testPiece, pos)) {
+                currentPiece.shape = rotated;
+                render();
+                return;
+            }
+            
+            // Try wallkick: offset by 1 or 2 in each direction
+            for (let offsetX = -2; offsetX <= 2; offsetX++) {
+                for (let offsetY = -1; offsetY <= 1; offsetY++) {
+                    const testPos = { x: pos.x + offsetX, y: pos.y + offsetY };
+                    if (canMove(testPiece, testPos)) {
+                        currentPiece.shape = rotated;
+                        pos = testPos;
+                        render();
+                        return;
+                    }
+                }
+            }
+        }
+
+        function holdPiece() {
+            if (!canHoldAgain || !currentPiece) return;
+            
+            const temp = heldPiece;
+            heldPiece = currentPiece;
+            canHoldAgain = false;
+            
+            if (temp) {
+                currentPiece = temp;
+            } else {
+                currentPiece = getRandomPiece();
+            }
+            
+            pos = { x: 3, y: 0 };
+            updateHoldPreview();
+        }
+
+        function updateHoldPreview() {
+            const preview = document.getElementById('holdPreview');
+            preview.innerHTML = '';
+            
+            if (!heldPiece) {
+                for (let i = 0; i < 16; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'preview-cell';
+                    preview.appendChild(cell);
+                }
+                return;
+            }
+
+            const cells = [];
+            for (let i = 0; i < 16; i++) cells.push(0);
+
+            for (let y = 0; y < heldPiece.shape.length; y++) {
+                for (let x = 0; x < heldPiece.shape[y].length; x++) {
+                    if (heldPiece.shape[y][x]) {
+                        cells[y * 4 + x] = heldPiece.color;
+                    }
+                }
+            }
+
+            cells.forEach(color => {
+                const cell = document.createElement('div');
+                cell.className = 'preview-cell';
+                cell.style.backgroundColor = color || '#111';
+                preview.appendChild(cell);
+            });
+        }
+
+        function render() {
+            const displayGrid = grid.map(row => [...row]);
+            
+            if (currentPiece && !gameOver) {
+                for (let y = 0; y < currentPiece.shape.length; y++) {
+                    for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                        if (currentPiece.shape[y][x]) {
+                            const ny = pos.y + y;
+                            const nx = pos.x + x;
+                            if (ny >= 0 && ny < GRID_HEIGHT && nx >= 0 && nx < GRID_WIDTH) {
+                                displayGrid[ny][nx] = currentPiece.color;
+                            }
+                        }
+                    }
+                }
+            }
+
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+            displayGrid.forEach(row => {
+                row.forEach(color => {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.style.backgroundColor = color || '#111';
+                    board.appendChild(cell);
+                });
+            });
+        }
+
+        function update() {
+            if (gameOver || paused) return;
+
+            const newPos = { ...pos, y: pos.y + 1 };
+            
+            if (canMove(currentPiece, newPos)) {
+                pos = newPos;
+            } else {
+                placePiece(currentPiece, pos);
+                const clearedLines = clearLines();
+                lines += clearedLines;
+                score += clearedLines * 100;
+                
+                currentPiece = getRandomPiece();
+                pos = { x: 3, y: 0 };
+                canHoldAgain = true;
+                
+                if (!canMove(currentPiece, pos)) {
+                    gameOver = true;
+                    document.getElementById('gameOver').classList.add('show');
+                    clearInterval(gameInterval);
+                }
+            }
+
+            document.getElementById('score').textContent = score;
+            document.getElementById('lines').textContent = lines;
+            render();
+        }
+
+        function handleKeyDown(e) {
+            if (gameOver || paused || !currentPiece) return;
+
+            if (e.key === 'ArrowLeft' && canMove(currentPiece, { ...pos, x: pos.x - 1 })) {
+                pos.x--;
+                render();
+            } else if (e.key === 'ArrowRight' && canMove(currentPiece, { ...pos, x: pos.x + 1 })) {
+                pos.x++;
+                render();
+            } else if (e.key === 'ArrowDown' && canMove(currentPiece, { ...pos, y: pos.y + 1 })) {
+                pos.y++;
+                render();
+            } else if (e.key === ' ') {
+                e.preventDefault();
+                holdPiece();
+                render();
+            } else if (e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                rotatePiece(false); // CCW
+            } else if (e.key.toLowerCase() === 'x') {
+                e.preventDefault();
+                rotatePiece(true); // CW
+            }
+        }
+
+        function togglePause() {
+            paused = !paused;
+            document.querySelector('.btn-pause').textContent = paused ? 'Resume' : 'Pause';
+        }
+
+        function newGame() {
+            initGrid();
+            currentPiece = getRandomPiece();
+            heldPiece = null;
+            pos = { x: 3, y: 0 };
+            score = 0;
+            lines = 0;
+            gameOver = false;
+            paused = false;
+            canHoldAgain = true;
+            document.getElementById('gameOver').classList.remove('show');
+            document.querySelector('.btn-pause').textContent = 'Pause';
+            document.getElementById('score').textContent = '0';
+            document.getElementById('lines').textContent = '0';
+            updateHoldPreview();
+            render();
+            
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(update, 500);
+        }
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        // Initialize game
+        newGame();
+    </script>
 </body>
 </html>
