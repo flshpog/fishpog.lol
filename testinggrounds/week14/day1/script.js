@@ -84,9 +84,6 @@ async function handleFileImport(event) {
         // create database table with the imported data
         createTable();
         
-        // update ui to show the imported data
-        displayData();
-        
         // generate form fields for adding new rows
         generateFormFields();
         
@@ -161,52 +158,6 @@ function createTable() {
 
 
 /* ============================================
-   DATA DISPLAY FUNCTIONS
-   ============================================ */
-
-// displays all data in a table format
-function displayData() {
-    const displayElement = document.getElementById('data-display');
-    
-    // exit if no data to display
-    if (dataRows.length === 0) {
-        displayElement.innerHTML = '<p class="data-placeholder">no data to display.</p>';
-        return;
-    }
-    
-    // build html table
-    let html = '<table><thead><tr>';
-    
-    // add column headers
-    columns.forEach(col => {
-        html += `<th>${escapeHtml(col)}</th>`;
-    });
-    html += '</tr></thead><tbody>';
-    
-    // add data rows
-    dataRows.forEach(row => {
-        html += '<tr>';
-        row.forEach(cell => {
-            html += `<td>${escapeHtml(cell)}</td>`;
-        });
-        html += '</tr>';
-    });
-    
-    html += '</tbody></table>';
-    
-    displayElement.innerHTML = html;
-}
-
-
-// escapes html special characters to prevent xss
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-
-/* ============================================
    SQL QUERY EXECUTION
    ============================================ */
 
@@ -269,6 +220,14 @@ function displayQueryResults(results) {
     html += '</tbody></table>';
     
     resultsElement.innerHTML = html;
+}
+
+
+// escapes html special characters to prevent xss
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 
@@ -376,9 +335,6 @@ function handleAddRow(event) {
         
         // add to in-memory data array
         dataRows.push(newRow);
-        
-        // refresh data display
-        displayData();
         
         // clear form fields
         event.target.reset();
