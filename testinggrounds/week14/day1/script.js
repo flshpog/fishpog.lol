@@ -106,20 +106,64 @@ async function handleFileImport(event) {
 
 // parses csv text into columns and rows
 function parseCSV(text) {
-    // split text into lines
+    // split text into lines and filter out empty lines
     const lines = text.split('\n').filter(line => line.trim());
     
+    // exit if file is empty
+    if (lines.length === 0) {
+        throw new Error('csv file is empty');
+    }
+    
     // first line contains column headers
-    const headers = lines[0].split(',').map(h => h.trim());
+    const headers = parseCSVLine(lines[0]);
     
     // remaining lines are data rows
     const rows = [];
     for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim());
-        rows.push(values);
+        const values = parseCSVLine(lines[i]);
+        // only add rows that have the correct number of columns
+        if (values.length === headers.length) {
+            rows.push(values);
+        }
     }
     
     return { columns: headers, rows: rows };
+}
+
+
+// parses a single csv line, handling quotes and commas properly
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+        
+        if (char === '"') {
+            // handle escaped quotes (two quotes in a row)
+            if (inQuotes && nextChar === '"') {
+                current += '"';
+                i++; // skip next quote
+            } else {
+                // toggle quote state
+                inQuotes = !inQuotes;
+            }
+        } else if (char === ',' && !inQuotes) {
+            // found a field separator
+            result.push(current.trim());
+            current = '';
+        } else {
+            // regular character
+            current += char;
+        }
+    }
+    
+    // add the last field
+    result.push(current.trim());
+    
+    return result;
 }
 
 
