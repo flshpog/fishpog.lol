@@ -3,9 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Week 14 Day 1</title>
+    <title>CSV Data Manager</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-Week 14 Day 1 — placeholder page. Add your code here.
+    <!-- main container for entire application -->
+    <div class="container">
+        
+        <!-- header section with title -->
+        <header>
+            <h1>CSV Data Manager</h1>
+            <p class="subtitle">import, query, and manage your data</p>
+        </header>
+
+
+        <!-- file import/export controls section -->
+        <section class="file-controls">
+            <div class="control-group">
+                <label for="file-input" class="file-label">
+                    <span class="label-text">choose csv file</span>
+                    <input type="file" id="file-input" accept=".csv" class="file-input">
+                </label>
+                
+                <button id="export-btn" class="btn btn-secondary" disabled>
+                    export csv
+                </button>
+            </div>
+        </section>
+
+
+        <!-- data display area - shows current csv data in table format -->
+        <section class="data-section">
+            <h2>current data</h2>
+            <div class="table-wrapper">
+                <div id="data-display" class="data-placeholder">
+                    no data loaded. import a csv file to get started.
+                </div>
+            </div>
+        </section>
+
+
+        <!-- sql query interface section -->
+        <section class="query-section">
+            <h2>sql query</h2>
+            
+            <!-- example queries that user can click to populate textarea -->
+            <div class="examples-container">
+                <p class="examples-label">example queries:</p>
+                <div id="example-queries" class="example-queries">
+                    <!-- dynamic query examples will be inserted here by javascript -->
+                </div>
+            </div>
+
+            <!-- textarea for user to write custom sql queries -->
+            <textarea 
+                id="query-input" 
+                class="query-input" 
+                placeholder="enter your sql query here... (e.g., SELECT * FROM data WHERE column_name = 'value')"
+                rows="4"
+            ></textarea>
+            
+            <button id="run-query-btn" class="btn btn-primary" disabled>
+                run query
+            </button>
+        </section>
+
+
+        <!-- query results display area -->
+        <section class="results-section">
+            <h2>query results</h2>
+            <div class="table-wrapper">
+                <div id="query-results" class="data-placeholder">
+                    run a query to see results here.
+                </div>
+            </div>
+        </section>
+
+
+        <!-- add new row form section -->
+        <section class="add-row-section">
+            <h2>add new row</h2>
+            <form id="add-row-form" class="add-row-form">
+                <!-- dynamic input fields will be inserted here based on csv columns -->
+                <div id="form-fields" class="form-fields">
+                    <p class="data-placeholder">import a csv file to add new rows.</p>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="add-row-btn" disabled>
+                    add row
+                </button>
+            </form>
+        </section>
+
+    </div>
+
+    <!-- link to external javascript file -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
