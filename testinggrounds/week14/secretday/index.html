@@ -8,6 +8,8 @@
 body {
     background: rgb(223, 254, 255);
     font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Verdana;
+    margin: 0;
+    padding: 0;
 }
 
 .container {
@@ -39,6 +41,7 @@ body {
     display: flex;
     align-items: center;
     gap: 20px;
+    flex-wrap: wrap;
 }
 
 .field {
@@ -73,17 +76,60 @@ body {
     background-color: rgb(240, 254, 255);
     border-radius: 15px;
     font-family: monospace;
+    resize: vertical;
+}
+
+.output-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .output-box {
-    width: 380px;
-    height: 200px;
+    width: 100%;
+    min-height: 200px;
+    max-height: 500px;
     padding: 10px;
     border: 2px solid rgb(52, 98, 185);
     background-color: rgb(240, 254, 255);
     border-radius: 15px;
-    font-family: monospace;
     overflow: auto;
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.results-table th {
+    background-color: rgb(82, 114, 218);
+    color: white;
+    padding: 8px;
+    text-align: left;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+}
+
+.results-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+.results-table tr:nth-child(even) {
+    background-color: rgba(82, 114, 218, 0.05);
+}
+
+.results-table tr:hover {
+    background-color: rgba(82, 114, 218, 0.1);
+}
+
+.status-message {
+    padding: 10px;
+    font-family: monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
 }
 
 .run-btn {
@@ -94,6 +140,14 @@ body {
     border: none;
     cursor: pointer;
 }
+
+.success {
+    color: #006600;
+}
+
+.error {
+    color: #cc0000;
+}
 </style>
 </head>
 <body>
@@ -103,7 +157,7 @@ body {
     <!-- Import Section -->
     <div class="import-section">
         <label class="import-title">Import File</label><br>
-        <input type="text" id="filepath" class="file-text" readonly>
+        <input type="text" id="filepath" class="file-text" readonly placeholder="No file selected">
         <input type="file" id="fileInput" style="display:none" accept=".csv">
         <button class="btn" id="browseBtn">Browse...</button>
     </div>
@@ -141,7 +195,9 @@ body {
     <!-- SQL Section -->
     <div class="sql-section">
         <textarea id="sqlBox" class="sql-box" placeholder="Write SQL here... (e.g., SELECT * FROM skiers)"></textarea>
-        <textarea id="outputBox" class="output-box" readonly placeholder="Output..."></textarea>
+        <div class="output-section">
+            <div id="outputBox" class="output-box"></div>
+        </div>
     </div>
 
     <button id="runBtn" class="run-btn">Run SQL</button>
@@ -152,6 +208,7 @@ body {
 // GLOBAL FLAG TO CHECK IF CSV LOADED
 // ------------------------------
 let skierTableLoaded = false;
+let columnHeaders = [];
 
 // ------------------------------
 // Browse Button
@@ -178,19 +235,20 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
             // Parse CSV manually to handle it properly
             const lines = csvText.split('\n').filter(line => line.trim());
             if (lines.length < 2) {
-                document.getElementById("outputBox").value = "ERROR: CSV file is empty or invalid.";
+                showStatusMessage("ERROR: CSV file is empty or invalid.", true);
                 return;
             }
 
-            // Get headers
-            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            // Get headers - handle quoted fields
+            const headerLine = lines[0];
+            columnHeaders = parseCSVLine(headerLine);
             
             // Parse data rows
             const data = [];
             for (let i = 1; i < lines.length; i++) {
-                const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                const values = parseCSVLine(lines[i]);
                 const row = {};
-                headers.forEach((header, index) => {
+                columnHeaders.forEach((header, index) => {
                     row[header] = values[index] || '';
                 });
                 data.push(row);
@@ -200,20 +258,22 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
             alasql("DROP TABLE IF EXISTS skiers");
             alasql("CREATE TABLE skiers");
 
-            // Insert rows one by one
+            // Insert rows
             data.forEach(row => {
                 alasql("INSERT INTO skiers VALUES ?", [row]);
             });
 
             skierTableLoaded = true;
 
-            document.getElementById("outputBox").value =
+            showStatusMessage(
                 "✓ CSV Loaded Successfully!\n" +
                 "Rows Imported: " + data.length + "\n" +
-                "Columns: " + headers.join(', ') + "\n\n" +
-                "Try: SELECT * FROM skiers";
+                "Columns: " + columnHeaders.join(', ') + "\n\n" +
+                "Try running: SELECT * FROM skiers LIMIT 10",
+                false
+            );
         } catch (err) {
-            document.getElementById("outputBox").value = "ERROR loading CSV:\n" + err.message;
+            showStatusMessage("ERROR loading CSV:\n" + err.message, true);
             skierTableLoaded = false;
         }
     };
@@ -222,35 +282,152 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
 });
 
 // ------------------------------
+// Helper: Parse CSV Line (handles quotes)
+// ------------------------------
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+        
+        if (char === '"') {
+            if (inQuotes && nextChar === '"') {
+                current += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
+        } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    result.push(current.trim());
+    
+    return result;
+}
+
+// ------------------------------
+// Helper: Show Status Message
+// ------------------------------
+function showStatusMessage(message, isError) {
+    const outputBox = document.getElementById("outputBox");
+    outputBox.innerHTML = `<div class="status-message ${isError ? 'error' : 'success'}">${message}</div>`;
+}
+
+// ------------------------------
+// Helper: Display Results as Table
+// ------------------------------
+function displayResultsTable(results, sql) {
+    const outputBox = document.getElementById("outputBox");
+    
+    if (!Array.isArray(results) || results.length === 0) {
+        outputBox.innerHTML = `
+            <div class="status-message success">
+                ✓ Query executed successfully!<br><br>
+                SQL: ${sql}<br><br>
+                No results returned or 0 rows affected.
+            </div>
+        `;
+        return;
+    }
+    
+    // Get column names from first result
+    const columns = Object.keys(results[0]);
+    
+    // Build table HTML
+    let tableHTML = `
+        <div class="status-message success">
+            ✓ Query executed successfully! (${results.length} row(s) returned)<br>
+            SQL: ${sql}
+        </div>
+        <table class="results-table">
+            <thead>
+                <tr>
+                    ${columns.map(col => `<th>${col}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    // Add data rows
+    results.forEach(row => {
+        tableHTML += '<tr>';
+        columns.forEach(col => {
+            const value = row[col] !== null && row[col] !== undefined ? row[col] : '';
+            tableHTML += `<td>${value}</td>`;
+        });
+        tableHTML += '</tr>';
+    });
+    
+    tableHTML += `
+            </tbody>
+        </table>
+    `;
+    
+    outputBox.innerHTML = tableHTML;
+}
+
+// ------------------------------
 // Create New Entry
 // ------------------------------
 document.getElementById("createBtn").addEventListener("click", () => {
-    const data = {
-        ID: document.getElementById("ID").value,
-        Name: document.getElementById("skierName").value,
-        Gender: document.getElementById("gender").value,
-        SkisOn: document.getElementById("skisOn").value,
-        Podiums: document.getElementById("podiums").value,
-        Victories: document.getElementById("victories").value
-    };
-
-    if (skierTableLoaded) {
-        try {
-            alasql("INSERT INTO skiers VALUES ?", [data]);
-            alert("✓ New Entry Added to Database:\n\n" + JSON.stringify(data, null, 2));
-            
-            // Clear the form
-            document.getElementById("ID").value = '';
-            document.getElementById("skierName").value = '';
-            document.getElementById("gender").value = '';
-            document.getElementById("skisOn").value = '';
-            document.getElementById("podiums").value = '';
-            document.getElementById("victories").value = '';
-        } catch (err) {
-            alert("Error adding entry:\n" + err.message);
-        }
-    } else {
+    if (!skierTableLoaded) {
         alert("Please load a CSV file first!");
+        return;
+    }
+
+    const data = {};
+    
+    // Dynamically build data object based on loaded columns
+    const id = document.getElementById("ID").value;
+    const name = document.getElementById("skierName").value;
+    const gender = document.getElementById("gender").value;
+    const skisOn = document.getElementById("skisOn").value;
+    const podiums = document.getElementById("podiums").value;
+    const victories = document.getElementById("victories").value;
+    
+    if (!id && !name) {
+        alert("Please enter at least an ID or Name!");
+        return;
+    }
+    
+    // Use the first column name from the CSV for each field
+    if (columnHeaders.length >= 6) {
+        data[columnHeaders[0]] = id;
+        data[columnHeaders[1]] = name;
+        data[columnHeaders[2]] = gender;
+        data[columnHeaders[3]] = skisOn;
+        data[columnHeaders[4]] = podiums;
+        data[columnHeaders[5]] = victories;
+    } else {
+        // Fallback to default names
+        data.ID = id;
+        data.Name = name;
+        data.Gender = gender;
+        data.SkisOn = skisOn;
+        data.Podiums = podiums;
+        data.Victories = victories;
+    }
+
+    try {
+        alasql("INSERT INTO skiers VALUES ?", [data]);
+        alert("✓ New Entry Added to Database!");
+        
+        // Clear the form
+        document.getElementById("ID").value = '';
+        document.getElementById("skierName").value = '';
+        document.getElementById("gender").value = '';
+        document.getElementById("skisOn").value = '';
+        document.getElementById("podiums").value = '';
+        document.getElementById("victories").value = '';
+    } catch (err) {
+        alert("Error adding entry:\n" + err.message);
     }
 });
 
@@ -259,39 +436,22 @@ document.getElementById("createBtn").addEventListener("click", () => {
 // ------------------------------
 document.getElementById("runBtn").addEventListener("click", () => {
     const sql = document.getElementById("sqlBox").value.trim();
-    const outputBox = document.getElementById("outputBox");
 
     if (!sql) {
-        outputBox.value = "Please enter an SQL query.";
+        showStatusMessage("Please enter an SQL query.", true);
         return;
     }
 
     if (!skierTableLoaded) {
-        outputBox.value = "ERROR: Please upload a CSV file first.";
+        showStatusMessage("ERROR: Please upload a CSV file first.", true);
         return;
     }
 
     try {
         const result = alasql(sql);
-        
-        // Format the output nicely
-        let output = "✓ Query executed successfully!\n\n";
-        output += "SQL: " + sql + "\n\n";
-        output += "Results (" + (Array.isArray(result) ? result.length : 1) + " row(s)):\n";
-        output += "─────────────────────────────────\n\n";
-        
-        if (Array.isArray(result) && result.length > 0) {
-            // Display as formatted table
-            output += JSON.stringify(result, null, 2);
-        } else if (typeof result === 'number') {
-            output += "Affected rows: " + result;
-        } else {
-            output += JSON.stringify(result, null, 2);
-        }
-        
-        outputBox.value = output;
+        displayResultsTable(result, sql);
     } catch (err) {
-        outputBox.value = "✗ SQL Error:\n\n" + err.message + "\n\nPlease check your SQL syntax.";
+        showStatusMessage("✗ SQL Error:\n\n" + err.message + "\n\nPlease check your SQL syntax.", true);
     }
 });
 </script>
