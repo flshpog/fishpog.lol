@@ -3,9 +3,875 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Week 14 Day 1</title>
+    <title>CSV Data Manager</title>
+    <style>
+        /* ============================================
+           GLOBAL RESET AND BASE STYLES
+           ============================================ */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            color: #333;
+        }
+
+        /* ============================================
+           MAIN CONTAINER
+           ============================================ */
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 3rem;
+        }
+
+        /* ============================================
+           HEADER SECTION
+           ============================================ */
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        /* ============================================
+           SECTION STYLING (COMMON)
+           ============================================ */
+
+        section {
+            margin-bottom: 3rem;
+        }
+
+        section h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ============================================
+           FILE CONTROLS SECTION
+           ============================================ */
+
+        .file-controls {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 3rem;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* custom file input styling */
+        .file-label {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .label-text {
+            display: block;
+            padding: 0.75rem 1.5rem;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .label-text:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* hide default file input */
+        .file-input {
+            display: none;
+        }
+
+        /* ============================================
+           BUTTON STYLES
+           ============================================ */
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+        }
+
+        .btn:disabled {
+            background: #e0e0e0;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        /* ============================================
+           TABLE STYLES (FOR QUERY RESULTS)
+           ============================================ */
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .data-placeholder {
+            padding: 3rem;
+            text-align: center;
+            color: #999;
+            font-style: italic;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        /* table header styling */
+        thead {
+            background: #667eea;
+            color: white;
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #5568d3;
+        }
+
+        /* table body styling */
+        td {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* ============================================
+           SQL QUERY SECTION
+           ============================================ */
+
+        .query-section {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 12px;
+        }
+
+        /* example queries display */
+        .examples-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .examples-label {
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 0.75rem;
+        }
+
+        .example-queries {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .example-query {
+            padding: 0.5rem 1rem;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: #667eea;
+            transition: all 0.2s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        .example-query:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        /* sql textarea input */
+        .query-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            resize: vertical;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .query-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* ============================================
+           ADD ROW FORM SECTION
+           ============================================ */
+
+        .add-row-section {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 12px;
+        }
+
+        .add-row-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* form fields container - uses grid layout for responsive columns */
+        .form-fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        /* individual form field styling */
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-field label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .form-field input {
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-field input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* ============================================
+           RESPONSIVE DESIGN
+           ============================================ */
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            header h1 {
+                font-size: 2rem;
+            }
+            
+            .control-group {
+                flex-direction: column;
+            }
+            
+            table {
+                font-size: 0.8rem;
+            }
+            
+            th, td {
+                padding: 0.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
-Week 14 Day 1 — placeholder page. Add your code here.
+    <!-- main container for entire application -->
+    <div class="container">
+        
+        <!-- header section with title -->
+        <header>
+            <h1>CSV Data Manager</h1>
+            <p class="subtitle">import, query, and manage your data</p>
+        </header>
+
+        <!-- file import/export controls section -->
+        <section class="file-controls">
+            <div class="control-group">
+                <label for="file-input" class="file-label">
+                    <span class="label-text">choose csv file</span>
+                    <input type="file" id="file-input" accept=".csv" class="file-input">
+                </label>
+                
+                <button id="export-btn" class="btn btn-secondary" disabled>
+                    export csv
+                </button>
+            </div>
+        </section>
+
+        <!-- sql query interface section -->
+        <section class="query-section">
+            <h2>sql query</h2>
+            
+            <!-- example queries that user can click to populate textarea -->
+            <div class="examples-container">
+                <p class="examples-label">example queries:</p>
+                <div id="example-queries" class="example-queries">
+                    <!-- dynamic query examples will be inserted here by javascript -->
+                </div>
+            </div>
+
+            <!-- textarea for user to write custom sql queries -->
+            <textarea 
+                id="query-input" 
+                class="query-input" 
+                placeholder="enter your sql query here... (e.g., SELECT * FROM data WHERE column_name = 'value')"
+                rows="4"
+            ></textarea>
+            
+            <button id="run-query-btn" class="btn btn-primary" disabled>
+                run query
+            </button>
+        </section>
+
+        <!-- query results display area -->
+        <section class="results-section">
+            <h2>query results</h2>
+            <div class="table-wrapper">
+                <div id="query-results" class="data-placeholder">
+                    run a query to see results here.
+                </div>
+            </div>
+        </section>
+
+        <!-- add new row form section -->
+        <section class="add-row-section">
+            <h2>add new row</h2>
+            <form id="add-row-form" class="add-row-form">
+                <!-- dynamic input fields will be inserted here based on csv columns -->
+                <div id="form-fields" class="form-fields">
+                    <p class="data-placeholder">import a csv file to add new rows.</p>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="add-row-btn" disabled>
+                    add row
+                </button>
+            </form>
+        </section>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <script>
+        /* ============================================
+           GLOBAL STATE VARIABLES
+           ============================================ */
+
+        // holds the current database instance from sql.js
+        let db = null;
+
+        // stores the column names from the imported csv
+        let columns = [];
+
+        // stores all the data rows from the csv
+        let dataRows = [];
+
+
+        /* ============================================
+           INITIALIZATION
+           ============================================ */
+
+        // wait for dom to be fully loaded before running any code
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+
+        // main initialization function - sets up sql.js and event listeners
+        async function initializeApp() {
+            try {
+                // initialize sql.js wasm module
+                const SQL = await initSqlJs({
+                    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+                });
+                
+                // create new database instance in memory
+                db = new SQL.Database();
+                
+                console.log('database initialized successfully');
+                
+            } catch (error) {
+                console.error('failed to initialize database:', error);
+                alert('error initializing database. please refresh the page.');
+            }
+            
+            // set up all event listeners for user interactions
+            setupEventListeners();
+        }
+
+
+        // attach event listeners to all interactive elements
+        function setupEventListeners() {
+            // file import handler
+            document.getElementById('file-input').addEventListener('change', handleFileImport);
+            
+            // export button handler
+            document.getElementById('export-btn').addEventListener('click', handleExport);
+            
+            // run query button handler
+            document.getElementById('run-query-btn').addEventListener('click', handleRunQuery);
+            
+            // add row form submission handler
+            document.getElementById('add-row-form').addEventListener('submit', handleAddRow);
+        }
+
+
+        /* ============================================
+           FILE IMPORT FUNCTIONALITY
+           ============================================ */
+
+        // handles csv file import when user selects a file
+        async function handleFileImport(event) {
+            const file = event.target.files[0];
+            
+            // exit if no file was selected
+            if (!file) return;
+            
+            try {
+                // read file contents as text
+                const text = await file.text();
+                
+                // parse csv text into structured data
+                const parsedData = parseCSV(text);
+                
+                // store parsed data in global state
+                columns = parsedData.columns;
+                dataRows = parsedData.rows;
+                
+                // create database table with the imported data
+                createTable();
+                
+                // generate form fields for adding new rows
+                generateFormFields();
+                
+                // generate example sql queries based on columns
+                generateExampleQueries();
+                
+                // enable buttons that were disabled
+                document.getElementById('export-btn').disabled = false;
+                document.getElementById('run-query-btn').disabled = false;
+                document.getElementById('add-row-btn').disabled = false;
+                
+                console.log('file imported successfully');
+                
+            } catch (error) {
+                console.error('error importing file:', error);
+                alert('error importing csv file. please check the file format.');
+            }
+        }
+
+
+        // parses csv text into columns and rows
+        function parseCSV(text) {
+            // split text into lines and filter out empty lines
+            const lines = text.split('\n').filter(line => line.trim());
+            
+            // exit if file is empty
+            if (lines.length === 0) {
+                throw new Error('csv file is empty');
+            }
+            
+            // first line contains column headers
+            const headers = parseCSVLine(lines[0]);
+            
+            // remaining lines are data rows
+            const rows = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                // only add rows that have the correct number of columns
+                if (values.length === headers.length) {
+                    rows.push(values);
+                }
+            }
+            
+            return { columns: headers, rows: rows };
+        }
+
+
+        // parses a single csv line, handling quotes and commas properly
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                const nextChar = line[i + 1];
+                
+                if (char === '"') {
+                    // handle escaped quotes (two quotes in a row)
+                    if (inQuotes && nextChar === '"') {
+                        current += '"';
+                        i++; // skip next quote
+                    } else {
+                        // toggle quote state
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    // found a field separator
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    // regular character
+                    current += char;
+                }
+            }
+            
+            // add the last field
+            result.push(current.trim());
+            
+            return result;
+        }
+
+
+        /* ============================================
+           DATABASE TABLE MANAGEMENT
+           ============================================ */
+
+        // creates a new table in the database with imported data
+        function createTable() {
+            try {
+                // drop existing table if it exists
+                db.run('DROP TABLE IF EXISTS data');
+                
+                // create column definitions (all as text type for simplicity)
+                const columnDefs = columns.map(col => `"${col}" TEXT`).join(', ');
+                
+                // create new table
+                db.run(`CREATE TABLE data (${columnDefs})`);
+                
+                // insert all data rows into the table
+                const placeholders = columns.map(() => '?').join(', ');
+                const insertStmt = db.prepare(`INSERT INTO data VALUES (${placeholders})`);
+                
+                dataRows.forEach(row => {
+                    insertStmt.run(row);
+                });
+                
+                insertStmt.free();
+                
+                console.log('table created with', dataRows.length, 'rows');
+                
+            } catch (error) {
+                console.error('error creating table:', error);
+            }
+        }
+
+
+        /* ============================================
+           SQL QUERY EXECUTION
+           ============================================ */
+
+        // handles running sql queries entered by user
+        function handleRunQuery() {
+            const query = document.getElementById('query-input').value.trim();
+            
+            // check if query is empty
+            if (!query) {
+                alert('please enter a sql query');
+                return;
+            }
+            
+            try {
+                // execute the query
+                const results = db.exec(query);
+                
+                // display results
+                displayQueryResults(results);
+                
+            } catch (error) {
+                console.error('query error:', error);
+                document.getElementById('query-results').innerHTML = 
+                    `<p class="data-placeholder" style="color: #e53e3e;">error: ${escapeHtml(error.message)}</p>`;
+            }
+        }
+
+
+        // displays results from sql query execution
+        function displayQueryResults(results) {
+            const resultsElement = document.getElementById('query-results');
+            
+            // check if query returned no results
+            if (!results || results.length === 0) {
+                resultsElement.innerHTML = '<p class="data-placeholder">query executed successfully. no results returned.</p>';
+                return;
+            }
+            
+            // get first result set
+            const result = results[0];
+            const resultColumns = result.columns;
+            const resultValues = result.values;
+            
+            // build results table
+            let html = '<table><thead><tr>';
+            
+            resultColumns.forEach(col => {
+                html += `<th>${escapeHtml(col)}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            resultValues.forEach(row => {
+                html += '<tr>';
+                row.forEach(cell => {
+                    html += `<td>${escapeHtml(String(cell))}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            
+            resultsElement.innerHTML = html;
+        }
+
+
+        // escapes html special characters to prevent xss
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+
+        /* ============================================
+           EXAMPLE QUERIES GENERATION
+           ============================================ */
+
+        // generates example sql queries based on imported columns
+        function generateExampleQueries() {
+            const examplesContainer = document.getElementById('example-queries');
+            
+            // exit if no columns available
+            if (columns.length === 0) {
+                examplesContainer.innerHTML = '';
+                return;
+            }
+            
+            const examples = [];
+            
+            // example 1: select all records
+            examples.push('SELECT * FROM data');
+            
+            // example 2: select first column only
+            examples.push(`SELECT "${columns[0]}" FROM data`);
+            
+            // example 3: count total rows
+            examples.push('SELECT COUNT(*) as total_rows FROM data');
+            
+            // example 4: limit results to 5 rows
+            examples.push('SELECT * FROM data LIMIT 5');
+            
+            // example 5: complex query with multiple operations
+            if (columns.length >= 2) {
+                examples.push(`SELECT "${columns[0]}", COUNT(*) as count FROM data GROUP BY "${columns[0]}" ORDER BY count DESC`);
+            }
+            
+            // create clickable example buttons
+            let html = '';
+            examples.forEach(query => {
+                html += `<div class="example-query">${escapeHtml(query)}</div>`;
+            });
+            
+            examplesContainer.innerHTML = html;
+            
+            // add click handlers to populate query input
+            examplesContainer.querySelectorAll('.example-query').forEach((element, index) => {
+                element.addEventListener('click', () => {
+                    document.getElementById('query-input').value = examples[index];
+                });
+            });
+        }
+
+
+        /* ============================================
+           ADD NEW ROW FUNCTIONALITY
+           ============================================ */
+
+        // generates input fields for each column to add new rows
+        function generateFormFields() {
+            const formFieldsContainer = document.getElementById('form-fields');
+            
+            // exit if no columns available
+            if (columns.length === 0) {
+                formFieldsContainer.innerHTML = '<p class="data-placeholder">no columns available.</p>';
+                return;
+            }
+            
+            // create input field for each column
+            let html = '';
+            columns.forEach((col, index) => {
+                html += `
+                    <div class="form-field">
+                        <label for="field-${index}">${escapeHtml(col)}</label>
+                        <input 
+                            type="text" 
+                            id="field-${index}" 
+                            name="${escapeHtml(col)}" 
+                            placeholder="enter ${escapeHtml(col)}"
+                            required
+                        >
+                    </div>
+                `;
+            });
+            
+            formFieldsContainer.innerHTML = html;
+        }
+
+
+        // handles form submission to add a new row
+        function handleAddRow(event) {
+            // prevent default form submission behavior
+            event.preventDefault();
+            
+            // collect values from all form fields
+            const newRow = [];
+            columns.forEach((col, index) => {
+                const value = document.getElementById(`field-${index}`).value.trim();
+                newRow.push(value);
+            });
+            
+            try {
+                // insert new row into database
+                const placeholders = columns.map(() => '?').join(', ');
+                db.run(`INSERT INTO data VALUES (${placeholders})`, newRow);
+                
+                // add to in-memory data array
+                dataRows.push(newRow);
+                
+                // clear form fields
+                event.target.reset();
+                
+                console.log('new row added successfully');
+                
+            } catch (error) {
+                console.error('error adding row:', error);
+                alert('error adding row to database.');
+            }
+        }
+
+
+        /* ============================================
+           EXPORT FUNCTIONALITY
+           ============================================ */
+
+        // handles exporting current data as csv file
+        function handleExport() {
+            try {
+                // query all data from database
+                const results = db.exec('SELECT * FROM data');
+                
+                // check if there's data to export
+                if (!results || results.length === 0 || dataRows.length === 0) {
+                    alert('no data to export');
+                    return;
+                }
+                
+                // build csv content
+                let csv = columns.join(',') + '\n';
+                
+                // get fresh data from database to include any new rows
+                const freshResults = db.exec('SELECT * FROM data')[0];
+                freshResults.values.forEach(row => {
+                    csv += row.join(',') + '\n';
+                });
+                
+                // create blob and download link
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'exported_data.csv';
+                
+                // trigger download
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // clean up url object
+                window.URL.revokeObjectURL(url);
+                
+                console.log('data exported successfully');
+                
+            } catch (error) {
+                console.error('error exporting data:', error);
+                alert('error exporting data.');
+            }
+        }
+    </script>
 </body>
 </html>
