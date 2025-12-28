@@ -3,9 +3,636 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Week 20 Day 1</title>
+    <title>17-Letter Wordle Solver</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0a0a;
+            --bg-card: #1a1a1a;
+            --accent-green: #00ff88;
+            --accent-yellow: #ffcc00;
+            --accent-gray: #3a3a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --border-color: #2a2a2a;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 136, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 204, 0, 0.05) 0%, transparent 50%);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4rem;
+            letter-spacing: 0.1em;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 0 40px rgba(0, 255, 136, 0.3);
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .card h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: var(--accent-green);
+            letter-spacing: 0.05em;
+        }
+
+        .input-section {
+            margin-bottom: 25px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .letter-grid {
+            display: grid;
+            grid-template-columns: repeat(17, 1fr);
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .letter-input {
+            aspect-ratio: 1;
+            background: var(--bg-dark);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+
+        .letter-input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+        }
+
+        .letter-input.green {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: var(--accent-green);
+        }
+
+        .letter-input.yellow {
+            background: rgba(255, 204, 0, 0.2);
+            border-color: var(--accent-yellow);
+        }
+
+        .letter-input.gray {
+            background: rgba(58, 58, 58, 0.2);
+            border-color: var(--accent-gray);
+        }
+
+        .color-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .color-btn {
+            padding: 8px 20px;
+            border: 2px solid;
+            border-radius: 6px;
+            background: transparent;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .color-btn.green-btn {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .color-btn.green-btn:hover, .color-btn.green-btn.active {
+            background: var(--accent-green);
+            color: var(--bg-dark);
+        }
+
+        .color-btn.yellow-btn {
+            border-color: var(--accent-yellow);
+            color: var(--accent-yellow);
+        }
+
+        .color-btn.yellow-btn:hover, .color-btn.yellow-btn.active {
+            background: var(--accent-yellow);
+            color: var(--bg-dark);
+        }
+
+        .color-btn.gray-btn {
+            border-color: var(--accent-gray);
+            color: var(--text-secondary);
+        }
+
+        .color-btn.gray-btn:hover, .color-btn.gray-btn.active {
+            background: var(--accent-gray);
+            color: var(--text-primary);
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-dark);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: var(--accent-green);
+            color: var(--bg-dark);
+        }
+
+        .btn-primary:hover {
+            background: #00dd77;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .results {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .results::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .results::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+            border-radius: 4px;
+        }
+
+        .results::-webkit-scrollbar-thumb {
+            background: var(--accent-green);
+            border-radius: 4px;
+        }
+
+        .word-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            letter-spacing: 0.15em;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .word-item:hover {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 136, 0.05);
+            transform: translateX(5px);
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-box {
+            flex: 1;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            font-family: 'Bebas Neue', sans-serif;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 5px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .file-upload {
+            margin-top: 20px;
+            padding: 20px;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-upload:hover {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 136, 0.02);
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 3rem;
+            }
+
+            .letter-grid {
+                gap: 4px;
+            }
+        }
+    </style>
 </head>
 <body>
-Week 20 Day 1 — placeholder page. Add your code here.
+    <div class="container">
+        <header>
+            <h1>Wordle Solver</h1>
+            <div class="subtitle">17-Letter Edition</div>
+        </header>
+
+        <div class="main-grid">
+            <div class="card">
+                <h2>Enter Your Guesses</h2>
+                
+                <div class="input-section">
+                    <label class="input-label">Word Grid (Click to set colors)</label>
+                    <div class="color-buttons">
+                        <button class="color-btn green-btn" data-color="green">🟩 Green (Correct)</button>
+                        <button class="color-btn yellow-btn" data-color="yellow">🟨 Yellow (Wrong Pos)</button>
+                        <button class="color-btn gray-btn" data-color="gray">⬛ Gray (Not in word)</button>
+                    </div>
+                    <div class="letter-grid" id="letterGrid"></div>
+                </div>
+
+                <div class="input-section">
+                    <label class="input-label">Excluded Letters (Gray)</label>
+                    <input type="text" class="text-input" id="excludedLetters" placeholder="e.g., ABCD">
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="solveWordle()">🔍 Solve</button>
+                    <button class="btn btn-secondary" onclick="resetBoard()">↻ Reset</button>
+                </div>
+
+                <div class="file-upload" onclick="document.getElementById('wordFile').click()">
+                    <input type="file" id="wordFile" accept=".txt,.json" onchange="loadWordList(event)">
+                    <div style="color: var(--text-secondary); margin-bottom: 8px;">📁 Upload Word List</div>
+                    <div style="font-size: 0.7rem; color: var(--text-secondary);">.txt (one word per line) or .json format</div>
+                    <div id="uploadStatus" style="margin-top: 10px; font-size: 0.8rem; color: var(--accent-green);"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Possible Words</h2>
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="totalWords">0</div>
+                        <div class="stat-label">Total Words</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="matchingWords">0</div>
+                        <div class="stat-label">Matches</div>
+                    </div>
+                </div>
+                <div class="results" id="results">
+                    <div class="no-results">Upload a word list and enter your guesses to find matching words!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let wordList = [];
+        let selectedColor = 'gray';
+        let letterData = Array(17).fill().map(() => ({ letter: '', color: null }));
+
+        // Initialize letter grid
+        function initializeGrid() {
+            const grid = document.getElementById('letterGrid');
+            grid.innerHTML = '';
+            for (let i = 0; i < 17; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.maxLength = 1;
+                input.className = 'letter-input';
+                input.dataset.index = i;
+                
+                input.addEventListener('input', (e) => {
+                    const value = e.target.value.toUpperCase();
+                    e.target.value = value;
+                    letterData[i].letter = value;
+                    
+                    if (value && i < 16) {
+                        const nextInput = grid.children[i + 1];
+                        nextInput.focus();
+                    }
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !e.target.value && i > 0) {
+                        const prevInput = grid.children[i - 1];
+                        prevInput.focus();
+                    }
+                });
+
+                input.addEventListener('click', () => {
+                    if (letterData[i].letter) {
+                        applyColor(i, selectedColor);
+                    }
+                });
+                
+                grid.appendChild(input);
+            }
+        }
+
+        // Color button handlers
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedColor = btn.dataset.color;
+            });
+        });
+
+        // Set initial active color
+        document.querySelector('.gray-btn').classList.add('active');
+
+        function applyColor(index, color) {
+            const input = document.getElementById('letterGrid').children[index];
+            input.className = 'letter-input ' + color;
+            letterData[index].color = color;
+        }
+
+        function loadWordList(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                
+                try {
+                    // Try parsing as JSON first
+                    const data = JSON.parse(content);
+                    wordList = Array.isArray(data) ? data : data.words || [];
+                } catch {
+                    // Parse as text (one word per line)
+                    wordList = content.split('\n')
+                        .map(word => word.trim().toUpperCase())
+                        .filter(word => word.length === 17);
+                }
+
+                // Filter to only 17-letter words
+                wordList = wordList.filter(word => word.length === 17);
+                
+                document.getElementById('totalWords').textContent = wordList.length;
+                document.getElementById('uploadStatus').textContent = `✓ Loaded ${wordList.length} words`;
+                
+                setTimeout(() => {
+                    document.getElementById('uploadStatus').textContent = '';
+                }, 3000);
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function solveWordle() {
+            if (wordList.length === 0) {
+                alert('Please upload a word list first!');
+                return;
+            }
+
+            const excludedLetters = document.getElementById('excludedLetters').value.toUpperCase().split('');
+            const greenPositions = {};
+            const yellowLetters = [];
+            const yellowPositions = {};
+
+            // Parse letter data
+            letterData.forEach((data, index) => {
+                if (data.letter) {
+                    if (data.color === 'green') {
+                        greenPositions[index] = data.letter;
+                    } else if (data.color === 'yellow') {
+                        yellowLetters.push(data.letter);
+                        if (!yellowPositions[data.letter]) {
+                            yellowPositions[data.letter] = [];
+                        }
+                        yellowPositions[data.letter].push(index);
+                    } else if (data.color === 'gray') {
+                        if (!excludedLetters.includes(data.letter)) {
+                            excludedLetters.push(data.letter);
+                        }
+                    }
+                }
+            });
+
+            // Filter words
+            const matches = wordList.filter(word => {
+                word = word.toUpperCase();
+
+                // Check green positions
+                for (let pos in greenPositions) {
+                    if (word[pos] !== greenPositions[pos]) {
+                        return false;
+                    }
+                }
+
+                // Check yellow letters (must be in word but not in those positions)
+                for (let letter of yellowLetters) {
+                    if (!word.includes(letter)) {
+                        return false;
+                    }
+                    if (yellowPositions[letter]) {
+                        for (let pos of yellowPositions[letter]) {
+                            if (word[pos] === letter) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+
+                // Check excluded letters
+                for (let letter of excludedLetters) {
+                    if (word.includes(letter)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            displayResults(matches);
+        }
+
+        function displayResults(matches) {
+            const resultsDiv = document.getElementById('results');
+            document.getElementById('matchingWords').textContent = matches.length;
+
+            if (matches.length === 0) {
+                resultsDiv.innerHTML = '<div class="no-results">No matching words found. Try adjusting your criteria!</div>';
+                return;
+            }
+
+            resultsDiv.innerHTML = matches
+                .map(word => `<div class="word-item" onclick="copyWord('${word}')">${word}</div>`)
+                .join('');
+        }
+
+        function copyWord(word) {
+            navigator.clipboard.writeText(word).then(() => {
+                alert(`Copied: ${word}`);
+            });
+        }
+
+        function resetBoard() {
+            letterData = Array(17).fill().map(() => ({ letter: '', color: null }));
+            document.getElementById('excludedLetters').value = '';
+            initializeGrid();
+            document.getElementById('results').innerHTML = '<div class="no-results">Board reset! Enter new guesses.</div>';
+            document.getElementById('matchingWords').textContent = '0';
+        }
+
+        // Initialize on load
+        initializeGrid();
+    </script>
 </body>
 </html>

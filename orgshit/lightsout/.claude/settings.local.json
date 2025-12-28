@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:lightsout.ir)",
+      "WebSearch",
+      "WebFetch(domain:www.lightsout.ir)",
+      "WebFetch(domain:www.logicgamesonline.com)",
+      "WebFetch(domain:www.jaapsch.net)",
+      "WebFetch(domain:people.sc.fsu.edu)",
+      "Bash(node:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
