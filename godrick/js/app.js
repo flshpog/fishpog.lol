@@ -1,4 +1,4 @@
-class GodrickChat {
+class WrightChat {
     constructor() {
         this.messages = [];
         this.currentChartId = 0;
@@ -101,7 +101,7 @@ class GodrickChat {
         messageDiv.id = messageId;
 
         const avatar = role === 'user' ? 'Y' : 'G';
-        const name = role === 'user' ? 'You' : 'Godrick';
+        const name = role === 'user' ? 'You' : 'Wright';
 
         messageDiv.innerHTML = `
             <div class="message-header">
@@ -123,7 +123,7 @@ class GodrickChat {
         const contentDiv = document.getElementById(`${messageId}-content`);
         if (contentDiv) {
             contentDiv.innerHTML = this.formatContent(content);
-            this.processChartData(contentDiv);
+            this.processArtifacts(contentDiv);
         }
     }
 
@@ -137,6 +137,15 @@ class GodrickChat {
         });
 
         return marked.parse(content);
+    }
+
+    processArtifacts(contentDiv) {
+        // Process chart-data artifacts
+        this.processChartData(contentDiv);
+        // Process HTML preview artifacts
+        this.processHtmlPreviews(contentDiv);
+        // Process SVG image artifacts
+        this.processSvgImages(contentDiv);
     }
 
     processChartData(contentDiv) {
@@ -167,6 +176,102 @@ class GodrickChat {
                 this.renderChart(chartId, chartData);
             } catch (error) {
                 console.error('Error parsing chart data:', error);
+            }
+        });
+    }
+
+    processHtmlPreviews(contentDiv) {
+        // Find all code blocks with html-preview language
+        const codeBlocks = contentDiv.querySelectorAll('pre code.language-html-preview');
+
+        codeBlocks.forEach(codeBlock => {
+            try {
+                const htmlContent = codeBlock.textContent;
+
+                // Create artifact container with iframe
+                const artifactContainer = document.createElement('div');
+                artifactContainer.className = 'artifact-container html-artifact';
+                artifactContainer.innerHTML = `
+                    <div class="artifact-header">
+                        <span class="artifact-type">HTML Preview</span>
+                        <button class="artifact-expand-btn" title="Open in new tab">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="artifact-content">
+                        <iframe sandbox="allow-scripts" class="html-preview-frame"></iframe>
+                    </div>
+                `;
+
+                // Replace the code block with the artifact
+                const preElement = codeBlock.parentElement;
+                preElement.parentElement.replaceChild(artifactContainer, preElement);
+
+                // Set iframe content
+                const iframe = artifactContainer.querySelector('iframe');
+                iframe.srcdoc = htmlContent;
+
+                // Add expand button functionality
+                const expandBtn = artifactContainer.querySelector('.artifact-expand-btn');
+                expandBtn.addEventListener('click', () => {
+                    const newWindow = window.open('', '_blank');
+                    newWindow.document.write(htmlContent);
+                    newWindow.document.close();
+                });
+            } catch (error) {
+                console.error('Error processing HTML preview:', error);
+            }
+        });
+    }
+
+    processSvgImages(contentDiv) {
+        // Find all code blocks with svg-image language
+        const codeBlocks = contentDiv.querySelectorAll('pre code.language-svg-image');
+
+        codeBlocks.forEach(codeBlock => {
+            try {
+                const svgContent = codeBlock.textContent;
+
+                // Create artifact container
+                const artifactContainer = document.createElement('div');
+                artifactContainer.className = 'artifact-container svg-artifact';
+                artifactContainer.innerHTML = `
+                    <div class="artifact-header">
+                        <span class="artifact-type">SVG Image</span>
+                        <button class="artifact-download-btn" title="Download SVG">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="artifact-content svg-content">
+                        ${svgContent}
+                    </div>
+                `;
+
+                // Replace the code block with the artifact
+                const preElement = codeBlock.parentElement;
+                preElement.parentElement.replaceChild(artifactContainer, preElement);
+
+                // Add download button functionality
+                const downloadBtn = artifactContainer.querySelector('.artifact-download-btn');
+                downloadBtn.addEventListener('click', () => {
+                    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'wright-image.svg';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            } catch (error) {
+                console.error('Error processing SVG image:', error);
             }
         });
     }
@@ -279,5 +384,5 @@ class GodrickChat {
 
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    new GodrickChat();
+    new WrightChat();
 });
