@@ -1,14 +1,64 @@
 const express = require('express');
 const cors = require('cors');
+const session = require('express-session');
+const passport = require('passport');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const Anthropic = require('@anthropic-ai/sdk');
 require('dotenv').config();
+
+// Initialize database
+const { initializeDatabase } = require('./db/database');
+initializeDatabase();
+
+// Configure passport
+const { configurePassport } = require('./config/passport');
+configurePassport();
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const conversationRoutes = require('./routes/conversations');
+
+// Import services for chat
+const { optionalAuth } = require('./middleware/auth');
+const { createConversation, addMessage, autoGenerateTitle, getConversationById } = require('./services/conversationService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+// Security middleware
+app.use(helmet({
+    contentSecurityPolicy: false // Disable for SSE compatibility
+}));
+
+// Rate limiting for auth endpoints
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 20, // 20 requests per window
+    message: { error: 'Too many requests, please try again later' }
+});
+
+// CORS configuration
+app.use(cors({
+    origin: process.env.FRONTEND_URL || true,
+    credentials: true
+}));
+
 app.use(express.json());
+
+// Session for OAuth flow
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'fallback-secret-change-me',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 10 * 60 * 1000 // 10 minutes (just for OAuth flow)
+    }
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
@@ -17,6 +67,10 @@ const anthropic = new Anthropic({
 
 // System prompt for Wright with chart generation and artifact capabilities
 const SYSTEM_PROMPT = `You are Wright, a helpful AI assistant with the ability to generate charts, visualizations, HTML previews, and SVG images.
+
+## Communication Style
+- keep all responses short and concise unless the user asks for more detail or specifies a word count to meet.
+- always write in lowercase letters. do not capitalize the start of sentences, proper nouns, or abbreviations (write "html" not "HTML", "javascript" not "JavaScript"). only use capital letters when absolutely necessary, such as when it would cause confusion otherwise.
 
 ## Charts
 When a user asks you to create a chart or graph, generate the data in JSON format wrapped in a "chart-data" code block:
@@ -70,13 +124,34 @@ SVG can create complex graphics including shapes, paths, gradients, patterns, te
 
 Always use the appropriate artifact type for the request. You can combine multiple artifacts in one response.`;
 
-// Chat endpoint
-app.post('/api/chat', async (req, res) => {
+// Mount routes
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/conversations', conversationRoutes);
+
+// Chat endpoint - supports both authenticated and anonymous users
+app.post('/api/chat', optionalAuth, async (req, res) => {
     try {
-        const { messages } = req.body;
+        const { messages, conversationId } = req.body;
 
         if (!messages || !Array.isArray(messages)) {
             return res.status(400).json({ error: 'Messages array is required' });
+        }
+
+        let actualConversationId = conversationId;
+        const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+
+        // If user is authenticated, save messages
+        if (req.user && lastUserMessage) {
+            // Create conversation if needed
+            if (!actualConversationId) {
+                const conversation = createConversation(req.user.id);
+                actualConversationId = conversation.id;
+                // Auto-generate title from first message
+                autoGenerateTitle(actualConversationId, req.user.id, lastUserMessage.content);
+            }
+
+            // Save user message
+            addMessage(actualConversationId, req.user.id, 'user', lastUserMessage.content);
         }
 
         // Stream the response
@@ -91,12 +166,24 @@ app.post('/api/chat', async (req, res) => {
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
 
+        let fullResponse = '';
+
         stream.on('text', (text) => {
+            fullResponse += text;
             res.write(`data: ${JSON.stringify({ type: 'text', content: text })}\n\n`);
         });
 
         stream.on('message', (message) => {
-            res.write(`data: ${JSON.stringify({ type: 'done', message })}\n\n`);
+            // Save assistant response if user is authenticated
+            if (req.user && actualConversationId) {
+                addMessage(actualConversationId, req.user.id, 'assistant', fullResponse);
+            }
+
+            res.write(`data: ${JSON.stringify({
+                type: 'done',
+                message,
+                conversationId: actualConversationId
+            })}\n\n`);
             res.end();
         });
 
