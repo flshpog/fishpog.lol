@@ -44,9 +44,29 @@ function findOrCreateOAuthUser(provider, oauthId, email, displayName, avatarUrl)
 // Get user by ID
 function getUserById(id) {
     return db.prepare(`
-        SELECT id, email, display_name, avatar_url, auth_provider, created_at
+        SELECT id, email, display_name, avatar_url, auth_provider, preferences, created_at
         FROM users WHERE id = ?
     `).get(id);
+}
+
+// Update user preferences
+function updateUserPreferences(userId, preferences) {
+    const stmt = db.prepare(`
+        UPDATE users SET preferences = ? WHERE id = ?
+    `);
+    stmt.run(JSON.stringify(preferences), userId);
+    return getUserById(userId);
+}
+
+// Get user preferences
+function getUserPreferences(userId) {
+    const user = db.prepare(`SELECT preferences FROM users WHERE id = ?`).get(userId);
+    if (!user) return {};
+    try {
+        return JSON.parse(user.preferences || '{}');
+    } catch {
+        return {};
+    }
 }
 
 // Get user by email (includes password hash for auth)
@@ -65,5 +85,7 @@ module.exports = {
     findOrCreateOAuthUser,
     getUserById,
     getUserByEmail,
-    emailExists
+    emailExists,
+    updateUserPreferences,
+    getUserPreferences
 };

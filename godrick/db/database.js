@@ -19,6 +19,7 @@ function initializeDatabase() {
             avatar_url TEXT,
             auth_provider TEXT DEFAULT 'local',
             oauth_id TEXT,
+            preferences TEXT DEFAULT '{}',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(auth_provider, oauth_id)
         );

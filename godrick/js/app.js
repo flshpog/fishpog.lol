@@ -33,11 +33,22 @@ class WrightChat {
             googleLoginBtn: document.getElementById('googleLoginBtn'),
             githubLoginBtn: document.getElementById('githubLoginBtn'),
             // Conversation list
-            conversationList: document.getElementById('conversationList')
+            conversationList: document.getElementById('conversationList'),
+            // Settings elements
+            settingsBtn: document.getElementById('settingsBtn'),
+            settingsModal: document.getElementById('settingsModal'),
+            settingsModalOverlay: document.getElementById('settingsModalOverlay'),
+            settingsModalClose: document.getElementById('settingsModalClose'),
+            themeGrid: document.getElementById('themeGrid'),
+            fontGrid: document.getElementById('fontGrid'),
+            accentColorPicker: document.getElementById('accentColorPicker'),
+            accentColorValue: document.getElementById('accentColorValue'),
+            resetColorBtn: document.getElementById('resetColorBtn')
         };
 
         this.initializeEventListeners();
         this.initializeAuth();
+        this.initializeSettings();
     }
 
     initializeAuth() {
@@ -66,6 +77,8 @@ class WrightChat {
 
             // Load conversations
             this.loadConversations();
+            // Load preferences from server
+            this.loadUserPreferences();
             this.closeAuthModal();
         } else {
             // Logged out
@@ -129,6 +142,66 @@ class WrightChat {
         // OAuth buttons
         this.elements.googleLoginBtn?.addEventListener('click', () => authManager.loginWithGoogle());
         this.elements.githubLoginBtn?.addEventListener('click', () => authManager.loginWithGithub());
+
+        // Settings modal
+        this.elements.settingsBtn?.addEventListener('click', () => this.openSettingsModal());
+        this.elements.settingsModalOverlay?.addEventListener('click', () => this.closeSettingsModal());
+        this.elements.settingsModalClose?.addEventListener('click', () => this.closeSettingsModal());
+    }
+
+    initializeSettings() {
+        // Theme selection
+        this.elements.themeGrid?.querySelectorAll('.theme-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                themeManager.applyTheme(btn.dataset.theme);
+            });
+        });
+
+        // Font selection
+        this.elements.fontGrid?.querySelectorAll('.font-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                themeManager.applyFont(btn.dataset.font);
+            });
+        });
+
+        // Accent color picker
+        this.elements.accentColorPicker?.addEventListener('input', (e) => {
+            themeManager.applyAccentColor(e.target.value);
+            if (this.elements.accentColorValue) {
+                this.elements.accentColorValue.textContent = e.target.value;
+            }
+        });
+
+        // Reset color button
+        this.elements.resetColorBtn?.addEventListener('click', () => {
+            themeManager.resetAccentColor();
+        });
+
+        // Set up server sync for logged-in users
+        themeManager.onPreferencesChange = async (prefs) => {
+            if (authManager.isLoggedIn()) {
+                try {
+                    await fetch(`${API_URL}/api/auth/preferences`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...authManager.getAuthHeader()
+                        },
+                        body: JSON.stringify({ preferences: prefs })
+                    });
+                } catch (error) {
+                    console.error('Error saving preferences to server:', error);
+                }
+            }
+        };
+    }
+
+    openSettingsModal() {
+        this.elements.settingsModal?.classList.remove('hidden');
+    }
+
+    closeSettingsModal() {
+        this.elements.settingsModal?.classList.add('hidden');
     }
 
     openAuthModal() {
@@ -179,6 +252,25 @@ class WrightChat {
     logout() {
         authManager.logout();
         this.newChat();
+    }
+
+    async loadUserPreferences() {
+        if (!authManager.isLoggedIn()) return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/auth/preferences`, {
+                headers: authManager.getAuthHeader()
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.preferences && Object.keys(data.preferences).length > 0) {
+                    themeManager.applyPreferences(data.preferences);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading user preferences:', error);
+        }
     }
 
     async loadConversations() {

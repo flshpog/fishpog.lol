@@ -3,7 +3,7 @@ const passport = require('passport');
 const router = express.Router();
 
 const { hashPassword, comparePassword, generateAccessToken, generateRefreshToken, verifyToken } = require('../services/authService');
-const { createUser, getUserByEmail, emailExists, getUserById } = require('../services/userService');
+const { createUser, getUserByEmail, emailExists, getUserById, updateUserPreferences, getUserPreferences } = require('../services/userService');
 const { authenticateToken } = require('../middleware/auth');
 
 // Register with email/password
@@ -110,6 +110,32 @@ router.post('/refresh', (req, res) => {
 // Get current user
 router.get('/me', authenticateToken, (req, res) => {
     res.json({ user: req.user });
+});
+
+// Get user preferences
+router.get('/preferences', authenticateToken, (req, res) => {
+    try {
+        const preferences = getUserPreferences(req.user.id);
+        res.json({ preferences });
+    } catch (error) {
+        console.error('Error getting preferences:', error);
+        res.status(500).json({ error: 'Failed to get preferences' });
+    }
+});
+
+// Update user preferences
+router.put('/preferences', authenticateToken, (req, res) => {
+    try {
+        const { preferences } = req.body;
+        if (!preferences || typeof preferences !== 'object') {
+            return res.status(400).json({ error: 'Valid preferences object required' });
+        }
+        updateUserPreferences(req.user.id, preferences);
+        res.json({ preferences });
+    } catch (error) {
+        console.error('Error updating preferences:', error);
+        res.status(500).json({ error: 'Failed to update preferences' });
+    }
 });
 
 // Google OAuth
