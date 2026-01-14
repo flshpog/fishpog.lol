@@ -8,8 +8,29 @@ const db = new Database(dbPath);
 // Enable foreign keys
 db.pragma('foreign_keys = ON');
 
+// Run migrations for existing databases
+function runMigrations() {
+    // Check if users table exists and add preferences column if missing
+    try {
+        const tableInfo = db.prepare("PRAGMA table_info(users)").all();
+        const hasPreferences = tableInfo.some(col => col.name === 'preferences');
+
+        if (tableInfo.length > 0 && !hasPreferences) {
+            console.log('Adding preferences column to users table...');
+            db.exec("ALTER TABLE users ADD COLUMN preferences TEXT DEFAULT '{}'");
+            console.log('Migration complete: preferences column added');
+        }
+    } catch (error) {
+        console.log('Migration check:', error.message);
+    }
+}
+
 // Initialize schema
 function initializeDatabase() {
+    // Run migrations for existing databases
+    runMigrations();
+
+    // Create tables if they don't exist
     db.exec(`
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
