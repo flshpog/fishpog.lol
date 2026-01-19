@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mr. Wright Clicker</title>
+
+<style>
+:root {
+    --bg:#f2f4f8;
+    --card:#fff;
+    --accent:#4a6cf7;
+}
+
+body {
+    margin:0;
+    font-family:"Segoe UI",Arial,sans-serif;
+    background:var(--bg);
+}
+
+#game {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    height:100vh;
+}
+
+#clicker {
+    text-align:center;
+    padding-top:30px;
+}
+
+#money {
+    font-size:36px;
+    font-weight:bold;
+    transition:transform .15s;
+}
+
+.bump { transform:scale(1.1); }
+
+#stats { font-size:15px; }
+
+#mainClick {
+    font-size:20px;
+    padding:18px 40px;
+    border:none;
+    border-radius:12px;
+    background:var(--accent);
+    color:white;
+    cursor:pointer;
+    box-shadow:0 6px 15px rgba(0,0,0,.15);
+}
+
+#mainClick:active {
+    transform:scale(.92);
+}
+
+#upgrades {
+    padding:20px;
+    overflow-y:auto;
+}
+
+.upgrade {
+    background:var(--card);
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:15px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+}
+
+.upgrade img{
+    width:72px;
+    height:72px;
+    object-fit:cover;
+    border-radius:14px;
+    background:var(--accent-soft);
+}
+
+button {
+    padding:6px 14px;
+    border:none;
+    border-radius:8px;
+    background:var(--accent);
+    color:white;
+    cursor:pointer;
+}
+
+button:disabled {
+    background:#999;
+    cursor:not-allowed;
+}
+
+.tooltip {
+    font-size:12px;
+    color:#555;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<div id="clicker">
+    <p id="money">$0</p>
+
+    <div id="stats">
+        <p id="perClick">$1 per click</p>
+        <p id="perSecond">$0 per second</p>
+        <p id="goal">Goal: $100,000,000</p>
+        <p id="prestige">Prestiges: 0 | Base Multiplier: 1×</p>
+    </div>
+
+    <button id="mainClick">Click Mr. Wright</button>
+</div>
+
+<div id="upgrades"></div>
+
+</div>
+
+<script>
+/* ===== GAME STATE ===== */
+let money = 0;
+let clickValue = 1;
+let moneyPerSecond = 0;
+
+let prestigeCount = 0;
+let baseMultiplier = 1;
+let activeMultiplier = 1;
+
+let goal = 100_000_000;
+
+/* ===== DOM ===== */
+const moneyText = document.getElementById("money");
+const perClickText = document.getElementById("perClick");
+const perSecondText = document.getElementById("perSecond");
+const goalText = document.getElementById("goal");
+const prestigeText = document.getElementById("prestige");
+const mainClick = document.getElementById("mainClick");
+const upgradesDiv = document.getElementById("upgrades");
+
+/*clicking*/
+mainClick.onclick = () => {
+    money += clickValue * activeMultiplier;
+    bump();
+    checkPrestige();
+    updateUI();
+};
+
+function bump() {
+    moneyText.classList.add("bump");
+    setTimeout(() => moneyText.classList.remove("bump"), 150);
+}
+
+/*Upgrades*/
+const baseUpgrades = [
+    { name:"Glasses", baseCost:25, click:1, img:"Img/Glasses.jpg"},
+    { name:"F- Math Test", baseCost:10000, click:10, img:"Img/F.jpg"},
+    { name:"A+ Math Test", baseCost:75000, click:25, img:"Img/A.jpg"},
+    { name:"Saxophone", baseCost:600000, click:75, img:"Img/Saxaphone.jpg"},
+
+    { name:"Computer", baseCost:300, cps:6, img:"Img/Computer.jpg"},
+    { name:"Smart Board", baseCost:20000, cps:120, img:"Img/board.jfif"},
+    { name:"Tutoring", baseCost:250000, cps:1800, img:"Img/tutor.jfif"},
+    { name:"Motorcycle", baseCost:5000000, cps:20000, img:"Img/Motorcycle.jpg"},
+
+    { name:"Megaphone", baseCost:1500, mult:2, oneTime:true, img:"Img/Megaphone.jpg"},
+    { name:"ChatGPT", baseCost:2500000, mult:2.5, oneTime:true, img:"Img/ChatGPT.jpg"},
+    { name:"Eli", baseCost:30000000, mult:3, oneTime:true, img:"Img/Me.jpg"}
+
+    
+];
+
+let upgrades = [];
+
+/*Upgrade system*/
+function buildUpgrades() {
+    upgradesDiv.innerHTML = "";
+    upgrades = [];
+
+    baseUpgrades.forEach(base => {
+        const u = {
+            ...base,
+            cost: base.baseCost,
+            bought: false
+        };
+
+        u.div = document.createElement("div");
+        u.div.className = "upgrade";
+
+        const img=document.createElement("img");
+        img.src=u.img||"";
+        img.onerror=()=>img.style.display="none";
+
+        u.text = document.createElement("p");
+        u.tip = document.createElement("div");
+        u.tip.className = "tooltip";
+
+        u.btn = document.createElement("button");
+        u.btn.textContent = "Buy";
+        u.btn.onclick = () => buyUpgrade(u);
+
+        u.div.append(img, u.text, u.tip, u.btn);
+        upgradesDiv.appendChild(u.div);
+        upgrades.push(u);
+
+        
+    });
+}
+
+/*The shop*/
+function buyUpgrade(u) {
+    if (money < u.cost) return;
+    money -= u.cost;
+
+    if (u.click) {
+        clickValue += u.click;
+        u.cost = Math.floor(u.cost * 1.25);
+    }
+
+    if (u.cps) {
+        moneyPerSecond += u.cps;
+        u.cost = Math.floor(u.cost * 1.25);
+    }
+
+    if (u.mult && !u.bought) {
+        activeMultiplier *= u.mult;
+        u.bought = true;
+        u.btn.textContent = "Bought";
+        u.btn.disabled = true;
+    }
+
+    updateUI();
+}
+
+/* ===== PASSIVE ===== */
+setInterval(() => {
+    money += moneyPerSecond * activeMultiplier;
+    checkPrestige();
+    updateUI();
+}, 1000);
+
+/* ===== PRESTIGE ===== */
+function checkPrestige() {
+    if (money >= goal) {
+        prestigeCount++;
+        baseMultiplier *= 2;
+
+        money = 0;
+        clickValue = 1;
+        moneyPerSecond = 0;
+        activeMultiplier = baseMultiplier;
+
+        goal *= 10;
+
+        buildUpgrades();
+    }
+}
+
+/* ===== SORT UPGRADES ===== */
+function sortUpgradesByCost() {
+    upgrades.sort((a, b) => a.cost - b.cost);
+    upgrades.forEach(u => upgradesDiv.appendChild(u.div));
+}
+
+/* ===== UI ===== */
+function updateUI() {
+    moneyText.textContent = "$" + Math.floor(money);
+    perClickText.textContent = "$" + Math.floor(clickValue * activeMultiplier) + " per click";
+    perSecondText.textContent = "$" + Math.floor(moneyPerSecond * activeMultiplier) + " per second";
+    goalText.textContent = "Goal: $" + goal.toLocaleString();
+    prestigeText.textContent = `Prestiges: ${prestigeCount} | Base Multiplier: ${baseMultiplier}×`;
+
+    upgrades.forEach(u => {
+        let effect =
+            u.click ? `+${u.click} per click` :
+            u.cps ? `+$${u.cps}/sec` :
+            `${u.mult}× multiplier`;
+
+        u.text.textContent = `${u.name} — $${u.cost}`;
+        u.tip.textContent = effect;
+
+        u.btn.disabled = u.oneTime
+            ? u.bought || money < u.cost
+            : money < u.cost;
+    });
+
+    sortUpgradesByCost();
+}
+
+/* INIT */
+buildUpgrades();
+updateUI();
+</script>
+
+</body>
+</html>
