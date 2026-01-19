@@ -1,6 +1,6 @@
-# Godrick AI Chatbot
+# Wright AI Chatbot
 
-An AI chatbot with a Claude.ai-inspired UI and intelligent chart generation capabilities. Godrick can understand requests for data visualizations and automatically generate beautiful charts using Chart.js.
+An AI chatbot with a Claude.ai-inspired UI and intelligent chart generation capabilities. Wright can understand requests for data visualizations and automatically generate beautiful charts using Chart.js.
 
 **Live at:** [fishpog.lol/godrick](https://fishpog.lol/godrick)
 
@@ -8,7 +8,7 @@ An AI chatbot with a Claude.ai-inspired UI and intelligent chart generation capa
 
 - **Claude.ai-inspired UI**: Clean, modern interface with dark theme
 - **Real-time streaming**: Messages stream in real-time for a responsive experience
-- **Smart Chart Generation**: Automatically detects and renders charts when Godrick generates visualization data
+- **Smart Chart Generation**: Automatically detects and renders charts when Wright generates visualization data
 - **Multiple Chart Types**: Supports line, bar, pie, doughnut, radar, and scatter charts
 - **Markdown Support**: Full markdown rendering for rich text formatting
 - **Conversation History**: Maintains chat context throughout the conversation
@@ -96,7 +96,7 @@ Already set up! Just:
 
 ## How Chart Generation Works
 
-Godrick has been trained to generate chart data in a special format. When you ask for a visualization, it will:
+Wright has been trained to generate chart data in a special format. When you ask for a visualization, it will:
 
 1. Generate structured JSON data in a `chart-data` code block
 2. The frontend automatically detects these blocks
@@ -114,7 +114,7 @@ Try these prompts to see chart generation in action:
 
 ### Chart Data Format
 
-Godrick generates charts using this JSON structure:
+Wright generates charts using this JSON structure:
 
 ```json
 {
@@ -179,7 +179,7 @@ Edit the CSS variables in `css/styles.css`:
 
 ### Modifying AI Behavior
 
-Edit the `SYSTEM_PROMPT` in `server.js` to change how Godrick responds or generates charts.
+Edit the `SYSTEM_PROMPT` in `server.js` to change how Wright responds or generates charts.
 
 ### Using Different Models
 

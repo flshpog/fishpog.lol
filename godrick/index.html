@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Godrick AI</title>
+    <title>Wright AI</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -13,7 +13,22 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h1 class="logo">Godrick</h1>
+                <h1 class="logo">Wright</h1>
+
+                <!-- Auth buttons (shown when logged out) -->
+                <div id="authButtons" class="auth-buttons">
+                    <button class="login-btn" id="loginBtn">Log in</button>
+                </div>
+
+                <!-- User menu (shown when logged in) -->
+                <div id="userMenu" class="user-menu hidden">
+                    <div class="user-info">
+                        <div class="user-avatar" id="userAvatar">U</div>
+                        <span class="user-name" id="userName"></span>
+                    </div>
+                    <button class="logout-btn" id="logoutBtn">Logout</button>
+                </div>
+
                 <button class="new-chat-btn" id="newChatBtn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -22,10 +37,23 @@
                     New chat
                 </button>
             </div>
-            <div class="chat-history">
-                <div class="history-item active">
+
+            <!-- Conversation history -->
+            <div class="chat-history" id="conversationList">
+                <div class="history-item active" id="currentConversation">
                     <span>Current conversation</span>
                 </div>
+            </div>
+
+            <!-- Settings button -->
+            <div class="sidebar-footer">
+                <button class="settings-btn" id="settingsBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    Settings
+                </button>
             </div>
         </aside>
 
@@ -34,8 +62,8 @@
             <div class="chat-container" id="chatContainer">
                 <div class="welcome-screen" id="welcomeScreen">
                     <div class="welcome-content">
-                        <h1 class="welcome-title">Godrick</h1>
-                        <p class="welcome-subtitle">Your AI assistant with visualization capabilities</p>
+                        <h1 class="welcome-title">Wright</h1>
+                        <p class="welcome-subtitle">The <strong>Wright</strong> way to do it.</p>
                         <div class="suggestions">
                             <button class="suggestion-btn" data-prompt="Generate a line chart showing temperature trends">
                                 Create a temperature chart
@@ -60,7 +88,7 @@
                 <div class="input-wrapper">
                     <textarea
                         id="messageInput"
-                        placeholder="Message Godrick..."
+                        placeholder="Message Wright..."
                         rows="1"
                         maxlength="5000"
                     ></textarea>
@@ -72,13 +100,153 @@
                     </button>
                 </div>
                 <div class="input-footer">
-                    Godrick can make mistakes. Please verify important information.
+                    Wright can make mistakes. Please verify important information.
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal hidden">
+        <div class="modal-overlay" id="modalOverlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">&times;</button>
+
+            <!-- Tab navigation -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Log in</button>
+                <button class="auth-tab" data-tab="signup">Sign up</button>
+            </div>
+
+            <!-- Login form -->
+            <form id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <input type="email" id="loginEmail" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="loginPassword" placeholder="Password" required>
+                </div>
+                <div class="form-error" id="loginError"></div>
+                <button type="submit" class="auth-submit-btn">Log in</button>
+            </form>
+
+            <!-- Signup form -->
+            <form id="signupForm" class="auth-form hidden">
+                <div class="form-group">
+                    <input type="text" id="signupName" placeholder="Display name" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="signupEmail" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="signupPassword" placeholder="Password (min 8 characters)" required minlength="8">
+                </div>
+                <div class="form-error" id="signupError"></div>
+                <button type="submit" class="auth-submit-btn">Sign up</button>
+            </form>
+
+            <!-- OAuth divider -->
+            <div class="oauth-divider">
+                <span>or continue with</span>
+            </div>
+
+            <!-- OAuth buttons -->
+            <div class="oauth-buttons">
+                <button type="button" class="oauth-btn google" id="googleLoginBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Google
+                </button>
+                <button type="button" class="oauth-btn github" id="githubLoginBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    GitHub
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal hidden">
+        <div class="modal-overlay" id="settingsModalOverlay"></div>
+        <div class="modal-content settings-modal">
+            <button class="modal-close" id="settingsModalClose">&times;</button>
+            <h2 class="settings-title">Settings</h2>
+
+            <!-- Theme Selection -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">Theme</h3>
+                <div class="theme-grid" id="themeGrid">
+                    <button class="theme-option active" data-theme="dark">
+                        <div class="theme-preview dark-preview"></div>
+                        <span>Dark</span>
+                    </button>
+                    <button class="theme-option" data-theme="light">
+                        <div class="theme-preview light-preview"></div>
+                        <span>Light</span>
+                    </button>
+                    <button class="theme-option" data-theme="ocean">
+                        <div class="theme-preview ocean-preview"></div>
+                        <span>Ocean</span>
+                    </button>
+                    <button class="theme-option" data-theme="forest">
+                        <div class="theme-preview forest-preview"></div>
+                        <span>Forest</span>
+                    </button>
+                    <button class="theme-option" data-theme="sunset">
+                        <div class="theme-preview sunset-preview"></div>
+                        <span>Sunset</span>
+                    </button>
+                    <button class="theme-option" data-theme="midnight">
+                        <div class="theme-preview midnight-preview"></div>
+                        <span>Midnight</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Custom Accent Color -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">Accent Color</h3>
+                <div class="color-picker-row">
+                    <input type="color" id="accentColorPicker" value="#cc785c" class="color-picker">
+                    <span class="color-value" id="accentColorValue">#cc785c</span>
+                    <button class="reset-color-btn" id="resetColorBtn">Reset</button>
+                </div>
+            </div>
+
+            <!-- Font Selection -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">Font</h3>
+                <div class="font-grid" id="fontGrid">
+                    <button class="font-option active" data-font="default">
+                        <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">Aa</span>
+                        <span>Default</span>
+                    </button>
+                    <button class="font-option" data-font="mono">
+                        <span style="font-family: 'Courier New', monospace;">Aa</span>
+                        <span>Mono</span>
+                    </button>
+                    <button class="font-option" data-font="serif">
+                        <span style="font-family: Georgia, serif;">Aa</span>
+                        <span>Serif</span>
+                    </button>
+                    <button class="font-option" data-font="rounded">
+                        <span style="font-family: 'Comic Sans MS', cursive;">Aa</span>
+                        <span>Rounded</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/themes.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

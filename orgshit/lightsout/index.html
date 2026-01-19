@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chase the Lights - Practice Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
+        }
+
+        .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+
+        /* Reference Section */
+        .reference-container {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .pattern-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .pattern-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .pattern-item:hover {
+            border-color: rgba(255, 204, 0, 0.3);
+        }
+
+        .pattern-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .pattern-header:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .pattern-lights {
+            display: flex;
+            gap: 6px;
+        }
+
+        .pattern-lights .mini-light {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            background: #2a2a3e;
+            border: 1px solid #3a3a4e;
+        }
+
+        .pattern-lights .mini-light.on {
+            background: #ffcc00;
+            border-color: #ffdd44;
+            box-shadow: 0 0 8px rgba(255, 204, 0, 0.4);
+        }
+
+        .pattern-arrow {
+            color: #666;
+            transition: transform 0.3s ease;
+        }
+
+        .pattern-item.open .pattern-arrow {
+            transform: rotate(180deg);
+        }
+
+        .pattern-solution {
+            display: none;
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .pattern-item.open .pattern-solution {
+            display: block;
+        }
+
+        .solution-grid-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .mini-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+        }
+
+        .mini-grid .mini-light {
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            background: #2a2a3e;
+            border: 1px solid #3a3a4e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            color: white;
+            font-weight: bold;
+        }
+
+        .mini-grid .mini-light.on {
+            background: #ffcc00;
+            border-color: #ffdd44;
+        }
+
+        .mini-grid .mini-light.click {
+            background: #4CAF50;
+            border-color: #66BB6A;
+        }
+
+        .solution-moves {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .solution-moves-title {
+            color: #888;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .solution-moves-list {
+            font-family: monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            color: #ccc;
+        }
+
+        .solution-moves-list .row-moves {
+            margin-bottom: 5px;
+        }
+
+        .solution-moves-list .row-label {
+            color: #888;
+            margin-right: 8px;
+        }
+
+        .solution-moves-list .move {
+            background: rgba(76, 175, 80, 0.3);
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-right: 4px;
+        }
+
+        .header-pattern-code {
+            font-family: monospace;
+            color: #ffcc00;
+            font-size: 0.9rem;
+            margin-left: 15px;
+        }
+
+        .total-moves {
+            color: #888;
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+
+        footer {
+            margin-top: 40px;
+            color: #555;
+            font-size: 0.85rem;
+        }
+
+        footer a {
+            color: #ffcc00;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chase the Lights</h1>
+    <p class="subtitle">Reference for bottom-row patterns</p>
+
+    <div class="reference-container">
+        <div class="pattern-list" id="pattern-list">
+            <!-- Patterns will be generated by JS -->
+        </div>
+    </div>
+
+    <footer>
+        Practice tool for <a href="https://lightsout.ir" target="_blank">Lights Out</a>
+    </footer>
+
+    <script>
+        // Column names for display
+        const COLS = ['A', 'B', 'C', 'D', 'E'];
+
+        // The 7 VERIFIED basis patterns - these are the ONLY bottom row patterns
+        // that can result from chasing a solvable puzzle
+        // Bottom row pattern -> Top row to press
+        // Verified by simulation to actually solve the puzzle
+        const TOP_ROW_LOOKUP = {
+            '00000': '00000',  // Already solved
+            '00111': '00010',  // --OOO -> ---O- (press D)
+            '01010': '10010',  // -O-O- -> O--O- (press A,D)
+            '01101': '10000',  // -OO-O -> O---- (press A)
+            '10001': '11000',  // O---O -> OO--- (press A,B)
+            '10110': '00001',  // O-OO- -> ----O (press E)
+            '11011': '00100',  // OO-OO -> --O-- (press C)
+            '11100': '01000',  // OOO-- -> -O--- (press B)
+        };
+
+        // Calculate the full solution for a given bottom row pattern
+        function calculateSolution(bottomPattern) {
+            const topRow = TOP_ROW_LOOKUP[bottomPattern];
+            if (!topRow) return null;
+            if (topRow === '00000' && bottomPattern !== '00000') return null;
+
+            // Simulate: we have a grid with ONLY bottom row lit
+            // We need to find all moves that will clear it
+            // The moves are: press top row buttons, then chase down
+
+            let moves = [];
+            let clickGrid = [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0]
+            ];
+            let step = 1;
+
+            // To find the chase pattern, we simulate pressing top row on an EMPTY grid
+            // and see what lights up, then chase those
+            let grid = [
+                [false, false, false, false, false],
+                [false, false, false, false, false],
+                [false, false, false, false, false],
+                [false, false, false, false, false],
+                [false, false, false, false, false]
+            ];
+
+            // Toggle function
+            function toggle(r, c) {
+                if (r >= 0 && r < 5 && c >= 0 && c < 5) {
+                    grid[r][c] = !grid[r][c];
+                }
+            }
+
+            function press(r, c) {
+                toggle(r, c);
+                toggle(r-1, c);
+                toggle(r+1, c);
+                toggle(r, c-1);
+                toggle(r, c+1);
+            }
+
+            // Step 1: Press top row according to lookup (on empty grid)
+            for (let c = 0; c < 5; c++) {
+                if (topRow[c] === '1') {
+                    press(0, c);
+                    moves.push({ row: 0, col: c, step: step++ });
+                    clickGrid[0][c] = moves.length;
+                }
+            }
+
+            // Step 2: Chase the lights down rows 1-4
+            for (let r = 1; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    // If the cell above is lit, press this cell
+                    if (grid[r-1][c]) {
+                        press(r, c);
+                        moves.push({ row: r, col: c, step: step++ });
+                        clickGrid[r][c] = moves.length;
+                    }
+                }
+            }
+
+            // The bottom row should now match our target pattern
+            // (these moves will CLEAR that pattern when applied to a grid with only bottom row lit)
+
+            return {
+                topRow: topRow,
+                moves: moves,
+                clickGrid: clickGrid,
+                totalMoves: moves.length
+            };
+        }
+
+        // Generate solutions for all 7 solvable patterns
+        const ALL_SOLUTIONS = {};
+        Object.keys(TOP_ROW_LOOKUP).forEach(pattern => {
+            if (pattern !== '00000') {
+                const solution = calculateSolution(pattern);
+                if (solution) {
+                    ALL_SOLUTIONS[pattern] = solution;
+                }
+            }
+        });
+
+        console.log(`Found ${Object.keys(ALL_SOLUTIONS).length} solvable patterns`);
+
+        // Generate reference list
+        function generateReferenceList() {
+            const list = document.getElementById('pattern-list');
+            const sortedPatterns = Object.keys(ALL_SOLUTIONS).sort();
+
+            sortedPatterns.forEach(pattern => {
+                const solution = ALL_SOLUTIONS[pattern];
+                if (!solution) return;
+
+                const item = document.createElement('div');
+                item.className = 'pattern-item';
+
+                // Build mini grid HTML with click markers
+                let miniGridHTML = '';
+                for (let r = 0; r < 5; r++) {
+                    for (let c = 0; c < 5; c++) {
+                        const isOn = (r === 4 && pattern[c] === '1');
+                        const clickNum = solution.clickGrid[r][c];
+                        let classes = 'mini-light';
+                        if (isOn) classes += ' on';
+                        if (clickNum > 0) classes += ' click';
+                        miniGridHTML += `<div class="${classes}">${clickNum > 0 ? clickNum : ''}</div>`;
+                    }
+                }
+
+                // Build moves list HTML
+                let movesHTML = '';
+                let currentRow = -1;
+                let rowMoves = [];
+
+                solution.moves.forEach((move, idx) => {
+                    if (move.row !== currentRow) {
+                        if (rowMoves.length > 0) {
+                            movesHTML += `<div class="row-moves"><span class="row-label">Row ${currentRow + 1}:</span>${rowMoves.map(m => `<span class="move">${m}</span>`).join('')}</div>`;
+                        }
+                        currentRow = move.row;
+                        rowMoves = [];
+                    }
+                    rowMoves.push(`${COLS[move.col]}${move.row + 1}`);
+                });
+
+                if (rowMoves.length > 0) {
+                    movesHTML += `<div class="row-moves"><span class="row-label">Row ${currentRow + 1}:</span>${rowMoves.map(m => `<span class="move">${m}</span>`).join('')}</div>`;
+                }
+
+                item.innerHTML = `
+                    <div class="pattern-header">
+                        <div style="display: flex; align-items: center;">
+                            <div class="pattern-lights">
+                                ${pattern.split('').map(bit =>
+                                    `<div class="mini-light ${bit === '1' ? 'on' : ''}"></div>`
+                                ).join('')}
+                            </div>
+                            <span class="header-pattern-code">${pattern}</span>
+                        </div>
+                        <span class="pattern-arrow">▼</span>
+                    </div>
+                    <div class="pattern-solution">
+                        <div class="solution-grid-container">
+                            <div>
+                                <div class="solution-moves-title">Grid (numbers = click order)</div>
+                                <div class="mini-grid">${miniGridHTML}</div>
+                            </div>
+                            <div class="solution-moves">
+                                <div class="solution-moves-title">Move Sequence</div>
+                                <div class="solution-moves-list">${movesHTML}</div>
+                                <div class="total-moves">Total: ${solution.totalMoves} moves</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                item.querySelector('.pattern-header').addEventListener('click', () => {
+                    item.classList.toggle('open');
+                });
+
+                list.appendChild(item);
+            });
+        }
+
+        // Initialize
+        generateReferenceList();
+    </script>
+</body>
+</html>
