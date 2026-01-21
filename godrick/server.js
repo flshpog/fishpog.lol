@@ -1,71 +1,119 @@
+// ============================================================================
+// WRIGHT CHATBOT - BACKEND SERVER (server.js)
+// ============================================================================
+// This is the main entry point for the backend. It handles:
+//   1. Receiving messages from the frontend
+//   2. Sending those messages to the Anthropic Claude API
+//   3. Streaming responses back to the frontend in real-time
+//   4. Saving conversations to the database (for logged-in users)
+// ============================================================================
+
+// --- DEPENDENCIES ---
+// Express: Web framework for handling HTTP requests
 const express = require('express');
+// CORS: Allows frontend (different domain) to talk to backend
 const cors = require('cors');
+// Session: Stores temporary data during OAuth login flow
 const session = require('express-session');
+// Passport: Handles Google/GitHub OAuth authentication
 const passport = require('passport');
+// Helmet: Adds security headers to protect against common attacks
 const helmet = require('helmet');
+// Rate Limit: Prevents spam/abuse by limiting requests per IP
 const rateLimit = require('express-rate-limit');
+// Anthropic SDK: Official library to communicate with Claude AI
 const Anthropic = require('@anthropic-ai/sdk');
+// Dotenv: Loads secret keys from .env file
 require('dotenv').config();
 
-// Initialize database
+// --- DATABASE SETUP ---
+// Initialize SQLite database with users, conversations, and messages tables
 const { initializeDatabase } = require('./db/database');
 initializeDatabase();
 
-// Configure passport
+// --- AUTHENTICATION SETUP ---
+// Configure OAuth strategies for Google and GitHub login
 const { configurePassport } = require('./config/passport');
 configurePassport();
 
-// Import routes
+// --- ROUTE IMPORTS ---
+// authRoutes: Login, signup, OAuth callbacks (/api/auth/*)
 const authRoutes = require('./routes/auth');
+// conversationRoutes: Load/save conversation history (/api/conversations/*)
 const conversationRoutes = require('./routes/conversations');
 
-// Import services for chat
+// --- SERVICE IMPORTS ---
+// Middleware to check if user is logged in (optional - allows anonymous chat)
 const { optionalAuth } = require('./middleware/auth');
+// Database operations for saving chat history
 const { createConversation, addMessage, autoGenerateTitle, getConversationById } = require('./services/conversationService');
 
+// --- CREATE EXPRESS APP ---
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Security middleware
+// ============================================================================
+// MIDDLEWARE CONFIGURATION
+// ============================================================================
+// Middleware = functions that run on every request before reaching endpoints
+
+// Security middleware - adds HTTP headers to prevent common attacks
 app.use(helmet({
-    contentSecurityPolicy: false // Disable for SSE compatibility
+    contentSecurityPolicy: false // Disabled so streaming (SSE) works properly
 }));
 
-// Rate limiting for auth endpoints
+// Rate limiting - prevents abuse by limiting login attempts
+// If someone tries to login more than 20 times in 15 minutes, they're blocked
 const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 20, // 20 requests per window
+    windowMs: 15 * 60 * 1000, // 15 minute window
+    max: 20,                   // max 20 requests per window
     message: { error: 'Too many requests, please try again later' }
 });
 
-// CORS configuration
+// CORS - allows the frontend (hosted on GitHub Pages) to make requests to this backend
+// Without this, browsers would block requests from a different domain
 app.use(cors({
-    origin: process.env.FRONTEND_URL || true,
-    credentials: true
+    origin: process.env.FRONTEND_URL || true,  // Allow frontend URL from .env
+    credentials: true                           // Allow cookies/auth headers
 }));
 
+// Parse JSON request bodies (converts JSON strings to JavaScript objects)
 app.use(express.json());
 
-// Session for OAuth flow
+// Session middleware - temporarily stores data during OAuth flow
+// When user clicks "Login with Google", we need to remember who they are
+// between the redirect to Google and the callback
 app.use(session({
     secret: process.env.SESSION_SECRET || 'fallback-secret-change-me',
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 10 * 60 * 1000 // 10 minutes (just for OAuth flow)
+        secure: process.env.NODE_ENV === 'production',  // HTTPS only in production
+        maxAge: 10 * 60 * 1000  // 10 minutes - just enough for OAuth flow
     }
 }));
 
+// Initialize Passport.js for OAuth authentication
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Initialize Anthropic client
+// ============================================================================
+// ANTHROPIC AI CLIENT
+// ============================================================================
+// This is what connects us to Claude AI - the brain of the chatbot
 const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
+    apiKey: process.env.ANTHROPIC_API_KEY,  // API key from .env file
 });
 
-// System prompt for Wright with chart generation and artifact capabilities
+// ============================================================================
+// SYSTEM PROMPT - This is the "personality" and instructions for the AI
+// ============================================================================
+// The system prompt tells Claude HOW to behave and WHAT special formats to use.
+// This is what makes Wright different from generic Claude - it teaches the AI
+// to output special code blocks that our frontend knows how to render as:
+//   - Charts (using Chart.js library)
+//   - HTML previews (rendered in iframes)
+//   - SVG images (vector graphics)
 const SYSTEM_PROMPT = `You are Wright, a helpful AI assistant with the ability to generate charts, visualizations, HTML previews, and SVG images.
 
 ## Communication Style
@@ -124,69 +172,99 @@ SVG can create complex graphics including shapes, paths, gradients, patterns, te
 
 Always use the appropriate artifact type for the request. You can combine multiple artifacts in one response.`;
 
-// Mount routes
+// ============================================================================
+// API ROUTES
+// ============================================================================
+// Routes define what URLs the server responds to
+
+// Authentication routes at /api/auth/* (login, signup, OAuth)
+// authLimiter applied here to prevent brute-force login attacks
 app.use('/api/auth', authLimiter, authRoutes);
+
+// Conversation history routes at /api/conversations/*
 app.use('/api/conversations', conversationRoutes);
 
-// Chat endpoint - supports both authenticated and anonymous users
+// ============================================================================
+// MAIN CHAT ENDPOINT - THE HEART OF THE CHATBOT
+// ============================================================================
+// This is where the magic happens! When user sends a message:
+//   1. Frontend POSTs to /api/chat with the conversation history
+//   2. We forward that to Claude AI
+//   3. Claude streams back a response word-by-word
+//   4. We forward each chunk to the frontend in real-time (SSE)
+//   5. If user is logged in, we save the conversation to the database
 app.post('/api/chat', optionalAuth, async (req, res) => {
     try {
+        // --- STEP 1: Extract data from the request ---
         const { messages, conversationId } = req.body;
+        // messages = array of {role: 'user'|'assistant', content: '...'}
+        // conversationId = optional ID if continuing an existing conversation
 
+        // Validate input
         if (!messages || !Array.isArray(messages)) {
             return res.status(400).json({ error: 'Messages array is required' });
         }
 
         let actualConversationId = conversationId;
+        // Get the last message the user sent (the new one)
         const lastUserMessage = messages.filter(m => m.role === 'user').pop();
 
-        // If user is authenticated, save messages
+        // --- STEP 2: Save to database (only if user is logged in) ---
         if (req.user && lastUserMessage) {
-            // Create conversation if needed
+            // If this is a new conversation, create one in the database
             if (!actualConversationId) {
                 const conversation = createConversation(req.user.id);
                 actualConversationId = conversation.id;
-                // Auto-generate title from first message
+                // Use first message to auto-generate a title (e.g., "Help with JavaScript")
                 autoGenerateTitle(actualConversationId, req.user.id, lastUserMessage.content);
             }
 
-            // Save user message
+            // Save the user's message to the database
             addMessage(actualConversationId, req.user.id, 'user', lastUserMessage.content);
         }
 
-        // Stream the response
+        // --- STEP 3: Send messages to Claude AI and get streaming response ---
+        // anthropic.messages.stream() returns responses word-by-word as they're generated
         const stream = await anthropic.messages.stream({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 4096,
-            system: SYSTEM_PROMPT,
-            messages: messages,
+            model: 'claude-sonnet-4-20250514',  // Which Claude model to use
+            max_tokens: 4096,                   // Maximum response length
+            system: SYSTEM_PROMPT,              // The personality/instructions defined above
+            messages: messages,                 // The full conversation history
         });
 
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
+        // --- STEP 4: Set up Server-Sent Events (SSE) for real-time streaming ---
+        // SSE allows server to push data to the client as it becomes available
+        res.setHeader('Content-Type', 'text/event-stream');  // Tell browser this is SSE
+        res.setHeader('Cache-Control', 'no-cache');          // Don't cache the response
+        res.setHeader('Connection', 'keep-alive');           // Keep connection open
 
-        let fullResponse = '';
+        let fullResponse = '';  // Accumulate the complete response
 
+        // --- STEP 5: Handle streaming events ---
+        // 'text' event fires every time we receive a new chunk of text
         stream.on('text', (text) => {
-            fullResponse += text;
+            fullResponse += text;  // Add to our accumulated response
+            // Send chunk to frontend in SSE format: "data: {...}\n\n"
             res.write(`data: ${JSON.stringify({ type: 'text', content: text })}\n\n`);
         });
 
+        // 'message' event fires when the response is complete
         stream.on('message', (message) => {
-            // Save assistant response if user is authenticated
+            // Save the AI's response to database if user is logged in
             if (req.user && actualConversationId) {
                 addMessage(actualConversationId, req.user.id, 'assistant', fullResponse);
             }
 
+            // Send completion signal to frontend
             res.write(`data: ${JSON.stringify({
                 type: 'done',
                 message,
-                conversationId: actualConversationId
+                conversationId: actualConversationId  // Send back conversation ID for future messages
             })}\n\n`);
-            res.end();
+            res.end();  // Close the connection
         });
 
+        // 'error' event fires if something goes wrong with the AI request
         stream.on('error', (error) => {
             console.error('Stream error:', error);
             res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
@@ -199,6 +277,9 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
     }
 });
 
+// ============================================================================
+// START THE SERVER
+// ============================================================================
 app.listen(PORT, () => {
     console.log(`Wright server running on http://localhost:${PORT}`);
 });

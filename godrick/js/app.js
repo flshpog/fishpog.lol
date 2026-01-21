@@ -1,26 +1,49 @@
-class WrightChat {
-    constructor() {
-        this.messages = [];
-        this.currentChartId = 0;
-        this.charts = new Map();
-        this.currentConversationId = null;
-        this.conversations = [];
+// ============================================================================
+// WRIGHT CHATBOT - FRONTEND APPLICATION (app.js)
+// ============================================================================
+// This file controls the entire user interface. It handles:
+//   1. Capturing user input and displaying messages
+//   2. Sending messages to the backend server
+//   3. Receiving and displaying streaming responses in real-time
+//   4. Rendering special "artifacts" (charts, HTML previews, SVG images)
+//   5. Managing user authentication state (login/logout)
+//   6. Loading and displaying conversation history
+// ============================================================================
 
+class WrightChat {
+    // ========================================================================
+    // CONSTRUCTOR - Runs when the app starts
+    // ========================================================================
+    constructor() {
+        // --- STATE VARIABLES ---
+        // These track the current state of the chat application
+        this.messages = [];              // Array of all messages in current conversation
+        this.currentChartId = 0;         // Counter for unique chart IDs
+        this.charts = new Map();         // Map to store Chart.js instances (for cleanup)
+        this.currentConversationId = null;  // ID of current conversation (null if new)
+        this.conversations = [];         // List of user's saved conversations
+
+        // --- DOM ELEMENT REFERENCES ---
+        // We grab all the HTML elements we need to interact with
+        // This makes it easy to reference them later without querying the DOM repeatedly
         this.elements = {
-            chatContainer: document.getElementById('chatContainer'),
-            messagesContainer: document.getElementById('messages'),
-            welcomeScreen: document.getElementById('welcomeScreen'),
-            messageInput: document.getElementById('messageInput'),
-            sendBtn: document.getElementById('sendBtn'),
-            newChatBtn: document.getElementById('newChatBtn'),
-            // Auth elements
-            authButtons: document.getElementById('authButtons'),
-            userMenu: document.getElementById('userMenu'),
+            // Main chat elements
+            chatContainer: document.getElementById('chatContainer'),      // Scrollable chat area
+            messagesContainer: document.getElementById('messages'),       // Where messages appear
+            welcomeScreen: document.getElementById('welcomeScreen'),      // Initial welcome view
+            messageInput: document.getElementById('messageInput'),        // Text input field
+            sendBtn: document.getElementById('sendBtn'),                  // Send button
+            newChatBtn: document.getElementById('newChatBtn'),            // New chat button
+
+            // Authentication UI elements
+            authButtons: document.getElementById('authButtons'),          // Login button container
+            userMenu: document.getElementById('userMenu'),                // Logged-in user menu
             loginBtn: document.getElementById('loginBtn'),
             logoutBtn: document.getElementById('logoutBtn'),
             userAvatar: document.getElementById('userAvatar'),
             userName: document.getElementById('userName'),
-            // Modal elements
+
+            // Login/Signup modal elements
             authModal: document.getElementById('authModal'),
             modalOverlay: document.getElementById('modalOverlay'),
             modalClose: document.getElementById('modalClose'),
@@ -29,12 +52,15 @@ class WrightChat {
             signupForm: document.getElementById('signupForm'),
             loginError: document.getElementById('loginError'),
             signupError: document.getElementById('signupError'),
-            // OAuth buttons
+
+            // OAuth buttons (Google/GitHub login)
             googleLoginBtn: document.getElementById('googleLoginBtn'),
             githubLoginBtn: document.getElementById('githubLoginBtn'),
-            // Conversation list
+
+            // Sidebar conversation list
             conversationList: document.getElementById('conversationList'),
-            // Settings elements
+
+            // Settings modal elements
             settingsBtn: document.getElementById('settingsBtn'),
             settingsModal: document.getElementById('settingsModal'),
             settingsModalOverlay: document.getElementById('settingsModalOverlay'),
@@ -46,42 +72,52 @@ class WrightChat {
             resetColorBtn: document.getElementById('resetColorBtn')
         };
 
-        this.initializeEventListeners();
-        this.initializeAuth();
-        this.initializeSettings();
+        // --- INITIALIZE THE APP ---
+        this.initializeEventListeners();  // Set up click handlers, etc.
+        this.initializeAuth();            // Set up authentication
+        this.initializeSettings();        // Set up theme/font settings
     }
 
+    // ========================================================================
+    // AUTHENTICATION METHODS
+    // ========================================================================
+
     initializeAuth() {
-        // Set up auth state change callback
+        // When auth state changes (login/logout), update the UI
         authManager.onAuthChange = (user) => this.handleAuthChange(user);
 
-        // Check if already logged in
+        // Check if user is already logged in (from a previous session)
         if (authManager.user) {
             this.handleAuthChange(authManager.user);
         }
     }
 
     handleAuthChange(user) {
+        // This runs whenever the user logs in or out
         if (user) {
-            // Logged in
+            // --- USER LOGGED IN ---
+            // Hide login button, show user menu
             this.elements.authButtons.classList.add('hidden');
             this.elements.userMenu.classList.remove('hidden');
             this.elements.userName.textContent = user.display_name || user.email;
+            // Show first letter of name as avatar fallback
             this.elements.userAvatar.textContent = (user.display_name || user.email || 'U')[0].toUpperCase();
 
+            // If user has a profile picture (from Google/GitHub OAuth), show it
             if (user.avatar_url) {
                 this.elements.userAvatar.style.backgroundImage = `url(${user.avatar_url})`;
                 this.elements.userAvatar.style.backgroundSize = 'cover';
                 this.elements.userAvatar.textContent = '';
             }
 
-            // Load conversations
+            // Load user's saved conversations from the server
             this.loadConversations();
-            // Load preferences from server
+            // Load user's theme preferences
             this.loadUserPreferences();
             this.closeAuthModal();
         } else {
-            // Logged out
+            // --- USER LOGGED OUT ---
+            // Show login button, hide user menu
             this.elements.authButtons.classList.remove('hidden');
             this.elements.userMenu.classList.add('hidden');
             this.elements.userAvatar.style.backgroundImage = '';
@@ -90,29 +126,35 @@ class WrightChat {
         }
     }
 
+    // ========================================================================
+    // EVENT LISTENERS - Connect user actions to code
+    // ========================================================================
+
     initializeEventListeners() {
-        // Send button click
+        // --- SEND MESSAGE ---
+        // Click send button to send message
         this.elements.sendBtn.addEventListener('click', () => this.sendMessage());
 
-        // Enter to send (Shift+Enter for new line)
+        // Press Enter to send (Shift+Enter for new line)
         this.elements.messageInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
+                e.preventDefault();  // Prevent newline
                 this.sendMessage();
             }
         });
 
-        // Auto-resize textarea
+        // Auto-resize the input textarea as user types
         this.elements.messageInput.addEventListener('input', (e) => {
             e.target.style.height = 'auto';
             e.target.style.height = e.target.scrollHeight + 'px';
-            this.updateSendButton();
+            this.updateSendButton();  // Enable/disable send button based on content
         });
 
-        // New chat button
+        // --- NEW CHAT ---
         this.elements.newChatBtn.addEventListener('click', () => this.newChat());
 
-        // Suggestion buttons
+        // --- SUGGESTION BUTTONS ---
+        // Quick prompts on the welcome screen
         document.querySelectorAll('.suggestion-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const prompt = btn.getAttribute('data-prompt');
@@ -122,28 +164,26 @@ class WrightChat {
             });
         });
 
-        // Auth modal
+        // --- AUTHENTICATION MODAL ---
         this.elements.loginBtn?.addEventListener('click', () => this.openAuthModal());
         this.elements.modalOverlay?.addEventListener('click', () => this.closeAuthModal());
         this.elements.modalClose?.addEventListener('click', () => this.closeAuthModal());
         this.elements.logoutBtn?.addEventListener('click', () => this.logout());
 
-        // Auth tabs
+        // Switch between Login and Signup tabs
         this.elements.authTabs.forEach(tab => {
             tab.addEventListener('click', () => this.switchAuthTab(tab.dataset.tab));
         });
 
-        // Login form
+        // Form submissions
         this.elements.loginForm?.addEventListener('submit', (e) => this.handleLogin(e));
-
-        // Signup form
         this.elements.signupForm?.addEventListener('submit', (e) => this.handleSignup(e));
 
-        // OAuth buttons
+        // OAuth login buttons (Google/GitHub)
         this.elements.googleLoginBtn?.addEventListener('click', () => authManager.loginWithGoogle());
         this.elements.githubLoginBtn?.addEventListener('click', () => authManager.loginWithGithub());
 
-        // Settings modal
+        // --- SETTINGS MODAL ---
         this.elements.settingsBtn?.addEventListener('click', () => this.openSettingsModal());
         this.elements.settingsModalOverlay?.addEventListener('click', () => this.closeSettingsModal());
         this.elements.settingsModalClose?.addEventListener('click', () => this.closeSettingsModal());
@@ -421,26 +461,33 @@ class WrightChat {
         this.renderConversationList();
     }
 
-    async sendMessage() {
-        const content = this.elements.messageInput.value.trim();
-        if (!content) return;
+    // ========================================================================
+    // CORE CHAT FUNCTIONALITY - Sending and receiving messages
+    // ========================================================================
 
-        // Hide welcome screen
+    async sendMessage() {
+        // Get the message text and remove extra whitespace
+        const content = this.elements.messageInput.value.trim();
+        if (!content) return;  // Don't send empty messages
+
+        // Hide the welcome screen (first message hides it)
         this.elements.welcomeScreen.style.display = 'none';
 
-        // Add user message
+        // Display the user's message in the chat
         this.addMessage('user', content);
+        // Add to our internal message array (this gets sent to the API)
         this.messages.push({ role: 'user', content });
 
-        // Clear input
+        // Clear the input field
         this.elements.messageInput.value = '';
         this.elements.messageInput.style.height = 'auto';
         this.updateSendButton();
 
-        // Add assistant message placeholder
+        // Create a placeholder for the AI's response (shows typing indicator)
         const assistantMessageId = this.addMessage('assistant', '', true);
 
         try {
+            // Stream the response from the server (this is where the magic happens!)
             await this.streamResponse(assistantMessageId);
         } catch (error) {
             console.error('Error:', error);
@@ -493,23 +540,33 @@ class WrightChat {
         return marked.parse(content);
     }
 
+    // ========================================================================
+    // ARTIFACT PROCESSING - Special content types (Charts, HTML, SVG)
+    // ========================================================================
+    // When Claude outputs special code blocks (chart-data, html-preview, svg-image),
+    // we detect them and replace the raw code with interactive rendered content.
+    // This is what makes Wright special - it can generate visual artifacts!
+
     processArtifacts(contentDiv) {
-        // Process chart-data artifacts
-        this.processChartData(contentDiv);
-        // Process HTML preview artifacts
-        this.processHtmlPreviews(contentDiv);
-        // Process SVG image artifacts
-        this.processSvgImages(contentDiv);
+        // Process each type of special artifact
+        this.processChartData(contentDiv);    // Interactive charts
+        this.processHtmlPreviews(contentDiv); // Live HTML previews
+        this.processSvgImages(contentDiv);    // Vector graphics
     }
 
+    // --- CHART PROCESSING ---
+    // Finds ```chart-data blocks and renders them as interactive Chart.js charts
     processChartData(contentDiv) {
+        // Find all code blocks marked as "chart-data"
         const codeBlocks = contentDiv.querySelectorAll('pre code.language-chart-data');
 
         codeBlocks.forEach(codeBlock => {
             try {
+                // Parse the JSON inside the code block
                 const jsonText = codeBlock.textContent;
                 const chartData = JSON.parse(jsonText);
 
+                // Create a container for the chart
                 const chartId = `chart-${this.currentChartId++}`;
                 const chartContainer = document.createElement('div');
                 chartContainer.className = 'chart-container';
@@ -520,9 +577,11 @@ class WrightChat {
                     </div>
                 `;
 
+                // Replace the code block with the chart container
                 const preElement = codeBlock.parentElement;
                 preElement.parentElement.replaceChild(chartContainer, preElement);
 
+                // Render the actual chart using Chart.js
                 this.renderChart(chartId, chartData);
             } catch (error) {
                 console.error('Error parsing chart data:', error);
@@ -530,6 +589,8 @@ class WrightChat {
         });
     }
 
+    // --- HTML PREVIEW PROCESSING ---
+    // Finds ```html-preview blocks and renders them in sandboxed iframes
     processHtmlPreviews(contentDiv) {
         const codeBlocks = contentDiv.querySelectorAll('pre code.language-html-preview');
 
@@ -537,6 +598,7 @@ class WrightChat {
             try {
                 const htmlContent = codeBlock.textContent;
 
+                // Create an artifact container with header and iframe
                 const artifactContainer = document.createElement('div');
                 artifactContainer.className = 'artifact-container html-artifact';
                 artifactContainer.innerHTML = `
@@ -555,12 +617,15 @@ class WrightChat {
                     </div>
                 `;
 
+                // Replace the code block with the artifact container
                 const preElement = codeBlock.parentElement;
                 preElement.parentElement.replaceChild(artifactContainer, preElement);
 
+                // Load the HTML into the iframe using srcdoc (safer than src)
                 const iframe = artifactContainer.querySelector('iframe');
                 iframe.srcdoc = htmlContent;
 
+                // "Open in new tab" button
                 const expandBtn = artifactContainer.querySelector('.artifact-expand-btn');
                 expandBtn.addEventListener('click', () => {
                     const newWindow = window.open('', '_blank');
@@ -573,6 +638,8 @@ class WrightChat {
         });
     }
 
+    // --- SVG IMAGE PROCESSING ---
+    // Finds ```svg-image blocks and renders them as inline SVG with download option
     processSvgImages(contentDiv) {
         const codeBlocks = contentDiv.querySelectorAll('pre code.language-svg-image');
 
@@ -580,6 +647,7 @@ class WrightChat {
             try {
                 const svgContent = codeBlock.textContent;
 
+                // Create an artifact container with the SVG rendered inline
                 const artifactContainer = document.createElement('div');
                 artifactContainer.className = 'artifact-container svg-artifact';
                 artifactContainer.innerHTML = `
@@ -598,9 +666,11 @@ class WrightChat {
                     </div>
                 `;
 
+                // Replace the code block with the artifact container
                 const preElement = codeBlock.parentElement;
                 preElement.parentElement.replaceChild(artifactContainer, preElement);
 
+                // Download button - creates a blob and triggers download
                 const downloadBtn = artifactContainer.querySelector('.artifact-download-btn');
                 downloadBtn.addEventListener('click', () => {
                     const blob = new Blob([svgContent], { type: 'image/svg+xml' });
@@ -609,7 +679,7 @@ class WrightChat {
                     a.href = url;
                     a.download = 'wright-image.svg';
                     a.click();
-                    URL.revokeObjectURL(url);
+                    URL.revokeObjectURL(url);  // Clean up the blob URL
                 });
             } catch (error) {
                 console.error('Error processing SVG image:', error);
@@ -662,18 +732,27 @@ class WrightChat {
         this.charts.set(chartId, chart);
     }
 
+    // ========================================================================
+    // STREAMING RESPONSE - Real-time message reception using Server-Sent Events
+    // ========================================================================
+    // This method receives the AI's response word-by-word as it's being generated.
+    // Instead of waiting for the entire response, we update the UI in real-time.
+    // This creates the "typing" effect you see in ChatGPT and Claude.
+
     async streamResponse(messageId) {
+        // Set up request headers (include auth token if logged in)
         const headers = {
             'Content-Type': 'application/json',
-            ...authManager.getAuthHeader()
+            ...authManager.getAuthHeader()  // Adds "Authorization: Bearer <token>" if logged in
         };
 
+        // --- STEP 1: Send the request to our backend ---
         const response = await fetch(`${API_URL}/api/chat`, {
             method: 'POST',
             headers,
             body: JSON.stringify({
-                messages: this.messages,
-                conversationId: this.currentConversationId
+                messages: this.messages,              // Full conversation history
+                conversationId: this.currentConversationId  // null for new conversations
             })
         });
 
@@ -681,36 +760,50 @@ class WrightChat {
             throw new Error('Network response was not ok');
         }
 
+        // --- STEP 2: Set up streaming reader ---
+        // The response body is a stream, not a single blob of text
         const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let accumulatedText = '';
+        const decoder = new TextDecoder();  // Converts bytes to text
+        let accumulatedText = '';  // Build up the full response
 
+        // --- STEP 3: Read the stream chunk by chunk ---
         while (true) {
+            // Read the next chunk from the stream
             const { done, value } = await reader.read();
 
-            if (done) break;
+            if (done) break;  // Stream finished
 
+            // Decode the bytes into text
             const chunk = decoder.decode(value, { stream: true });
+            // SSE format: each message is on its own line
             const lines = chunk.split('\n');
 
+            // --- STEP 4: Process each SSE message ---
             for (const line of lines) {
+                // SSE messages start with "data: "
                 if (line.startsWith('data: ')) {
                     try {
+                        // Parse the JSON after "data: "
                         const data = JSON.parse(line.slice(6));
 
                         if (data.type === 'text') {
+                            // --- NEW TEXT CHUNK ---
+                            // Add to accumulated text and update the UI
                             accumulatedText += data.content;
                             this.updateMessage(messageId, accumulatedText);
-                            this.scrollToBottom();
+                            this.scrollToBottom();  // Keep scrolled to bottom
                         } else if (data.type === 'done') {
+                            // --- RESPONSE COMPLETE ---
+                            // Get the final full text and update
                             const fullText = data.message.content[0].text;
                             this.updateMessage(messageId, fullText);
+                            // Add to our message history for context in future messages
                             this.messages.push({ role: 'assistant', content: fullText });
 
-                            // Update conversation ID if new conversation was created
+                            // If this was a new conversation, save the ID for future messages
                             if (data.conversationId && !this.currentConversationId) {
                                 this.currentConversationId = data.conversationId;
-                                this.loadConversations(); // Refresh list
+                                this.loadConversations();  // Refresh sidebar
                             }
                         } else if (data.type === 'error') {
                             console.error('Stream error:', data.error);
