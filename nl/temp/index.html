@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nl</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Nunito:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #1a1a2e;
+      --muted: #7d7dff;
+      --cream: #f4f4ff;
+      --paper: #ffffff;
+      --accent: #7d7dff;
+      --accent-soft: #beb5ff;
+      --rule: #e0deff;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--paper);
+      border-bottom: 2px solid var(--accent-soft);
+      padding: 2.5rem 2rem 1.5rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    header p.tagline {
+      margin-top: 0.5rem;
+      color: var(--accent-soft);
+      font-weight: 300;
+      font-size: 1rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+
+
+    /* ── LAYOUT ── */
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 6rem;
+    }
+
+    /* ── ENTRY ── */
+    .entry {
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      border-top: 3px solid var(--accent);
+      padding: 2.5rem 2.5rem 2rem;
+      margin-bottom: 3rem;
+      position: relative;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .entry-meta {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .entry-date {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 0.95rem;
+      color: var(--accent);
+    }
+
+    .entry-tag {
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--cream);
+      border: 1px solid var(--accent-soft);
+      padding: 0.2rem 0.55rem;
+      border-radius: 2px;
+    }
+
+    .entry h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.5rem, 3.5vw, 2rem);
+      line-height: 1.2;
+      margin-bottom: 1.2rem;
+    }
+
+    .entry p {
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: #2e2e45;
+      margin-bottom: 1rem;
+    }
+
+    .entry p:last-of-type { margin-bottom: 0; }
+
+    /* ── PHOTO GRID ── */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+
+    .photo-grid img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      display: block;
+      border: 1px solid var(--rule);
+      filter: saturate(0.9);
+      transition: filter 0.3s, transform 0.3s;
+    }
+
+    .photo-grid img:hover {
+      filter: saturate(1.1);
+      transform: scale(1.02);
+      z-index: 1;
+      position: relative;
+    }
+
+    /* single wide photo */
+    .photo-single img {
+      width: 100%;
+      max-height: 420px;
+      object-fit: cover;
+      border: 1px solid var(--rule);
+      margin: 1.5rem 0;
+      display: block;
+    }
+
+    figcaption {
+      font-size: 0.82rem;
+      color: var(--accent-soft);
+      margin-top: 0.4rem;
+      font-style: italic;
+    }
+
+    /* ── RULE DIVIDER ── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin: 2rem 0 1.5rem;
+    }
+    .divider::before,
+    .divider::after { content: ''; flex: 1; height: 1px; background: var(--rule); }
+    .divider span { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent-soft); white-space: nowrap; }
+
+    /* ── BLOCKQUOTE ── */
+    blockquote {
+      border-left: 3px solid var(--accent-soft);
+      padding: 0.6rem 1.2rem;
+      margin: 1.5rem 0;
+      color: var(--accent);
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1.15rem;
+      line-height: 1.6;
+      background: var(--cream);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.8rem;
+      color: var(--accent-soft);
+      border-top: 1px solid var(--rule);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 520px) {
+      .entry { padding: 1.5rem 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════
+       HEADER — Edit your blog name here
+  ════════════════════════════════════ -->
+  <header>
+    <h1>nl</h1>
+    <p class="tagline">who even cares to be honest</p>
+
+  </header>
+
+  <main>
+
+    <!-- ═══════════════════════════════════
+         ENTRY 1 — Copy this block to add
+         a new entry. Delete what you don't
+         need (photos, blockquote, etc.)
+    ════════════════════════════════════ -->
+    <article class="entry">
+
+      <!-- Date + optional tag -->
+      <div class="entry-meta">
+        <span class="entry-date">February 12, 2026</span>
+        <span class="entry-tag">Life</span>  <!-- delete if unwanted -->
+      </div>
+
+      <!-- Title -->
+      <h2>A Day Worth Writing About</h2>
+
+      <!-- Body text — add as many <p> tags as you like -->
+      <p>
+        Write your entry here. This is the main body of your post. You can
+        add as many paragraphs as you need — just copy the <code>&lt;p&gt;</code>
+        tag and fill it in.
+      </p>
+      <p>
+        Keep going with more thoughts, reflections, or anything on your mind.
+        The layout will grow naturally with your content.
+      </p>
+
+      <!-- ── OPTIONAL: single wide photo ── -->
+      <figure class="photo-single">
+        <img src="https://placehold.co/760x420?text=Your+Photo+Here" alt="Photo description" />
+        <figcaption>Add a caption for your photo here.</figcaption>
+      </figure>
+
+      <!-- ── OPTIONAL: blockquote / highlight ── -->
+      <blockquote>
+        "A sentence you want to stand out — a quote, a thought, or a small truth."
+      </blockquote>
+
+      <!-- More body text after the photo -->
+      <p>
+        Continue writing below the photo. Mix text and images however feels right.
+      </p>
+
+    </article>
+
+
+    <!-- ═══════════════════════════════════
+         ENTRY 2 — Example with photo grid
+    ════════════════════════════════════ -->
+    <article class="entry">
+
+      <div class="entry-meta">
+        <span class="entry-date">January 28, 2026</span>
+        <span class="entry-tag">Travel</span>
+      </div>
+
+      <h2>Weekend in the Mountains</h2>
+
+      <p>
+        Another entry showing off the photo grid layout. Great for when you
+        have a bunch of pictures from the same day or trip.
+      </p>
+
+      <!-- ── OPTIONAL: photo grid (2–4 images works best) ── -->
+      <div class="photo-grid">
+        <img src="https://placehold.co/400x300?text=Photo+1" alt="Photo 1" />
+        <img src="https://placehold.co/400x300?text=Photo+2" alt="Photo 2" />
+        <img src="https://placehold.co/400x300?text=Photo+3" alt="Photo 3" />
+      </div>
+
+      <p>
+        Write whatever came after — a reflection, a memory, how the trip ended.
+      </p>
+
+    </article>
+
+
+    <!-- ═══════════════════════════════════
+         ENTRY 3 — Text only (no photos)
+    ════════════════════════════════════ -->
+    <article class="entry">
+
+      <div class="entry-meta">
+        <span class="entry-date">January 5, 2026</span>
+      </div>
+
+      <h2>Just Some Thoughts</h2>
+
+      <p>
+        Not every entry needs a photo. This one is text only. Write freely —
+        a list of things you're grateful for, a short reflection, a poem,
+        whatever you like.
+      </p>
+
+      <div class="divider"><span>✦</span></div>
+
+      <p>
+        The divider above is a nice visual break for longer entries. Use it
+        to separate sections within a single post.
+      </p>
+
+    </article>
+
+  </main>
+
+  <footer>
+    <p>© 2026 fishpogs newsletter · Made with care</p>
+  </footer>
+
+</body>
+</html>
