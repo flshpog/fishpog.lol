@@ -121,6 +121,7 @@
       font-size: 12px;
     }
 
+
     .send-btn {
       width: 100%;
       padding: 12px;
@@ -231,7 +232,7 @@
     const sendBtn = document.getElementById('sendBtn');
     const status = document.getElementById('status');
 
-    // persist webhook url in localstorage so you don't retype it
+    // persist in localstorage so you don't retype
     webhookUrl.value = localStorage.getItem('webhookUrl') || '';
     username.value = localStorage.getItem('webhookUsername') || '';
     avatarUrl.value = localStorage.getItem('webhookAvatar') || '';
