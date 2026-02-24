@@ -19,6 +19,7 @@
 <meta name="twitter:description" content="Guess the hidden word in 6 tries. A new puzzle is available each day." />
 <meta name="twitter:image" content="https://fishpog.lol/samdle/embed.png" />
 
+
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -80,7 +81,7 @@
     flex-direction: column;
     gap: 5px;
     width: min(350px, calc(100vw - 40px));
-    height: min(420px, calc(100dvh - 50px - 210px - 10px));
+    height: min(420px, calc(100dvh - 50px - clamp(150px, 28vh, 210px) - 10px));
   }
 
   .board-row {
@@ -95,7 +96,7 @@
     align-items: center;
     justify-content: center;
     border: 2px solid var(--tone-4);
-    font-size: 2rem;
+    font-size: clamp(1.2rem, 5vw, 2rem);
     font-weight: 700;
     text-transform: uppercase;
     user-select: none;
@@ -128,34 +129,36 @@
 
   /* KEYBOARD */
   #keyboard {
-    padding: 8px 8px 12px;
+    padding: 6px 4px 10px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 5px;
     flex-shrink: 0;
   }
-  .kb-row { display: flex; justify-content: center; gap: 6px; }
+  .kb-row { display: flex; justify-content: center; gap: 4px; }
 
   .key {
-    height: 58px;
-    min-width: 43px;
+    height: clamp(40px, 7vh, 58px);
+    width: clamp(28px, 8.5vw, 43px);
     border-radius: 4px;
     border: none;
     background: var(--key-bg);
     color: var(--tone-1);
-    font-size: 0.85rem;
+    font-size: clamp(0.6rem, 2.5vw, 0.85rem);
     font-weight: 700;
     cursor: pointer;
     text-transform: uppercase;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 6px;
+    padding: 0;
     user-select: none;
     font-family: inherit;
     transition: background 0.1s, color 0.1s;
+    flex-shrink: 0;
   }
-  .key.wide    { min-width: 65px; font-size: 0.75rem; }
+  .key.wide    { width: clamp(42px, 13vw, 65px); font-size: clamp(0.55rem, 2vw, 0.75rem); }
+  .key.wide[data-key="⌫"] { font-size: clamp(1rem, 4vw, 1.3rem); }
   .key.correct { background: var(--correct); color: white; }
   .key.present { background: var(--present); color: white; }
   .key.absent  { background: var(--absent);  color: white; }
