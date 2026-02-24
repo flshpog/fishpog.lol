@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Samdle - A daily word game</title>
+
+<!-- Discord / Open Graph Embed -->
+<meta property="og:title" content="SAMDLE" />
+<meta property="og:description" content="Guess the word in 6 tries. A daily word game — the answer is always NICKY. 🟩" />
+<meta property="og:image" content="embed.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:type" content="website" />
+<meta name="theme-color" content="#6aaa64" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="SAMDLE" />
+<meta name="twitter:description" content="Guess the word in 6 tries. The answer is always NICKY. 🟩" />
+<meta name="twitter:image" content="embed.png" />
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --correct: #6aaa64;
+    --present: #c9b458;
+    --absent:  #787c7e;
+    --tone-1:  #1a1a1b;
+    --tone-3:  #878a8c;
+    --tone-4:  #d3d6da;
+    --white:   #ffffff;
+    --key-bg:  #d3d6da;
+  }
+
+  body {
+    font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--white);
+    color: var(--tone-1);
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 50px;
+    border-bottom: 1px solid var(--tone-4);
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+  .header-side { display: flex; align-items: center; gap: 8px; min-width: 100px; }
+  .header-side.right { justify-content: flex-end; }
+  .title {
+    font-size: 1.5rem; font-weight: 700;
+    letter-spacing: 0.1rem; text-transform: uppercase;
+    flex: 1; text-align: center; user-select: none;
+  }
+  .icon-btn {
+    background: none; border: none; cursor: pointer;
+    padding: 4px; color: var(--tone-1); display: flex; align-items: center;
+  }
+  .icon-btn svg { width: 24px; height: 24px; }
+
+  /* BOARD */
+  #board-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  #board {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: min(350px, calc(100vw - 40px));
+    height: min(420px, calc(100dvh - 50px - 210px - 10px));
+  }
+
+  .board-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    flex: 1;
+  }
+
+  .tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--tone-4);
+    font-size: 2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    user-select: none;
+    color: var(--tone-1);
+    background: var(--white);
+  }
+
+  .tile.filled   { border-color: var(--tone-3); animation: pop 0.1s ease-in-out; }
+  .tile.correct  { background: var(--correct); border-color: var(--correct); color: white; }
+  .tile.present  { background: var(--present); border-color: var(--present); color: white; }
+  .tile.absent   { background: var(--absent);  border-color: var(--absent);  color: white; }
+  .tile.bounce   { animation: bounce 0.7s ease; }
+
+  @keyframes pop {
+    0%,100% { transform: scale(1); }
+    50%     { transform: scale(1.12); }
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    40%     { transform: translateY(-20px); }
+    60%     { transform: translateY(5px); }
+    80%     { transform: translateY(-10px); }
+  }
+  .board-row.shake { animation: shake 0.5s ease; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%,60% { transform: translateX(-4px); }
+    40%,80% { transform: translateX(4px); }
+  }
+
+  /* KEYBOARD */
+  #keyboard {
+    padding: 8px 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .kb-row { display: flex; justify-content: center; gap: 6px; }
+
+  .key {
+    height: 58px;
+    min-width: 43px;
+    border-radius: 4px;
+    border: none;
+    background: var(--key-bg);
+    color: var(--tone-1);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    user-select: none;
+    font-family: inherit;
+    transition: background 0.1s, color 0.1s;
+  }
+  .key.wide    { min-width: 65px; font-size: 0.75rem; }
+  .key.correct { background: var(--correct); color: white; }
+  .key.present { background: var(--present); color: white; }
+  .key.absent  { background: var(--absent);  color: white; }
+
+  /* TOASTS */
+  #toasts {
+    position: fixed;
+    top: 60px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    z-index: 100; pointer-events: none;
+  }
+  .toast {
+    background: var(--tone-1); color: white;
+    padding: 10px 16px; border-radius: 4px;
+    font-weight: 700; font-size: 0.85rem;
+    white-space: nowrap;
+    animation: toastAnim 1.8s forwards;
+  }
+  @keyframes toastAnim {
+    0%   { opacity: 0; transform: translateY(-6px); }
+    15%  { opacity: 1; transform: translateY(0); }
+    70%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* END MODAL */
+  #modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(255,255,255,0.85);
+    z-index: 200; align-items: center; justify-content: center;
+  }
+  #modal-overlay.open { display: flex; }
+  #modal {
+    background: white; border: 1px solid var(--tone-4);
+    border-radius: 8px; padding: 32px 24px;
+    max-width: 340px; width: 90%;
+    text-align: center;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  }
+  #modal h2 { font-size: 1rem; letter-spacing: 0.15rem; text-transform: uppercase; margin-bottom: 12px; }
+  #modal .reveal { font-size: 2.2rem; font-weight: 700; letter-spacing: 0.3rem; color: var(--correct); margin-bottom: 12px; }
+  #modal p { font-size: 0.875rem; color: var(--tone-3); margin-bottom: 20px; }
+  #play-again {
+    background: var(--correct); color: white;
+    border: none; border-radius: 4px;
+    padding: 14px 28px; font-size: 0.95rem;
+    font-weight: 700; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 0.05rem;
+    font-family: inherit;
+  }
+
+  /* HELP MODAL */
+  #help-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(255,255,255,0.97);
+    z-index: 300; align-items: flex-start;
+    justify-content: center; padding-top: 60px;
+  }
+  #help-overlay.open { display: flex; }
+  #help-box {
+    background: white; border: 1px solid var(--tone-4);
+    border-radius: 8px; padding: 28px;
+    max-width: 460px; width: 90%;
+    position: relative; font-size: 0.85rem; line-height: 1.6;
+  }
+  #help-box h2 {
+    text-align: center; font-size: 1rem;
+    letter-spacing: 0.15rem; text-transform: uppercase;
+    padding-bottom: 16px; border-bottom: 1px solid var(--tone-4);
+    margin-bottom: 16px;
+  }
+  .help-close {
+    position: absolute; top: 12px; right: 14px;
+    background: none; border: none; font-size: 1.3rem;
+    cursor: pointer; color: var(--tone-3);
+  }
+  .ex-row { display: flex; gap: 4px; margin: 8px 0; }
+  .ex-tile {
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 1rem; text-transform: uppercase;
+    border: 2px solid var(--tone-4);
+  }
+  .ex-tile.correct { background: var(--correct); border-color: var(--correct); color: white; }
+  .ex-tile.present { background: var(--present); border-color: var(--present); color: white; }
+  .ex-tile.absent  { background: var(--absent);  border-color: var(--absent);  color: white; }
+  hr.div { border: none; border-top: 1px solid var(--tone-4); margin: 14px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-side left">
+    <button class="icon-btn" id="help-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </button>
+  </div>
+  <div class="title">Samdle</div>
+  <div class="header-side right">
+    <button class="icon-btn">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <rect x="2" y="14" width="4" height="8" rx="1"/>
+        <rect x="9" y="10" width="4" height="12" rx="1"/>
+        <rect x="16" y="6" width="4" height="16" rx="1"/>
+      </svg>
+    </button>
+    <button class="icon-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<div id="toasts"></div>
+
+<div id="board-container">
+  <div id="board"></div>
+</div>
+
+<div id="keyboard">
+  <div class="kb-row" id="kb-0"></div>
+  <div class="kb-row" id="kb-1"></div>
+  <div class="kb-row" id="kb-2"></div>
+</div>
+
+<div id="modal-overlay">
+  <div id="modal">
+    <h2 id="modal-title"></h2>
+    <div class="reveal">NICKY</div>
+    <p id="modal-msg"></p>
+    <button id="play-again">Play Again</button>
+  </div>
+</div>
+
+<div id="help-overlay">
+  <div id="help-box">
+    <h2>How To Play</h2>
+    <button class="help-close" id="help-close">✕</button>
+    <p>Guess the <strong>SAMDLE</strong> in 6 tries.</p>
+    <p>Each guess must be a valid 5-letter word. Press Enter to submit.</p>
+    <p>The colour of the tiles changes to show how close your guess was.</p>
+    <hr class="div">
+    <p><strong>Examples</strong></p>
+    <div class="ex-row">
+      <div class="ex-tile correct">N</div><div class="ex-tile">I</div>
+      <div class="ex-tile">C</div><div class="ex-tile">K</div><div class="ex-tile">Y</div>
+    </div>
+    <p><strong>N</strong> is in the word and in the correct spot.</p>
+    <div class="ex-row">
+      <div class="ex-tile">S</div><div class="ex-tile present">I</div>
+      <div class="ex-tile">L</div><div class="ex-tile">V</div><div class="ex-tile">A</div>
+    </div>
+    <p><strong>I</strong> is in the word but in the wrong spot.</p>
+    <div class="ex-row">
+      <div class="ex-tile">T</div><div class="ex-tile">R</div>
+      <div class="ex-tile absent">A</div><div class="ex-tile">C</div><div class="ex-tile">K</div>
+    </div>
+    <p><strong>A</strong> is not in the word in any spot.</p>
+    <hr class="div">
+    <p style="text-align:center">There is only <strong>one word</strong> — it's always <strong>NICKY</strong>! 🎉</p>
+  </div>
+</div>
+
+<script>
+  const ANSWER = 'NICKY';
+  const MAX_ROWS = 6;
+  const WORD_LEN = 5;
+
+  const VALID_WORDS = new Set([
+    'NICKY','ABOUT','ABOVE','ABUSE','ACHED','ACHES','ACIDS','ACRES','ACTED','ACUTE',
+    'ADDED','ADMIT','ADOBE','ADOPT','ADULT','AFTER','AGAIN','AGENT','AGREE','AHEAD',
+    'AIMED','ALARM','ALBUM','ALERT','ALIEN','ALIGN','ALIKE','ALIVE','ALONE','ALONG',
+    'ALOUD','ALTER','ANGEL','ANGLE','ANGRY','ANKLE','ANNOY','APPLY','ARMED','AROSE',
+    'ARRAY','ASKED','ATTIC','AUDIO','AUDIT','AWAKE','AWARD','AWFUL','BACKS','BADLY',
+    'BADGE','BALLS','BANDS','BANKS','BASED','BASIN','BASIS','BATCH','BEACH','BEARD',
+    'BEAST','BEGAN','BEGIN','BEING','BELOW','BENCH','BIBLE','BIRTH','BLACK','BLADE',
+    'BLAME','BLAND','BLANK','BLAST','BLAZE','BLEED','BLEND','BLIND','BLOCK','BLOOD',
+    'BLOWN','BLUES','BLUNT','BOARD','BOATS','BONDS','BONUS','BOOKS','BOOST','BOUND',
+    'BOXED','BRAIN','BRAND','BRAVE','BREAD','BREAK','BREED','BRIEF','BRING','BRISK',
+    'BROKE','BROWN','BRUSH','BUILD','BUILT','BUNCH','BURNS','BURST','BUYER','CACHE',
+    'CAMPS','CANDY','CARDS','CARRY','CATCH','CAUSE','CAVES','CHAIN','CHAIR','CHALK',
+    'CHAOS','CHARM','CHASE','CHEAP','CHECK','CHEER','CHESS','CHEST','CHIEF','CHILD',
+    'CHIPS','CHOSE','CIVIC','CIVIL','CLAIM','CLASH','CLASS','CLEAN','CLEAR','CLERK',
+    'CLICK','CLIMB','CLOCK','CLONE','CLOSE','CLOTH','CLOUD','COACH','COAST','COMES',
+    'COMIC','COULD','COUNT','COURT','COVER','CRAFT','CRANE','CRASH','CRAZY','CREAM',
+    'CREEK','CRISP','CROSS','CROWD','CRUEL','CRUSH','CURVE','CYCLE','DAILY','DANCE',
+    'DATED','DEALT','DEATH','DEBUT','DELAY','DENSE','DEPTH','DIRTY','DODGE','DOING',
+    'DOORS','DOUBT','DOUGH','DRAFT','DRAIN','DRAMA','DRANK','DRAWN','DREAD','DREAM',
+    'DRESS','DRIFT','DRINK','DRIVE','DROVE','DRUMS','DUSTY','DYING','EAGER','EARLY',
+    'EARTH','EIGHT','ELITE','EMPTY','ENDED','ENEMY','ENJOY','ENTER','ENTRY','EQUAL',
+    'ERROR','EVENT','EVERY','EXACT','EXIST','EXTRA','FACED','FACTS','FAINT','FAITH',
+    'FALSE','FANCY','FATAL','FAULT','FEAST','FIELD','FIFTH','FIFTY','FIGHT','FINAL',
+    'FIRST','FIXED','FLAME','FLASH','FLEET','FLESH','FLIES','FLOAT','FLOOD','FLOOR',
+    'FLOWS','FLUID','FOCUS','FORCE','FORGE','FOUND','FRAME','FRANK','FREED','FRESH',
+    'FRONT','FROST','FRUIT','FULLY','FUNNY','FUZZY','GAMES','GIANT','GIVEN','GLASS',
+    'GLOBE','GLOOM','GLOVE','GOING','GRACE','GRADE','GRAIN','GRAND','GRANT','GRASP',
+    'GRASS','GRAVE','GREED','GREEN','GREET','GRIEF','GRILL','GRIND','GROAN','GROSS',
+    'GROUP','GROWN','GUARD','GUESS','GUIDE','GUILD','GUILT','HABIT','HAPPY','HARSH',
+    'HASTY','HEART','HEAVY','HERBS','HILLS','HIRED','HONOR','HORSE','HOTEL','HOUSE',
+    'HUMID','HUMOR','HURRY','IMAGE','IMPLY','INDEX','INNER','INPUT','INTRO','IRONY',
+    'IVORY','JEWEL','JUDGE','JUICE','JUICY','KEEPS','KNIFE','KNOCK','KNOWN','LABEL',
+    'LARGE','LATER','LAUGH','LAYER','LEADS','LEARN','LEAVE','LEGAL','LEVEL','LIGHT',
+    'LINED','LINKS','LIONS','LIVER','LOCAL','LOGIC','LOVED','LOWER','LUCKY','LUNAR',
+    'MAGIC','MAJOR','MAKER','MANOR','MARCH','MARRY','MATCH','MAYOR','MEANS','MEDAL',
+    'MOIST','MONEY','MONTH','MORAL','MOTOR','MOUTH','MOVED','MOVIE','MUSIC','NOBLE',
+    'NOISE','NORTH','NOTED','NOVEL','NURSE','OCCUR','OCEAN','OFFER','OLDER','OPERA',
+    'ORBIT','ORDER','OTHER','OUGHT','OUTER','OWNED','OZONE','PAINT','PANIC','PAPER',
+    'PARTY','PATCH','PAUSE','PEACE','PEARL','PENNY','PHONE','PHOTO','PIANO','PIECE',
+    'PILOT','PITCH','PIXEL','PIZZA','PLACE','PLAIN','PLANE','PLANT','PLATE','PLAZA',
+    'POINT','POLAR','POWER','PRESS','PRICE','PRIDE','PRIME','PRINT','PRIOR','PRIZE',
+    'PROBE','PROOF','PROSE','PROUD','PROVE','PULSE','PURSE','QUEEN','QUERY','QUICK',
+    'QUIET','QUITE','QUOTA','QUOTE','RADAR','RADIO','RAISE','RALLY','RANGE','RAPID',
+    'RATED','REACH','REALM','REBEL','REFER','REIGN','RELAX','REPAY','REPLY','RESET',
+    'RIDER','RIGID','RISKY','RIVAL','RIVER','ROBOT','ROCKY','ROUGH','ROUND','ROUTE',
+    'ROYAL','RULED','RULER','RUMOR','SAINT','SALAD','SAUCE','SCALE','SCENE','SCOPE',
+    'SCORE','SCOUT','SEIZE','SENSE','SERVE','SEVEN','SHADE','SHALL','SHAME','SHAPE',
+    'SHARE','SHARK','SHARP','SHEER','SHELF','SHELL','SHIFT','SHINE','SHIRT','SHORT',
+    'SHOUT','SHOWN','SIGHT','SKILL','SKULL','SLAVE','SLEEP','SLICE','SLIDE','SLOPE',
+    'SMART','SMILE','SMOKE','SNACK','SOLAR','SOLID','SOLVE','SORRY','SOUND','SOUTH',
+    'SPACE','SPARK','SPEAK','SPEED','SPEND','SPICY','SPINE','SPOKE','SPORT','SQUAD',
+    'STACK','STAFF','STAGE','STALE','STAMP','STAND','STARE','START','STATE','STEAM',
+    'STEEL','STEEP','STEER','STERN','STICK','STIFF','STILL','STOCK','STONE','STOOD',
+    'STORE','STORY','STOVE','STRAP','STRIP','STUDY','STYLE','SUGAR','SUITE','SUNNY',
+    'SUPER','SURGE','SWAMP','SWEAR','SWEEP','SWEET','SWEPT','SWIFT','TABLE','TASTE',
+    'TEACH','TEETH','TEMPT','TENSE','TERMS','THEIR','THEME','THICK','THINK','THIRD',
+    'THORN','THREE','THREW','THROW','TIGER','TIRED','TITLE','TODAY','TOKEN','TOXIC',
+    'TRACK','TRADE','TRAIL','TRAIN','TRAIT','TREND','TRIAL','TRIBE','TRICK','TRIED',
+    'TROOP','TRULY','TRUST','TRUTH','TWIST','UNCLE','UNDER','UNION','UNITY','UNTIL',
+    'UPPER','UPSET','URBAN','USAGE','USUAL','VALID','VALUE','VALVE','VAPOR','VAULT',
+    'VERSE','VIRAL','VISIT','VISTA','VITAL','VIVID','VOICE','VOTER','WAGES','WATER',
+    'WEIGH','WEIRD','WHERE','WHICH','WHILE','WHITE','WHOLE','WHOSE','WIDER','WITCH',
+    'WORLD','WORST','WORTH','WOULD','WOUND','WRITE','WRONG','YACHT','YEARN','YOUNG',
+    'YOUTH','ZEBRA'
+  ]);
+
+  let tiles = [];
+  let currentRow = 0;
+  let currentCol = 0;
+  let gameOver = false;
+
+  function buildBoard() {
+    const board = document.getElementById('board');
+    board.innerHTML = '';
+    tiles = [];
+    for (let r = 0; r < MAX_ROWS; r++) {
+      const row = document.createElement('div');
+      row.className = 'board-row';
+      row.id = `board-row-${r}`;
+      const rowTiles = [];
+      for (let c = 0; c < WORD_LEN; c++) {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        row.appendChild(tile);
+        rowTiles.push(tile);
+      }
+      board.appendChild(row);
+      tiles.push(rowTiles);
+    }
+  }
+
+  const KB_ROWS = [
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L'],
+    ['ENTER','Z','X','C','V','B','N','M','⌫']
+  ];
+
+  function buildKeyboard() {
+    KB_ROWS.forEach((keys, i) => {
+      const row = document.getElementById(`kb-${i}`);
+      row.innerHTML = '';
+      keys.forEach(k => {
+        const btn = document.createElement('button');
+        btn.className = 'key' + (k === 'ENTER' || k === '⌫' ? ' wide' : '');
+        btn.textContent = k;
+        btn.dataset.key = k;
+        btn.addEventListener('click', () => handleKey(k));
+        row.appendChild(btn);
+      });
+    });
+  }
+
+  function handleKey(k) {
+    if (gameOver) return;
+    if (k === '⌫' || k === 'BACKSPACE') deleteLetter();
+    else if (k === 'ENTER') submitGuess();
+    else if (/^[A-Z]$/.test(k)) addLetter(k);
+  }
+
+  function addLetter(letter) {
+    if (currentCol >= WORD_LEN) return;
+    const tile = tiles[currentRow][currentCol];
+    tile.textContent = letter;
+    tile.classList.add('filled');
+    currentCol++;
+  }
+
+  function deleteLetter() {
+    if (currentCol <= 0) return;
+    currentCol--;
+    const tile = tiles[currentRow][currentCol];
+    tile.textContent = '';
+    tile.classList.remove('filled');
+  }
+
+  function submitGuess() {
+    if (currentCol < WORD_LEN) { shakeRow(currentRow); showToast('Not enough letters'); return; }
+    const guess = tiles[currentRow].map(t => t.textContent).join('');
+    if (!VALID_WORDS.has(guess)) { shakeRow(currentRow); showToast('Not in word list'); return; }
+    evaluate(guess);
+  }
+
+  function evaluate(guess) {
+    const result = Array(WORD_LEN).fill('absent');
+    const ans = ANSWER.split('');
+    const g = guess.split('');
+
+    g.forEach((l, i) => { if (l === ans[i]) { result[i] = 'correct'; ans[i] = null; } });
+    g.forEach((l, i) => {
+      if (result[i] === 'correct') return;
+      const idx = ans.indexOf(l);
+      if (idx !== -1) { result[i] = 'present'; ans[idx] = null; }
+    });
+
+    result.forEach((state, i) => {
+      const tile = tiles[currentRow][i];
+      setTimeout(() => {
+        tile.style.transition = 'transform 0.25s ease';
+        tile.style.transform = 'rotateX(-90deg)';
+        setTimeout(() => {
+          tile.classList.remove('filled');
+          tile.classList.add(state);
+          tile.style.transform = 'rotateX(0deg)';
+          updateKey(g[i], state);
+        }, 250);
+      }, i * 300);
+    });
+
+    setTimeout(() => {
+      if (guess === ANSWER) {
+        gameOver = true;
+        tiles[currentRow].forEach((t, i) => setTimeout(() => t.classList.add('bounce'), i * 80));
+        const msgs = ['Genius!','Magnificent!','Impressive!','Splendid!','Great!','Phew!'];
+        showToast(msgs[currentRow] ?? 'Nice!', 2400);
+        setTimeout(() => openModal(true), 2000);
+      } else {
+        currentRow++;
+        currentCol = 0;
+        if (currentRow >= MAX_ROWS) { gameOver = true; setTimeout(() => openModal(false), 400); }
+      }
+    }, WORD_LEN * 300 + 400);
+  }
+
+  function updateKey(letter, state) {
+    const btn = document.querySelector(`[data-key="${letter}"]`);
+    if (!btn) return;
+    const p = { correct: 3, present: 2, absent: 1 };
+    if ((p[state] || 0) > (p[btn.dataset.state] || 0)) {
+      btn.classList.remove('correct','present','absent');
+      btn.classList.add(state);
+      btn.dataset.state = state;
+    }
+  }
+
+  function shakeRow(r) {
+    const row = document.getElementById(`board-row-${r}`);
+    row.classList.add('shake');
+    row.addEventListener('animationend', () => row.classList.remove('shake'), { once: true });
+  }
+
+  function showToast(msg, duration = 1800) {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = msg;
+    document.getElementById('toasts').appendChild(el);
+    setTimeout(() => el.remove(), duration);
+  }
+
+  function openModal(won) {
+    document.getElementById('modal-title').textContent = won ? 'You got it! 🎉' : 'Better luck next time!';
+    document.getElementById('modal-msg').textContent = won
+      ? `You guessed NICKY in ${currentRow + 1} ${currentRow === 0 ? 'try' : 'tries'}!`
+      : 'The word was NICKY. Try again!';
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  document.getElementById('play-again').addEventListener('click', () => {
+    document.getElementById('modal-overlay').classList.remove('open');
+    currentRow = 0; currentCol = 0; gameOver = false;
+    buildBoard(); buildKeyboard();
+  });
+
+  document.getElementById('help-btn').addEventListener('click', () =>
+    document.getElementById('help-overlay').classList.add('open'));
+  document.getElementById('help-close').addEventListener('click', () =>
+    document.getElementById('help-overlay').classList.remove('open'));
+
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.toUpperCase();
+    if (k === 'BACKSPACE') handleKey('BACKSPACE');
+    else if (k === 'ENTER') handleKey('ENTER');
+    else if (/^[A-Z]$/.test(k)) handleKey(k);
+  });
+
+  buildBoard();
+  buildKeyboard();
+</script>
+</body>
+</html>
