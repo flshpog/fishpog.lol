@@ -1,11 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
+    <link rel="icon" type="image/x-icon" href="images/pogger.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>what even is a fish pog</title>
+    <title>yep that's the one</title>
+
 </head>
+
+<style>
+
+    .sentances {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items:center;
+        height: 100vh;
+        margin: 0;
+    }
+
+</style>
+
 <body>
     
+<div class="sentances">
+    <img id="erik" src="images/erik.gif">
+    <p>the site is gone... maybe it will be back soon...</p>
+</div>
+
+<script>
+
+    const rand = Math.floor(Math.random() * 90) + 1;
+    const gif = rand === 1 ? "images/stitches.gif" : "images/erik.gif";
+    document.getElementById("erik").src = gif;
+
+</script>
+
 </body>
+
 </html>
