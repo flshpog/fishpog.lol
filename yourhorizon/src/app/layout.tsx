@@ -3,9 +3,27 @@ import "./globals.css";
 import { LayoutShell } from "./LayoutShell";
 
 export const metadata: Metadata = {
-  title: "Your Horizon - ACNH Companion",
+  title: "Your Horizon",
   description:
-    "A comprehensive Animal Crossing: New Horizons companion tool. Track collections, manage villagers, predict turnip prices, and more.",
+    "All-in-one Animal Crossing: New Horizons companion. Track your museum, collections, turnip prices, villagers, weather, and more.",
+  metadataBase: new URL("https://fishpog.lol/yourhorizon"),
+  openGraph: {
+    title: "Your Horizon",
+    description:
+      "All-in-one Animal Crossing: New Horizons companion. Track your museum, collections, turnip prices, villagers, weather, and more.",
+    siteName: "Your Horizon",
+    type: "website",
+    url: "https://fishpog.lol/yourhorizon",
+  },
+  twitter: {
+    card: "summary",
+    title: "Your Horizon",
+    description:
+      "All-in-one Animal Crossing: New Horizons companion. Track your museum, collections, turnip prices, villagers, weather, and more.",
+  },
+  other: {
+    "theme-color": "#68b87a",
+  },
 };
 
 export default function RootLayout({
