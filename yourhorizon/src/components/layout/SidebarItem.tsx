@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { NavItem } from "@/types/navigation";
+import { useAppStore } from "@/store/appStore";
 
 interface SidebarItemProps {
   item: NavItem;
@@ -17,6 +18,11 @@ export function SidebarItem({ item, isActive }: SidebarItemProps) {
       <Link
         href={item.href}
         role="menuitem"
+        onClick={() => {
+          if (window.innerWidth < 1024) {
+            useAppStore.getState().setSidebarOpen(false);
+          }
+        }}
         aria-current={isActive ? "page" : undefined}
         className={`
           flex items-center gap-3 px-3 py-2 rounded-lg

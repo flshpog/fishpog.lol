@@ -16,7 +16,7 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  sidebarOpen: true,
+  sidebarOpen: typeof window !== "undefined" ? window.innerWidth >= 1024 : true,
   searchQuery: "",
   theme: "light",
 

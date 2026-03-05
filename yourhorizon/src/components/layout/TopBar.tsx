@@ -4,6 +4,7 @@ import { Breadcrumbs } from "./Breadcrumbs";
 import { useAppStore } from "@/store/appStore";
 
 export function TopBar() {
+  const sidebarOpen = useAppStore((s) => s.sidebarOpen);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
 
   return (
@@ -19,22 +20,23 @@ export function TopBar() {
         {/* Sidebar toggle */}
         <button
           onClick={toggleSidebar}
-          className="lg:hidden p-1.5 rounded-md hover:bg-bg-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
-          aria-label="Toggle sidebar"
+          className="p-1.5 rounded-md hover:bg-bg-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+          aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
         >
           <svg
             width="20"
             height="20"
             viewBox="0 0 20 20"
             fill="none"
-            className="text-text-secondary"
+            className={`text-text-secondary transition-transform duration-200 ${sidebarOpen ? "" : "rotate-180"}`}
             aria-hidden="true"
           >
             <path
-              d="M3 5h14M3 10h14M3 15h14"
+              d="M12.5 4L6.5 10L12.5 16"
               stroke="currentColor"
               strokeWidth="1.5"
               strokeLinecap="round"
+              strokeLinejoin="round"
             />
           </svg>
         </button>

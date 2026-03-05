@@ -25,11 +25,21 @@ export function LayoutShell({ children }: LayoutShellProps) {
 
       <div className="flex h-screen overflow-hidden">
         <Sidebar />
+
+        {/* Mobile backdrop — closes sidebar on tap */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-20 bg-black/30 lg:hidden"
+            onClick={() => useAppStore.getState().setSidebarOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
         <div
           className={`
             flex flex-col flex-1 overflow-hidden
             transition-all duration-200
-            ${sidebarOpen ? "ml-60" : "ml-0"}
+            ${sidebarOpen ? "lg:ml-60 ml-0" : "ml-0"}
           `}
         >
           <TopBar />
