@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import { DataBootstrap } from "@/components/data/DataBootstrap";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { MainContent } from "@/components/layout/MainContent";
 import { useAppStore } from "@/store/appStore";
+import { useAuthStore } from "@/store/authStore";
+import { pushData } from "@/lib/sync/syncService";
 
 interface LayoutShellProps {
   children: React.ReactNode;
@@ -12,6 +15,23 @@ interface LayoutShellProps {
 
 export function LayoutShell({ children }: LayoutShellProps) {
   const sidebarOpen = useAppStore((s) => s.sidebarOpen);
+  const { token, setLastSync } = useAuthStore();
+
+  // Auto-push data every 3 minutes while logged in
+  useEffect(() => {
+    if (!token) return;
+    const push = () =>
+      pushData(token)
+        .then(() => setLastSync(new Date().toISOString()))
+        .catch(() => {}); // silent — user can always push manually
+    const id = setInterval(push, 3 * 60 * 1000);
+    // Also push on tab close
+    window.addEventListener("beforeunload", push);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("beforeunload", push);
+    };
+  }, [token, setLastSync]);
 
   return (
     <DataBootstrap>

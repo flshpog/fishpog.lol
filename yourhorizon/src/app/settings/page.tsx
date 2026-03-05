@@ -216,6 +216,19 @@ function AccountSection() {
       setAuth(result.token, result.email);
       setEmailInput("");
       setPasswordInput("");
+      // Auto-load cloud data on login
+      if (mode === "login") {
+        setSyncStatus("Loading your data...");
+        const hasData = await pullData(result.token).catch(() => false);
+        if (hasData) {
+          setLastSync(new Date().toISOString());
+          setSyncStatus("Data loaded! Reloading...");
+          setTimeout(() => window.location.reload(), 800);
+        } else {
+          setSyncStatus("Logged in! No cloud data yet.");
+          setTimeout(() => setSyncStatus(""), 3000);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

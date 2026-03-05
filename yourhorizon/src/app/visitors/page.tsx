@@ -15,15 +15,26 @@ export default function VisitorsPage() {
     db.npcVisitors.toArray().then(setVisitors);
   }, []);
 
-  const today = new Date().toISOString().slice(0, 10);
-  const dayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
+  // ACNH day starts at 5 AM
+  const today = (() => {
+    const now = new Date();
+    if (now.getHours() < 5) now.setDate(now.getDate() - 1);
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  })();
+  const dayName = new Date(today + "T12:00:00").toLocaleDateString("en-US", { weekday: "long" });
 
-  // Get start of week (Sunday)
+  // Get start of week (Sunday), respecting 5 AM cutoff
   const weekStart = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - d.getDay());
-    return d.toISOString().slice(0, 10);
-  }, []);
+    const now = new Date(today + "T12:00:00");
+    now.setDate(now.getDate() - now.getDay());
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }, [today]);
 
   const weekVisitors = useMemo(() => {
     return new Set(visitLog.filter((v) => v.visitDate >= weekStart).map((v) => v.npcId));
@@ -87,6 +98,12 @@ export default function VisitorsPage() {
           const isHereToday = todayVisitors.has(npc.id);
           const totalVisits = visitCounts[npc.id] ?? 0;
           const lastVisit = lastVisits[npc.id];
+          const visitedThisWeek = weekVisitors.has(npc.id);
+          const visitDayLabel = lastVisit
+            ? (lastVisit === today
+                ? "Here Today"
+                : "Visited " + new Date(lastVisit + "T12:00:00").toLocaleDateString("en-US", { weekday: "long" }))
+            : null;
 
           return (
             <div
@@ -126,8 +143,10 @@ export default function VisitorsPage() {
               <h3 className="text-sm font-bold text-text mt-3">{npc.name}</h3>
 
               {/* Status */}
-              {isHereToday ? (
-                <Badge variant="donated" className="mt-1.5">Here Today</Badge>
+              {visitedThisWeek && visitDayLabel ? (
+                <Badge variant={isHereToday ? "donated" : "collected"} className="mt-1.5 text-center">
+                  {visitDayLabel}
+                </Badge>
               ) : (
                 <span className="text-[10px] text-text-muted mt-1.5">Tap to log visit</span>
               )}
@@ -139,10 +158,10 @@ export default function VisitorsPage() {
                 </span>
               )}
 
-              {/* Last seen */}
-              {lastVisit && !isHereToday && (
+              {/* Last seen (previous weeks) */}
+              {lastVisit && !visitedThisWeek && (
                 <span className="text-[10px] text-text-muted">
-                  Last: {lastVisit}
+                  Last: {new Date(lastVisit + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </span>
               )}
             </div>

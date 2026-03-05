@@ -6,6 +6,7 @@ export interface NavItem {
   href: string;
   icon: string;
   group: NavGroup;
+  comingSoon?: boolean;
 }
 
 export const NAV_GROUP_LABELS: Record<NavGroup, string> = {

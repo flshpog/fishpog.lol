@@ -13,6 +13,35 @@ export function SidebarItem({ item, isActive }: SidebarItemProps) {
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "/yourhorizon";
   const iconUrl = `${basePath}${item.icon}`;
 
+  if (item.comingSoon) {
+    return (
+      <li role="none">
+        <span
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium opacity-40 cursor-default select-none"
+          title="Coming soon"
+        >
+          <span
+            className="w-5 h-5 flex-shrink-0"
+            style={{
+              backgroundColor: "currentColor",
+              maskImage: `url(${iconUrl})`,
+              WebkitMaskImage: `url(${iconUrl})`,
+              maskSize: "contain",
+              WebkitMaskSize: "contain",
+              maskRepeat: "no-repeat",
+              WebkitMaskRepeat: "no-repeat",
+              maskPosition: "center",
+              WebkitMaskPosition: "center",
+            }}
+            aria-hidden="true"
+          />
+          <span className="flex-1">{item.label}</span>
+          <span className="text-[9px] font-bold uppercase tracking-wide bg-bg-hover px-1.5 py-0.5 rounded text-text-muted">Soon</span>
+        </span>
+      </li>
+    );
+  }
+
   return (
     <li role="none">
       <Link

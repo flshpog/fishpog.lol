@@ -8,7 +8,6 @@ import { useSettingsStore } from "@/store/settingsStore";
 import { useVillagerStore } from "@/modules/villagers/store/villagerStore";
 import { useMuseumStore } from "@/modules/museum/store/museumStore";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { FilterBar, type FilterOption } from "@/components/ui/FilterBar";
 import { DailyChecklist } from "./components/DailyChecklist";
 import type {
@@ -44,6 +43,7 @@ export function DashboardPage() {
   const [islandVillagers, setIslandVillagers] = useState<NormalizedVillager[]>([]);
   const [critterTab, setCritterTab] = useState("fish");
   const [loading, setLoading] = useState(true);
+  const [selectedCritter, setSelectedCritter] = useState<CritterAvailable | null>(null);
 
   const dayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
   const dateStr = new Date().toLocaleDateString("en-US", {
@@ -178,23 +178,32 @@ export function DashboardPage() {
               <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
                 {filteredCritters.map((critter) => {
                   const status = getStatus(critter.type, critter.id);
-                  const ringClass =
+                  const borderClass =
                     status === "donated"
-                      ? "ring-2 ring-donated"
+                      ? "border-2 border-donated"
                       : status === "caught"
-                      ? "ring-2 ring-caught"
-                      : "";
+                      ? "border-2 border-caught"
+                      : "border border-transparent hover:border-border";
 
                   return (
                     <div
                       key={`${critter.type}-${critter.id}`}
-                      className={`flex flex-col items-center gap-1 p-2 rounded-xl bg-bg-hover/50 border border-transparent hover:border-border transition-all duration-200 hover:shadow-sm cursor-pointer ${ringClass}`}
-                      onClick={() => toggleCaught(critter.type, critter.id)}
+                      className={`relative flex flex-col items-center gap-1 px-2 pb-2 pt-5 rounded-xl bg-bg-hover/50 transition-all duration-200 hover:shadow-sm cursor-pointer ${borderClass}`}
+                      onClick={() => setSelectedCritter(critter)}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         toggleDonated(critter.type, critter.id);
                       }}
                     >
+                      {/* C/D badge absolute top-left */}
+                      {status !== "none" && (
+                        <div className="absolute top-1 left-1 flex gap-px">
+                          <span className="w-4 h-4 rounded-full bg-caught text-white text-[8px] font-bold flex items-center justify-center">C</span>
+                          {status === "donated" && (
+                            <span className="w-4 h-4 rounded-full bg-donated text-white text-[8px] font-bold flex items-center justify-center">D</span>
+                          )}
+                        </div>
+                      )}
                       {critter.iconUri ? (
                         <img
                           src={critter.iconUri}
@@ -214,20 +223,12 @@ export function DashboardPage() {
                       <span className="text-[10px] text-text-secondary text-center leading-tight line-clamp-2 w-full">
                         {critter.name}
                       </span>
-                      {status !== "none" && (
-                        <Badge
-                          variant={status === "donated" ? "donated" : "collected"}
-                          className="mt-0.5"
-                        >
-                          {status === "donated" ? "D" : "C"}
-                        </Badge>
-                      )}
                     </div>
                   );
                 })}
               </div>
               <p className="text-[10px] text-text-muted mt-2">
-                Click to toggle caught. Right-click to toggle donated.
+                Tap to mark caught/donated. Right-click to quickly toggle donated.
               </p>
               </div>
             )}
@@ -318,6 +319,59 @@ export function DashboardPage() {
           </Card>
         </div>
       </div>
+
+      {/* Critter action popup */}
+      {selectedCritter && (() => {
+        const status = getStatus(selectedCritter.type, selectedCritter.id);
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setSelectedCritter(null)}
+          >
+            <div
+              className="w-full max-w-xs bg-bg-card rounded-2xl shadow-xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-5 py-4 flex items-center gap-3 border-b border-border">
+                {selectedCritter.iconUri && (
+                  <img src={selectedCritter.iconUri} alt={selectedCritter.name} width={48} height={48} className="w-12 h-12 object-contain flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-bold text-text capitalize">{selectedCritter.name}</h3>
+                  {selectedCritter.price !== undefined && (
+                    <p className="text-xs text-text-muted">{selectedCritter.price.toLocaleString()} bells</p>
+                  )}
+                </div>
+                <button onClick={() => setSelectedCritter(null)} className="p-1.5 rounded-lg hover:bg-bg-hover text-text-muted">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 3L3 11M3 3l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                </button>
+              </div>
+              <div className="px-5 py-4 flex gap-3">
+                <button
+                  onClick={() => { toggleCaught(selectedCritter.type, selectedCritter.id); setSelectedCritter(null); }}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                    status === "caught" || status === "donated"
+                      ? "bg-caught/20 text-caught border border-caught/40"
+                      : "bg-caught text-white"
+                  }`}
+                >
+                  {status === "caught" || status === "donated" ? "Unmark Caught" : "Mark Caught"}
+                </button>
+                <button
+                  onClick={() => { toggleDonated(selectedCritter.type, selectedCritter.id); setSelectedCritter(null); }}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                    status === "donated"
+                      ? "bg-donated/20 text-donated border border-donated/40"
+                      : "bg-donated text-white"
+                  }`}
+                >
+                  {status === "donated" ? "Unmark Donated" : "Mark Donated"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

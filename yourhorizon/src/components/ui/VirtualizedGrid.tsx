@@ -61,7 +61,7 @@ export function VirtualizedGrid<T>({
   });
 
   return (
-    <div ref={parentRef} className={`overflow-auto ${className}`} style={{ maxHeight: "70vh" }}>
+    <div ref={parentRef} className={`overflow-auto pr-2 ${className}`} style={{ maxHeight: "70vh" }}>
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,

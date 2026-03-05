@@ -38,7 +38,15 @@ const FRESH: Pick<
 };
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  // ACNH new day starts at 5 AM — before 5 AM still counts as yesterday
+  if (now.getHours() < 5) {
+    now.setDate(now.getDate() - 1);
+  }
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 export const useChecklistStore = create<ChecklistState>()(
