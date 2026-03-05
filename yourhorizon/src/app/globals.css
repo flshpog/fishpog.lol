@@ -1,0 +1,318 @@
+@import "tailwindcss";
+
+/* ============================================================
+   YOUR HORIZON - ACNH-Inspired Design System
+   ============================================================ */
+
+/* --- Light Theme (default) --- */
+:root {
+  /* Primary: ACNH Nook Inc. green */
+  --color-primary-50: #f0faf4;
+  --color-primary-100: #d6f2e0;
+  --color-primary-200: #a8e4bf;
+  --color-primary-300: #6dd099;
+  --color-primary-400: #3ab873;
+  --color-primary-500: #1a9d57;
+  --color-primary-600: #0e7b42;
+  --color-primary-700: #0b6236;
+  --color-primary-800: #094e2c;
+  --color-primary-900: #073f24;
+
+  /* Secondary: ACNH warm sand/tan */
+  --color-secondary-50: #fdf8ef;
+  --color-secondary-100: #faeed6;
+  --color-secondary-200: #f4daa8;
+  --color-secondary-300: #ecc377;
+  --color-secondary-400: #e4a94a;
+  --color-secondary-500: #d4902e;
+
+  /* Accent: ACNH sky blue */
+  --color-accent-50: #eff8ff;
+  --color-accent-100: #dbeefe;
+  --color-accent-200: #bfe1fe;
+  --color-accent-300: #92cefd;
+  --color-accent-400: #5eb4fa;
+  --color-accent-500: #3996f5;
+  --color-accent-600: #2378ea;
+
+  /* Status colors */
+  --color-caught: #eab308;
+  --color-donated: #22c55e;
+  --color-not-caught: #9ca3af;
+  --color-favorite: #ef4444;
+
+  /* Surfaces */
+  --color-bg: #faf9f5;
+  --color-bg-card: #ffffff;
+  --color-bg-sidebar: #f0ede4;
+  --color-bg-topbar: #ffffff;
+  --color-bg-hover: #f5f3ec;
+
+  /* Text */
+  --color-text: #2d2416;
+  --color-text-secondary: #6b5e4f;
+  --color-text-muted: #9c9182;
+
+  /* Borders */
+  --color-border: #e4dfd4;
+  --color-border-strong: #c9c1b3;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(45, 36, 22, 0.08), 0 1px 2px rgba(45, 36, 22, 0.06);
+  --shadow-card-hover: 0 4px 12px rgba(45, 36, 22, 0.12);
+  --shadow-sidebar: 2px 0 8px rgba(45, 36, 22, 0.06);
+}
+
+/* --- Dark Theme --- */
+[data-theme="dark"] {
+  --color-primary-50: #062117;
+  --color-primary-100: #0b3d2a;
+  --color-primary-200: #0e5939;
+  --color-primary-300: #14804e;
+  --color-primary-400: #1a9d57;
+  --color-primary-500: #3ab873;
+  --color-primary-600: #6dd099;
+  --color-primary-700: #a8e4bf;
+  --color-primary-800: #d6f2e0;
+  --color-primary-900: #f0faf4;
+
+  --color-secondary-50: #261e0f;
+  --color-secondary-100: #3d3018;
+  --color-secondary-200: #5c4822;
+  --color-secondary-300: #8a6a32;
+  --color-secondary-400: #b88e42;
+  --color-secondary-500: #d4a85a;
+
+  --color-accent-50: #0c1929;
+  --color-accent-100: #132c4d;
+  --color-accent-200: #1c4270;
+  --color-accent-300: #2860a0;
+  --color-accent-400: #3996f5;
+  --color-accent-500: #5eb4fa;
+  --color-accent-600: #92cefd;
+
+  --color-caught: #ca8a04;
+  --color-donated: #16a34a;
+  --color-not-caught: #6b7280;
+  --color-favorite: #dc2626;
+
+  --color-bg: #1a1610;
+  --color-bg-card: #252018;
+  --color-bg-sidebar: #1e1a13;
+  --color-bg-topbar: #252018;
+  --color-bg-hover: #302a1f;
+
+  --color-text: #ede8df;
+  --color-text-secondary: #b8ae9e;
+  --color-text-muted: #7d7264;
+
+  --color-border: #3d3628;
+  --color-border-strong: #574e3d;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-sidebar: 2px 0 8px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Tailwind v4 Theme Extension --- */
+@theme inline {
+  --color-primary-50: var(--color-primary-50);
+  --color-primary-100: var(--color-primary-100);
+  --color-primary-200: var(--color-primary-200);
+  --color-primary-300: var(--color-primary-300);
+  --color-primary-400: var(--color-primary-400);
+  --color-primary-500: var(--color-primary-500);
+  --color-primary-600: var(--color-primary-600);
+  --color-primary-700: var(--color-primary-700);
+  --color-primary-800: var(--color-primary-800);
+  --color-primary-900: var(--color-primary-900);
+
+  --color-secondary-50: var(--color-secondary-50);
+  --color-secondary-100: var(--color-secondary-100);
+  --color-secondary-200: var(--color-secondary-200);
+  --color-secondary-300: var(--color-secondary-300);
+  --color-secondary-400: var(--color-secondary-400);
+  --color-secondary-500: var(--color-secondary-500);
+
+  --color-accent-50: var(--color-accent-50);
+  --color-accent-100: var(--color-accent-100);
+  --color-accent-200: var(--color-accent-200);
+  --color-accent-300: var(--color-accent-300);
+  --color-accent-400: var(--color-accent-400);
+  --color-accent-500: var(--color-accent-500);
+  --color-accent-600: var(--color-accent-600);
+
+  --color-caught: var(--color-caught);
+  --color-donated: var(--color-donated);
+  --color-not-caught: var(--color-not-caught);
+  --color-favorite: var(--color-favorite);
+
+  --color-bg: var(--color-bg);
+  --color-bg-card: var(--color-bg-card);
+  --color-bg-sidebar: var(--color-bg-sidebar);
+  --color-bg-topbar: var(--color-bg-topbar);
+  --color-bg-hover: var(--color-bg-hover);
+
+  --color-text: var(--color-text);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+
+  --font-sans: "Nunito", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* --- Base Styles --- */
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+/* --- Scrollbar Styling --- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* --- Focus Styles --- */
+*:focus-visible {
+  outline: 2px solid var(--color-primary-400);
+  outline-offset: 2px;
+}
+
+/* Remove default focus outline; we use focus-visible above */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Skip-to-content target should not show focus ring */
+#main-content:focus {
+  outline: none;
+}
+
+/* --- Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- Screen Reader Only Utility --- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* --- Animations --- */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Page content animation */
+.animate-page {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Card entrance animation */
+.animate-card {
+  animation: fadeInUp 0.35s ease-out both;
+}
+
+/* Staggered children: apply to parent, cards get delay via nth-child */
+.animate-stagger > * {
+  animation: fadeInUp 0.35s ease-out both;
+}
+.animate-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.animate-stagger > *:nth-child(2) { animation-delay: 50ms; }
+.animate-stagger > *:nth-child(3) { animation-delay: 100ms; }
+.animate-stagger > *:nth-child(4) { animation-delay: 150ms; }
+.animate-stagger > *:nth-child(5) { animation-delay: 200ms; }
+.animate-stagger > *:nth-child(6) { animation-delay: 250ms; }
+.animate-stagger > *:nth-child(7) { animation-delay: 300ms; }
+.animate-stagger > *:nth-child(8) { animation-delay: 350ms; }
+.animate-stagger > *:nth-child(n+9) { animation-delay: 400ms; }
+
+/* Sidebar slide-in */
+.animate-sidebar {
+  animation: slideInLeft 0.25s ease-out;
+}
+
+/* Scale on hover for interactive cards */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Gentle pulse for loading states */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
