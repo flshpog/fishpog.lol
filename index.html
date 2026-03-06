@@ -1,43 +1,92 @@
+
+<!-- dont look please dont look -->
+
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
+<!-- ---------- -->
 
+<head>
     <link rel="icon" type="image/x-icon" href="images/pogger.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>yep that's the one</title>
 
-</head>
-
 <style>
 
-    .sentances {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items:center;
-        height: 100vh;
-        margin: 0;
-    }
+/* i do not fucking understand how this gradient works lol */
 
+body {
+background: linear-gradient(336deg, #7d7dff, #adadee);
+background-size: 400% 400%;
+-webkit-animation: gradient 6s ease infinite;
+-moz-animation: gradient 6s ease infinite;
+animation: gradient 6s ease infinite;
+}
+
+/* -------- */
+
+@-webkit-keyframes gradient {
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+}
+@-moz-keyframes gradient {
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+}
+@keyframes gradient {
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+}
+
+/* -------- */
+
+.castratebavvy {
+    position: fixed;
+    left: 10px;
+    bottom: 10px;
+}
+
+.sentances {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items:center;
+    height: 100vh;
+    margin: 0;
+}
 </style>
+</head>
+
+<!-- ---------- -->
 
 <body>
-    
+
 <div class="sentances">
+    <img src="images/bavvy.jpg" width="500" height="150">
+    <p>
+    i deleted the website because i'm tired of it being ugly and vibecoded
+    <br>
+    one day i'll finish the new one, for now it'll just be this
+    </p>
     <img id="erik" src="images/erik.gif">
-    <p>the site is gone... maybe it will be back soon...</p>
 </div>
 
-<script>
+<div class="bavvy">
+    <p>#castratebavvy</p>
+</div>
 
-    const rand = Math.floor(Math.random() * 90) + 1;
+<!-- ---------- -->
+
+<script>
+    const rand = Math.floor(Math.random() * 60) + 1;
     const gif = rand === 1 ? "images/stitches.gif" : "images/erik.gif";
     document.getElementById("erik").src = gif;
-
 </script>
 
 </body>
-
 </html>
