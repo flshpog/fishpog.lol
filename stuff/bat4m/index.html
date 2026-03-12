@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BAT4M Accounting Cheat Sheet</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Georgia, serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #222;
+    background: #fff;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 32px;
+  }
+
+  h1 {
+    font-size: 26px;
+    border-bottom: 2px solid #222;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+  .subtitle { color: #555; font-size: 13px; margin-bottom: 32px; }
+
+  h2 {
+    font-size: 18px;
+    margin: 36px 0 4px;
+    padding: 8px 12px;
+    background: #f0f0f0;
+    border-left: 4px solid #222;
+  }
+  .unit-desc { color: #555; font-size: 12px; margin-bottom: 16px; padding-left: 2px; }
+
+  h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 20px 0 8px;
+    color: #333;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 4px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 600px) {
+    .grid, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  .box {
+    border: 1px solid #ccc;
+    padding: 14px;
+    border-radius: 4px;
+  }
+  .box ul { padding-left: 16px; }
+  .box ul li { margin-bottom: 6px; font-size: 13px; }
+  .box ul li strong { color: #111; }
+  .box ul li .def { display: block; color: #555; font-size: 12px; }
+
+  .je {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin: 10px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+  }
+  .je-label {
+    background: #f0f0f0;
+    padding: 5px 10px;
+    font-family: Georgia, serif;
+    font-size: 11px;
+    font-style: italic;
+    color: #444;
+    border-bottom: 1px solid #ccc;
+  }
+  .je-body { padding: 8px 12px; }
+  .je-row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .je-row.cr .acct { padding-left: 28px; color: #555; }
+  .je-row.dr .acct { color: #111; }
+  .amt { font-weight: bold; min-width: 60px; text-align: right; }
+  .je-note {
+    font-family: Georgia, serif;
+    font-size: 11px;
+    color: #666;
+    padding: 4px 12px 8px;
+    border-top: 1px solid #eee;
+    font-style: italic;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 10px 0;
+  }
+  th {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 6px 10px;
+    text-align: left;
+    font-size: 12px;
+  }
+  td { border: 1px solid #ccc; padding: 6px 10px; }
+  .num { text-align: right; }
+  tr.total td { background: #f9f9f9; font-weight: bold; }
+
+  .formula {
+    background: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    margin: 8px 0;
+    line-height: 1.9;
+  }
+  .formula .label {
+    font-family: Georgia, serif;
+    font-size: 11px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .note {
+    background: #fffbe6;
+    border: 1px solid #e0ce00;
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin: 10px 0;
+  }
+
+  hr { border: none; border-top: 2px solid #222; margin: 40px 0 0; }
+
+  .nav {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px 14px;
+    margin-bottom: 32px;
+    font-size: 13px;
+  }
+  .nav a { color: #222; margin-right: 16px; }
+</style>
+</head>
+<body>
+
+<h1>BAT4M — Accounting Cheat Sheet</h1>
+<p class="subtitle">Units 2, 3, 4, 5 · All key terms, formulas, and journal entries with examples</p>
+
+<div class="nav">
+  <strong>Jump to:</strong>
+  <a href="#u2">Unit 2 — Merchandising</a>
+  <a href="#u3">Unit 3 — Inventory Costing</a>
+  <a href="#u4">Unit 4 — AIS & Journals</a>
+  <a href="#u5">Unit 5 — Corporations</a>
+</div>
+
+
+<!-- ===== UNIT 2 ===== -->
+<h2 id="u2">Unit 2 — Merchandising Activities</h2>
+<p class="unit-desc">Buying & selling inventory, income statements, perpetual vs periodic, discounts & returns</p>
+
+<h3>Key Terms</h3>
+<div class="grid">
+  <div class="box">
+    <ul>
+      <li><strong>Merchandiser</strong><span class="def">A company that earns income by buying and selling goods (doesn't manufacture them).</span></li>
+      <li><strong>Wholesaler</strong><span class="def">Buys large amounts from manufacturers, sells to retailers.</span></li>
+      <li><strong>Retailer</strong><span class="def">Buys from wholesalers, sells directly to consumers.</span></li>
+      <li><strong>Merchandise Inventory (M.I.)</strong><span class="def">Goods owned and held for sale. Listed as a current asset on the balance sheet.</span></li>
+      <li><strong>COGS (Cost of Goods Sold)</strong><span class="def">The cost the business paid for the goods it actually sold.</span></li>
+    </ul>
+  </div>
+  <div class="box">
+    <ul>
+      <li><strong>Net Sales</strong><span class="def">Gross Sales − Sales Discounts − Sales Returns & Allowances.</span></li>
+      <li><strong>Gross Profit (Gross Margin)</strong><span class="def">Net Sales − COGS.</span></li>
+      <li><strong>Gross Profit Ratio</strong><span class="def">(Gross Profit ÷ Net Sales) × 100%.</span></li>
+      <li><strong>Purchase Return</strong><span class="def">Merchandise sent back to the supplier.</span></li>
+      <li><strong>Purchase Allowance</strong><span class="def">Price reduction given by supplier for defective-but-still-sellable goods.</span></li>
+      <li><strong>Debit Memorandum</strong><span class="def">Document sent to supplier to initiate a return or allowance.</span></li>
+    </ul>
+  </div>
+</div>
+
+<h3>Perpetual vs. Periodic Inventory Systems</h3>
+<table>
+  <tr><th></th><th>Perpetual</th><th>Periodic</th></tr>
+  <tr><td><strong>How it works</strong></td><td>Inventory balance updated after every transaction</td><td>Inventory only counted at period-end</td></tr>
+  <tr><td><strong>Purchases recorded as</strong></td><td>Debit Merchandise Inventory</td><td>Debit Purchases (temporary account)</td></tr>
+  <tr><td><strong>COGS calculated</strong></td><td>After each sale</td><td>Only at end of period</td></tr>
+  <tr><td><strong>Physical count</strong></td><td>Still done periodically to verify</td><td>Required to calculate COGS</td></tr>
+  <tr><td><strong>Common?</strong></td><td>Yes — the standard today</td><td>Less common now</td></tr>
+</table>
+
+<h3>Income Statement Formulas</h3>
+<div class="grid">
+  <div>
+    <div class="formula">
+      <div class="label">Net Sales</div>
+      Gross Sales<br>
+      − Sales Discounts<br>
+      − Sales Returns & Allowances<br>
+      ─────────────────<br>
+      = Net Sales
+    </div>
+    <div class="formula">
+      <div class="label">Gross Profit</div>
+      Net Sales − COGS = Gross Profit
+    </div>
+    <div class="formula">
+      <div class="label">Net Income</div>
+      Gross Profit − Operating Expenses = Net Income
+    </div>
+  </div>
+  <div>
+    <div class="formula">
+      <div class="label">Merchandise Cost Flow</div>
+      Beginning Inventory<br>
+      + Net Purchases<br>
+      ─────────────────<br>
+      = Goods Available for Sale<br>
+      − Ending Inventory<br>
+      ─────────────────<br>
+      = COGS
+    </div>
+    <div class="formula">
+      <div class="label">Gross Profit Ratio</div>
+      (Gross Profit ÷ Net Sales) × 100%
+    </div>
+  </div>
+</div>
+
+<h3>Credit Terms & Discounts</h3>
+<div class="grid">
+  <div class="box">
+    <ul>
+      <li><strong>n/30</strong><span class="def">Full amount due within 30 days. No discount offered.</span></li>
+      <li><strong>n/10 EOM</strong><span class="def">Full amount due within 10 days after end of the month.</span></li>
+      <li><strong>2/10, n/30</strong><span class="def">Take 2% off if paid within 10 days (discount period). Otherwise full amount due by day 30 (credit period).</span></li>
+      <li><strong>List Price</strong><span class="def">The catalogue/advertised price from the manufacturer.</span></li>
+      <li><strong>Trade Discount</strong><span class="def">% taken off list price. Record at actual (net) cost — don't record the list price or discount separately.</span></li>
+    </ul>
+  </div>
+  <div class="box">
+    <p><strong>Example — 2/10, n/30 on a $900 purchase:</strong></p>
+    <p style="margin-top:8px">Discount available = 2% × $900 = <strong>$18</strong></p>
+    <p>If paid within 10 days: $900 − $18 = <strong>$882</strong></p>
+    <p>If paid after day 10: full <strong>$900</strong></p>
+    <br>
+    <p><em>From buyer's side: discount reduces Merchandise Inventory cost.</em></p>
+  </div>
+</div>
+
+<h3>FOB (Freight Terms)</h3>
+<table>
+  <tr><th></th><th>FOB Shipping Point</th><th>FOB Destination</th></tr>
+  <tr><td><strong>Ownership transfers</strong></td><td>At seller's location (when shipped)</td><td>At buyer's location (when received)</td></tr>
+  <tr><td><strong>Who pays freight</strong></td><td>Buyer</td><td>Seller</td></tr>
+  <tr><td><strong>Buyer records freight as</strong></td><td>Debit Merchandise Inventory (freight-in)</td><td>Nothing — seller's expense</td></tr>
+  <tr><td><strong>Freight-in</strong></td><td colspan="2">Freight on goods you purchase → adds to inventory cost</td></tr>
+  <tr><td><strong>Freight-out</strong></td><td colspan="2">Freight on goods you sell → operating expense (Delivery Expense)</td></tr>
+</table>
+
+<h3>Journal Entries — Perpetual System (Buyer's Side)</h3>
+<div class="grid">
+  <div>
+    <div class="je">
+      <div class="je-label">Purchase on Account</div>
+      <div class="je-body">
+        <div class="je-row dr"><span class="acct">Merchandise Inventory</span><span class="amt">1,200</span><span style="min-width:60px"></span></div>
+        <div class="je-row cr"><span class="acct">  Accounts Payable</span><span></span><span class="amt">1,200</span></div>
+      </div>
+    </div>
+    <div class="je">
+      <div class="je-label">Purchase Return (on credit)</div>
+      <div class="je-body">
+        <div class="je-row dr"><span class="acct">Accounts Payable</span><span class="amt">300</span><span style="min-width:60px"></span></div>
+        <div class="je-row cr"><span class="acct">  Merchandise Inventory</span><span></span><span class="amt">300</span></div>
+      </div>
+      <div class="je-note">Reduces what we owe and our inventory value.</div>
+    </div>
+    <div class="je">
+      <div class="je-label">Purchase Discount Taken (2/10, n/30 — paid within 10 days)</div>
+      <div class="je-body">
+        <div class="je-row dr"><span class="acct">Accounts Payable</span><span class="amt">900</span><span style="min-width:60px"></span></div>
+        <div class="je-row cr"><span class="acct">  Merchandise Inventory</span><span></span><span class="amt">18</span></div>
+        <div class="je-row cr"><span class="acct">  Cash</span><span></span><span class="amt">882</span></div>
+      </div>
+      <div class="je-note">$900 owing. 2% discount = $18. Cash paid = $882. Discount reduces inventory cost.</div>
+    </div>
+    <div class="je">
+      <div class="je-label">Freight-in (FOB Shipping Point)</div>
+      <div class="je-body">
+        <div class="je-row dr"><span class="acct">Merchandise Inventory</span><span class="amt">75</span><span style="min-width:60px"></span></div>
+        <div class="je-row cr"><span class="acct">  Cash</span><span></span><span class="amt">75</span></div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="je">
+      <div class="je-label">Sale on Account — Entry 1: Revenue</div>
+      <div class="je-body">
+        <div class="je-row dr"><span class="acct">Accounts Receivable</span><span class="amt">1,000</span><span style="min-width:60px"></span></div>
+        <div class="je-row cr"><span class="acct">  Sales</span><span></span><span class="amt">1,000</span></div>
+      </div>
+    </div>
+    <div class="je">
+      <div class="je-label">Sale on Account — Entry 2: Cost (perpetual only!)</div>
+      <div class="je-body">
+        <div class="je-row dr"><span class="acct">Cost of Goods Sold</span><span class="amt">600</span><span style="min-width:60px"></span></div>
+        <div class="je-row cr"><span class="acct">  Merchandise Inventory</span><span></span><span class="amt">600</span></div>
+      </div>
+      <div class="je-note">Every sale needs TWO entries in perpetual: one for revenue, one for cost.</div>
+    </div>
+    <div class="je">
+      <div class="je-label">Sales Return from Customer</div>
+      <div class="je-body">
+        <div class="je-row dr"><span class="acct">Sales Returns & Allowances</span><span class="amt">200</span><span style="min-width:60px"></span></div>
+        <div class="je-row cr"><span class="acct">  Accounts Receivable</span><span></span><span class="amt">200</span></div>
+        <div class="je-row dr"><span class="acct">Merchandise Inventory</span><span class="amt">120</span><span style="min-width:60px"></span></div>
+        <div class="je-row cr"><span class="acct">  Cost of Goods Sold</span><span></span><span class="amt">120</span></div>
+      </div>
+      <div class="je-note">Reverse both the revenue and the cost entries.</div>
+    </div>
+    <div class="je">
+      <div class="je-label">Sales Discount — Customer pays within discount period</div>
+      <div class="je-body">
+        <div class="je-row dr"><span class="acct">Cash</span><span class="amt">980</span><span style="min-width:60px"></span></div>
+        <div class="je-row dr"><span class="acct">Sales Discounts</span><span class="amt">20</span><span style="min-width:60px"></span></div>
+        <div class="je-row cr"><span class="acct">  Accounts Receivable</span><span></span><span class="amt">1,000</span></div>
+      </div>
+      <div class="je-note">Customer took 2% discount on $1,000 = $20 off. Pays $980 cash.</div>
+    </div>
+  </div>
+</div>
+
+<h3>Income Statement Example</h3>
+<table>
+  <tr><th colspan="2">Z-Mart — Income Statement, Year Ended Dec 31</th></tr>
+  <tr><td>Net Sales</td><td class="num">$314,700</td></tr>
+  <tr><td>Cost of Goods Sold</td><td class="num">(230,400)</td></tr>
+  <tr class="total"><td>Gross Profit</td><td class="num">$84,300</td></tr>
+  <tr><td>Total Operating Expenses</td><td class="num">(68,960)</td></tr>
+  <tr class="total"><td>Net Income</td><td class="num">$15,340</td></tr>
+</table>
+
+
+<!-- ===== UNIT 3 ===== -->
+<hr>
+<h2 id="u3">Unit 3 — Merchandise Inventory & Cost of Sales</h2>
+<p class="unit-desc">FIFO, Moving Weighted Average, Specific Identification, NRV, estimation methods</p>
+
+<h3>What Counts as Inventory?</h3>
+<div class="grid grid-3">
+  <div class="box">
+    <strong>Goods in Transit</strong>
+    <ul style="margin-top:8px">
+      <li><strong>FOB Shipping Point</strong><span class="def">Buyer owns them in transit → count in buyer's inventory.</span></li>
+      <li><strong>FOB Destination</strong><span class="def">Seller still owns them → count in seller's inventory.</span></li>
+    </ul>
+  </div>
+  <div class="box">
+    <strong>Consignment Goods</strong>
+    <ul style="margin-top:8px">
+      <li><strong>Consignor (owner)</strong><span class="def">Sends goods to consignee to sell. Still owns them → stays in consignor's inventory.</span></li>
+      <li><strong>Consignee (seller)</strong><span class="def">Has physical custody but does NOT own → NOT in their inventory.</span></li>
+    </ul>
+  </div>
+  <div class="box">
+    <strong>Damaged / Obsolete</strong>
+    <ul style="margin-top:8px">
+      <li><strong>Unsaleable</strong><span class="def">Don't include in inventory.</span></li>
+      <li><strong>Saleable at reduced price</strong><span class="def">Include at Net Realizable Value (NRV).</span></li>
+      <li><strong>NRV =</strong><span class="def">Expected selling price − costs to complete/sell.</span></li>
+    </ul>
+  </div>
+</div>
+
+<div class="note">
+  <strong>Inventory Cost Includes:</strong> Invoice price − discounts + all costs to bring goods to a saleable condition and location (e.g., import duties, transportation-in, storage, insurance).
+</div>
+
+<h3>The Three Costing Methods (Perpetual)</h3>
+<table>
+  <tr><th>Method</th><th>Assumption</th><th>COGS Uses</th><th>Ending Inventory Reflects</th><th>Best For</th></tr>
+  <tr><td><strong>FIFO</strong></td><td>Oldest units sold first</td><td>Oldest (cheapest in inflation) costs</td><td>Most recent (highest) costs</td><td>Most businesses</td></tr>
+  <tr><td><strong>Moving Weighted Average</strong></td><td>Recalculate average after each purchase</td><td>Current average cost/unit</td><td>Current average cost</td><td>Identical interchangeable goods</td></tr>
+  <tr><td><strong>Specific Identification</strong></td><td>Track each unit individually</td><td>Actual cost of that specific unit</td><td>Actual cost of remaining units</td><td>High-value unique items (cars, jewellery)</td></tr>
+</table>
+
+<h3>FIFO — Step-by-Step Example (Perpetual)</h3>
+<div class="note"><strong>Data:</strong> Jan 1: Buy 100 units @ $10. &nbsp; Feb 5: Buy 60 units @ $12. &nbsp; Mar 16: Sell 140 units @ $16 each.</div>
+<p style="margin:10px 0 6px;font-size:13px"><strong>Step 1 — COGS</strong> (sell oldest first: all 100 @ $10, then 40 from Feb batch @ $12):</p>
+<div class="formula">
+  100 units × $10 = $1,000
+   40 units × $12 =   $480
+  ──────────────────────
+  COGS             = $1,480
+</div>
+<p style="margin:10px 0 6px;font-size:13px"><strong>Step 2 — Ending Inventory</strong> (20 units left from Feb 5 batch):</p>
+<div class="formula">
+  20 units × $12 = $240  ← Ending Inventory
+</div>
+<p style="margin:10px 0 6px;font-size:13px"><strong>Step 3 — Journal Entries:</strong></p>
+<div class="grid">
+  <div class="je">
+    <div class="je-label">Record the Sale (Revenue)</div>
+    <div class="je-body">
+      <div class="je-row dr"><span class="acct">Cash</span><span class="amt">2,240</span><span style="min-width:60px"></span></div>
+      <div class="je-row cr"><span class="acct">  Sales (140 × $16)</span><span></span><span class="amt">2,240</span></div>
+    </div>
+  </div>
+  <div class="je">
+    <div class="je-label">Record the Cost</div>
+    <div class="je-body">
+      <div class="je-row dr"><span class="acct">Cost of Goods Sold</span><span class="amt">1,480</span><span style="min-width:60px"></span></div>
+      <div class="je-row cr"><span class="acct">  Merchandise Inventory</span><span></span><span class="amt">1,480</span></div>
+    </div>
+  </div>
+</div>
+
+<h3>Moving Weighted Average — Step-by-Step Example</h3>
+<div class="note"><strong>Data:</strong> Start with 14 units @ $100. &nbsp; Buy 25 more @ $110. &nbsp; Then sell 15 units.</div>
+<table>
+  <tr><th>Event</th><th class="num">Units</th><th class="num">Unit Cost</th><th class="num">Total Value</th><th class="num">New Avg Cost/Unit</th></tr>
+  <tr><td>Beginning Inventory</td><td class="num">14</td><td class="num">$100.00</td><td class="num">$1,400.00</td><td class="num">$100.00</td></tr>
+  <tr><td>+ Purchase</td><td class="num">25</td><td class="num">$110.00</td><td class="num">$2,750.00</td><td class="num">—</td></tr>
+  <tr class="total"><td>Recalculate Average (39 units total)</td><td class="num">39</td><td class="num">—</td><td class="num">$4,150.00</td><td class="num">$106.41</td></tr>
+  <tr><td>− Sale (15 units @ avg cost)</td><td class="num">15</td><td class="num">$106.41</td><td class="num">COGS: $1,596.15</td><td class="num">$106.41</td></tr>
+  <tr class="total"><td>Remaining Inventory</td><td class="num">24</td><td class="num">$106.41</td><td class="num">$2,553.85</td><td class="num">$106.41</td></tr>
+</table>
+<p style="font-size:12px;color:#555;margin-top:6px">Avg cost = Total inventory value ÷ total units. Recalculate after EVERY purchase.</p>
+
+<h3>FIFO vs. Moving Weighted Average Comparison</h3>
+<table>
+  <tr><th></th><th>FIFO (Rising Prices)</th><th>Weighted Average (Rising Prices)</th></tr>
+  <tr><td>COGS</td><td>Lower (uses older, cheaper costs)</td><td>In between</td></tr>
+  <tr><td>Net Income</td><td>Higher</td><td>In between</td></tr>
+  <tr><td>Ending Inventory</td><td>Higher (newer costs)</td><td>In between</td></tr>
+</table>
+
+<h3>Lower of Cost and Net Realizable Value (LCNRV)</h3>
+<div class="grid">
+  <div class="box">
+    <ul>
+      <li><strong>Rule</strong><span class="def">Report inventory at the lower of its cost OR its NRV. (Conservatism — don't overstate assets.)</span></li>
+      <li><strong>NRV</strong><span class="def">Expected selling price − estimated costs to complete and sell.</span></li>
+      <li><strong>When NRV &lt; Cost</strong><span class="def">Write inventory down to NRV. Record a loss in the current period.</span></li>
+    </ul>
+  </div>
+  <div class="je">
+    <div class="je-label">Write-Down Entry (NRV is lower than cost)</div>
+    <div class="je-body">
+      <div class="je-row dr"><span class="acct">Inventory Write-Down Expense</span><span class="amt">XXX</span><span style="min-width:60px"></span></div>
+      <div class="je-row cr"><span class="acct">  Merchandise Inventory</span><span></span><span class="amt">XXX</span></div>
+    </div>
+    <div class="je-note">Reduces inventory on the balance sheet to NRV.</div>
+  </div>
+</div>
+
+
+<!-- ===== UNIT 4 ===== -->
+<hr>
+<h2 id="u4">Unit 4 — Accounting Information Systems</h2>
+<p class="unit-desc">AIS components, special journals, subledgers, controlling accounts</p>
+
+<h3>Key Terms</h3>
+<div class="grid">
+  <div class="box">
+    <ul>
+      <li><strong>MIS (Management Info System)</strong><span class="def">Collects and processes ALL types of data across an organization for internal and external users.</span></li>
+      <li><strong>AIS (Accounting Info System)</strong><span class="def">A part of the MIS — focuses on financial data only. Turns raw financial data into accurate, timely reports.</span></li>
+      <li><strong>Source Documents</strong><span class="def">Inputs to the AIS: invoices, receipts, time cards, purchase orders, cheques, deposit slips.</span></li>
+    </ul>
+  </div>
+  <div class="box">
+    <ul>
+      <li><strong>General Ledger</strong><span class="def">The master list of all accounts with every transaction and its running balance.</span></li>
+      <li><strong>Subledger (Subsidiary Ledger)</strong><span class="def">A detailed breakdown of one General Ledger account (e.g., a separate account per customer within A/R).</span></li>
+      <li><strong>Controlling Account</strong><span class="def">The General Ledger account whose balance must always equal the sum of all balances in its subledger.</span></li>
+    </ul>
+  </div>
+</div>
+
+<h3>AIS: Inputs vs. Outputs</h3>
+<table>
+  <tr><th>Inputs (go INTO the system)</th><th>Outputs (come OUT of the system)</th></tr>
+  <tr><td>Bank statements from suppliers</td><td>Income statement</td></tr>
+  <tr><td>Time cards from employees</td><td>Balance sheet</td></tr>
+  <tr><td>Sales invoices issued to customers</td><td>Schedule of accounts payable/receivable</td></tr>
+  <tr><td>Purchase orders sent to suppliers</td><td>Property, plant & equipment report</td></tr>
+  <tr><td>Cheques written / deposit slips</td><td>Employee absence/payroll reports</td></tr>
+  <tr><td>Supplier memos (e.g., defective goods)</td><td>Any other special-purpose report</td></tr>
+</table>
+<div class="note" style="margin-top:8px"><strong>Quick rule:</strong> If it comes from outside and enters the system → Input. If the system produces it → Output.</div>
+
+<h3>Subledgers</h3>
+<div class="grid">
+  <div class="box">
+    <strong>Accounts Receivable Subledger</strong>
+    <ul style="margin-top:8px">
+      <li><strong>Purpose</strong><span class="def">One page/account per customer. Shows exactly what each customer owes.</span></li>
+      <li><strong>Controlling account</strong><span class="def">"Accounts Receivable" in the GL. Its total must equal the sum of all customer sub-accounts.</span></li>
+      <li><strong>Example:</strong><span class="def">A/R GL = $650. Customers: Albert $175 + Paul $225 + Frank $250 = $650 ✓</span></li>
+    </ul>
+  </div>
+  <div class="box">
+    <strong>Accounts Payable Subledger</strong>
+    <ul style="margin-top:8px">
+      <li><strong>Purpose</strong><span class="def">One page/account per supplier. Shows how much is owed to each one.</span></li>
+      <li><strong>Controlling account</strong><span class="def">"Accounts Payable" in the GL. Must match the sum of all supplier sub-accounts.</span></li>
+      <li><strong>Key rule:</strong><span class="def">After all posting, controlling account balance = sum of all subledger balances. Always.</span></li>
+    </ul>
+  </div>
+</div>
+
+<h3>The Four Special Journals</h3>
+<table>
+  <tr><th>Journal</th><th>Records</th><th>Typical Entry Pattern</th></tr>
+  <tr>
+    <td><strong>Sales Journal (SJ)</strong></td>
+    <td>Credit sales of merchandise only</td>
+    <td>Dr. Accounts Receivable / Cr. Sales<br>Dr. COGS / Cr. Merchandise Inventory</td>
+  </tr>
+  <tr>
+    <td><strong>Cash Receipts Journal (CRJ)</strong></td>
+    <td>All cash coming IN</td>
+    <td>Dr. Cash / Cr. Accounts Receivable (collections)<br>Dr. Cash / Cr. Sales (cash sales)</td>
+  </tr>
+  <tr>
+    <td><strong>Purchases Journal (PJ)</strong></td>
+    <td>Credit purchases of merchandise only</td>
+    <td>Dr. Merchandise Inventory / Cr. Accounts Payable</td>
+  </tr>
+  <tr>
+    <td><strong>Cash Disbursements Journal (CDJ)</strong></td>
+    <td>All cash going OUT</td>
+    <td>Dr. Accounts Payable / Cr. Cash (paying suppliers)<br>Dr. Expense / Cr. Cash (paying expenses)</td>
+  </tr>
+  <tr>
+    <td><strong>General Journal (GJ)</strong></td>
+    <td>Everything that doesn't fit above</td>
+    <td>Adjusting entries, depreciation, returns, allowances</td>
+  </tr>
+</table>
+
+<div class="note">
+  <strong>How posting works:</strong> Each individual row in a special journal is posted to the subledger <em>daily</em>. The column totals are posted to the General Ledger <em>once at month-end</em>. This saves a lot of time vs. the general journal.
+</div>
+
+<h3>Sales Journal Example</h3>
+<table>
+  <tr><th>Date</th><th>Customer</th><th class="num">A/R Dr. / Sales Cr.</th><th class="num">COGS Dr. / Inv. Cr.</th></tr>
+  <tr><td>Apr 3</td><td>Linda Hobart</td><td class="num">$3,000</td><td class="num">$1,800</td></tr>
+  <tr><td>Apr 5</td><td>Paul Abrams</td><td class="num">$8,000</td><td class="num">$4,800</td></tr>
+  <tr><td>Apr 11</td><td>Kelly Schaefer</td><td class="num">$9,500</td><td class="num">$5,700</td></tr>
+  <tr class="total"><td>Apr 30</td><td>Totals → post to General Ledger</td><td class="num">$20,500</td><td class="num">$12,300</td></tr>
+</table>
+<p style="font-size:12px;color:#555;margin-top:6px">Each row is posted to that customer's A/R subledger daily. The monthly totals go to the General Ledger once.</p>
+
+
+<!-- ===== UNIT 5 ===== -->
+<hr>
+<h2 id="u5">Unit 5 — Organization & Operations of Corporations</h2>
+<p class="unit-desc">Incorporation, share types, issuing shares, dividends, equity section, corporate statements</p>
+
+<h3>Corporations vs. Other Business Forms</h3>
+<table>
+  <tr><th></th><th>Corporation</th><th>Partnership / Proprietorship</th></tr>
+  <tr><td>Legal entity</td><td>Separate from owners</td><td>Not separate</td></tr>
+  <tr><td>Owner liability</td><td>Limited (lose only investment)</td><td>Unlimited personal liability</td></tr>
+  <tr><td>Ownership transfer</td><td>Easy — sell shares</td><td>Complicated</td></tr>
+  <tr><td>Life</td><td>Continuous (doesn't end with owner)</td><td>Ends with owner</td></tr>
+  <tr><td>Income tax</td><td>Corporation pays income tax</td><td>Owners pay personally</td></tr>
+  <tr><td>Governed by</td><td>CBCA (federal) or provincial law</td><td>Partnership agreement / none</td></tr>
+  <tr><td>Distributions to owners</td><td>Dividends (declared by board)</td><td>Withdrawals</td></tr>
+  <tr><td>Equity section</td><td>Share Capital + Retained Earnings</td><td>Owner, Capital</td></tr>
+</table>
+
+<h3>Key Share Terms</h3>
+<div class="grid">
+  <div class="box">
+    <ul>
+      <li><strong>Common Shares</strong><span class="def">The standard share class. Right to vote, receive declared dividends, and receive assets if company closes. In Canada — always no-par value (no face value).</span></li>
+      <li><strong>Preferred Shares</strong><span class="def">Get dividends before common shareholders (e.g., "$3 preferred" = $3/year/share). Usually no voting rights.</span></li>
+      <li><strong>Contributed Capital</strong><span class="def">Heading used on balance sheet when BOTH preferred AND common shares have been issued.</span></li>
+    </ul>
+  </div>
+  <div class="box">
+    <ul>
+      <li><strong>Authorized Shares</strong><span class="def">Maximum shares the company is allowed to issue (often "unlimited" in Canada).</span></li>
+      <li><strong>Issued & Outstanding</strong><span class="def">Shares actually sold and currently held by investors.</span></li>
+      <li><strong>Market Price</strong><span class="def">Current trading price. Buying/selling shares between investors does NOT affect the corporation's equity accounts.</span></li>
+      <li><strong>Retained Earnings</strong><span class="def">Cumulative net income − cumulative dividends paid. Grows with profit, shrinks with dividends.</span></li>
+    </ul>
+  </div>
+</div>
+
+<h3>Issuing Shares — Journal Entries</h3>
+<div class="grid">
+  <div>
+    <div class="je">
+      <div class="je-label">Issuing Common Shares for Cash (30,000 shares @ $10)</div>
+      <div class="je-body">
+        <div class="je-row dr"><span class="acct">Cash</span><span class="amt">300,000</span><span style="min-width:60px"></span></div>
+        <div class="je-row cr"><span class="acct">  Common Shares</span><span></span><span class="amt">300,000</span></div>
+      </div>
+    </div>
+    <div class="je">
+      <div class="je-label">Issuing Common Shares for Non-Cash Asset (land)</div>
+      <div class="je-body">
+        <div class="je-row dr"><span class="acct">Land</span><span class="amt">105,000</span><span style="min-width:60px"></span></div>
+        <div class="je-row cr"><span class="acct">  Common Shares</span><span></span><span class="amt">105,000</span></div>
+      </div>
+      <div class="je-note">Use the fair market value of the asset received.</div>
+    </div>
+  </div>
+  <div>
+    <div class="je">
+      <div class="je-label">Issuing Preferred Shares for Cash (5,000 shares @ $25)</div>
+      <div class="je-body">
+        <div class="je-row dr"><span class="acct">Cash</span><span class="amt">125,000</span><span style="min-width:60px"></span></div>
+        <div class="je-row cr"><span class="acct">  Preferred Shares</span><span></span><span class="amt">125,000</span></div>
+      </div>
+    </div>
+    <div class="je">
+      <div class="je-label">Issuing Shares to a Service Provider (e.g., promotor)</div>
+      <div class="je-body">
+        <div class="je-row dr"><span class="acct">Organization Costs Expense</span><span class="amt">5,000</span><span style="min-width:60px"></span></div>
+        <div class="je-row cr"><span class="acct">  Common Shares</span><span></span><span class="amt">5,000</span></div>
+      </div>
+      <div class="je-note">Organization costs are expensed as incurred — not capitalized.</div>
+    </div>
+  </div>
+</div>
+
+<h3>Dividends — Three Key Dates</h3>
+<table>
+  <tr><th>Date</th><th>What Happens</th><th>Journal Entry?</th></tr>
+  <tr><td><strong>1. Declaration Date</strong></td><td>Board declares the dividend. A liability is created.</td><td>Yes — Dr. Cash Dividends (or Retained Earnings) / Cr. Dividends Payable</td></tr>
+  <tr><td><strong>2. Record Date</strong></td><td>Whoever owns shares on this date gets the dividend. Stock goes "ex-dividend" 2–3 days before.</td><td>No entry needed</td></tr>
+  <tr><td><strong>3. Payment Date</strong></td><td>Cash is paid out to shareholders. Liability is eliminated.</td><td>Yes — Dr. Dividends Payable / Cr. Cash</td></tr>
+</table>
+
+<div class="grid" style="margin-top:12px">
+  <div class="je">
+    <div class="je-label">Declaration Date (5,000 shares × $1/share = $5,000)</div>
+    <div class="je-body">
+      <div class="je-row dr"><span class="acct">Cash Dividends (or Retained Earnings)</span><span class="amt">5,000</span><span style="min-width:60px"></span></div>
+      <div class="je-row cr"><span class="acct">  Common Dividends Payable</span><span></span><span class="amt">5,000</span></div>
+    </div>
+    <div class="je-note">Either method works: debit "Cash Dividends" (close to R/E at year-end) or debit R/E directly.</div>
+  </div>
+  <div class="je">
+    <div class="je-label">Payment Date</div>
+    <div class="je-body">
+      <div class="je-row dr"><span class="acct">Common Dividends Payable</span><span class="amt">5,000</span><span style="min-width:60px"></span></div>
+      <div class="je-row cr"><span class="acct">  Cash</span><span></span><span class="amt">5,000</span></div>
+    </div>
+    <div class="je-note">Liability is paid off. No entry on Record Date.</div>
+  </div>
+</div>
+
+<h3>Equity Section of the Balance Sheet</h3>
+<div class="grid">
+  <div>
+    <p style="font-size:13px;margin-bottom:8px"><strong>Common shares only → heading is "Equity"</strong></p>
+    <table>
+      <tr><th colspan="2">Equity (common shares only)</th></tr>
+      <tr><td>Common Shares, unlimited authorized, 30,000 issued & outstanding</td><td class="num">$300,000</td></tr>
+      <tr><td>Retained Earnings</td><td class="num">65,000</td></tr>
+      <tr class="total"><td>Total Equity</td><td class="num">$365,000</td></tr>
+    </table>
+  </div>
+  <div>
+    <p style="font-size:13px;margin-bottom:8px"><strong>Both share types → heading is "Contributed Capital"</strong></p>
+    <table>
+      <tr><th colspan="2">Equity (preferred + common)</th></tr>
+      <tr><td colspan="2" style="color:#555;font-size:12px">Contributed capital:</td></tr>
+      <tr><td>&nbsp;&nbsp;Preferred shares, $3, unlimited auth., 5,000 issued</td><td class="num">$125,000</td></tr>
+      <tr><td>&nbsp;&nbsp;Common shares, unlimited auth., 34,000 issued</td><td class="num">405,000</td></tr>
+      <tr><td>Total Contributed Capital</td><td class="num">$530,000</td></tr>
+      <tr><td>Retained Earnings</td><td class="num">303,000</td></tr>
+      <tr class="total"><td>Total Equity</td><td class="num">$833,000</td></tr>
+    </table>
+  </div>
+</div>
+
+<h3>Statement of Changes in Equity (Corporate)</h3>
+<table>
+  <tr><th>ABC Corporation</th><th class="num">Share Capital</th><th class="num">Retained Earnings</th><th class="num">Total</th></tr>
+  <tr><td>Balance, January 1</td><td class="num">$0</td><td class="num">$0</td><td class="num">$0</td></tr>
+  <tr><td>+ Issuance of shares</td><td class="num">500</td><td class="num">—</td><td class="num">500</td></tr>
+  <tr><td>+ Net income</td><td class="num">—</td><td class="num">48</td><td class="num">48</td></tr>
+  <tr><td>− Dividends</td><td class="num">—</td><td class="num">(40)</td><td class="num">(40)</td></tr>
+  <tr class="total"><td>Balance, December 31</td><td class="num">$500</td><td class="num">$8</td><td class="num">$508</td></tr>
+</table>
+<p style="font-size:12px;color:#555;margin-top:6px">Retained Earnings = all net income ever earned − all dividends ever declared. It accumulates over time.</p>
+
+</body>
+</html>
