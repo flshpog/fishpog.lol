@@ -72,6 +72,10 @@ p {
 
 <body>
 
+<div id="playOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;cursor:pointer;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;">
+    <p style="color:white;font-size:1.5rem;font-family:'Nunito',sans-serif;">click, there's audio!</p>
+</div>
+
 <div class="sentances">
     <img src="images/bavvy.jpg" width="500" height="150">
     <p>
@@ -88,12 +92,74 @@ p {
     <p>#castratebavvy</p>
 </div>
 
-<!-- ---------- -->
+<!-- -----you wouldnt beleive how long i studied coolsite.cv to put in this audio shit----- -->
+
 
 <script>
     const rand = Math.floor(Math.random() * 60) + 1;
     const gif = rand === 1 ? "images/stitches.gif" : "images/erik.gif";
     document.getElementById("erik").src = gif;
+
+    var context, buffer, song, volume, lowpass, analyser;
+
+    function initAudio() {
+        context = new (window.AudioContext || window.webkitAudioContext)();
+        volume = context.createGain();
+        analyser = context.createAnalyser();
+        volume.connect(analyser);
+        analyser.connect(context.destination);
+
+        var request = new XMLHttpRequest();
+        request.open("GET", "images/loop.mp3", true);
+        request.responseType = "arraybuffer";
+        request.onload = function () {
+            context.decodeAudioData(request.response, function (decoded) {
+                buffer = decoded;
+                playLoop();
+            });
+        };
+        request.send();
+    }
+
+    function playLoop() {
+        if (!buffer) return;
+        if (song) { song.stop(0); song.disconnect(); }
+        song = context.createBufferSource();
+        song.buffer = buffer;
+        song.connect(volume);
+        song.loop = true;
+        var trim = 1152 / buffer.sampleRate;
+        song.loopStart = trim;
+        song.loopEnd = buffer.duration - trim;
+        song.start(0, trim);
+    }
+
+    document.getElementById("playOverlay").addEventListener("click", function () {
+        this.remove();
+        initAudio();
+    }, { once: true });
+
+
+    document.addEventListener("visibilitychange", function () {
+        if (!context || !volume) return;
+        if (document.hidden) {
+            if (!lowpass) {
+                lowpass = context.createBiquadFilter();
+                lowpass.type = "lowpass";
+                lowpass.frequency.value = 22050;
+                volume.disconnect();
+                volume.connect(lowpass);
+                lowpass.connect(analyser);
+            }
+            lowpass.frequency.setValueAtTime(lowpass.frequency.value, context.currentTime);
+            lowpass.frequency.linearRampToValueAtTime(600, context.currentTime + 0.1);
+        } else {
+            if (lowpass) {
+                lowpass.frequency.setValueAtTime(lowpass.frequency.value, context.currentTime);
+                lowpass.frequency.linearRampToValueAtTime(22050, context.currentTime + 0.1);
+            }
+        }
+    });
 </script>
 
 </body>
