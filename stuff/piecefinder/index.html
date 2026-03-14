@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>puzzle piece locator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>puzzle piece locator</h1>
+    <p class="subtitle">find where a piece belongs in your puzzle</p>
+  </header>
+
+  <main>
+    <!-- Upload Section -->
+    <section class="upload-section">
+      <div class="upload-card" id="fullImageCard">
+        <h2>full puzzle image</h2>
+        <div class="drop-zone" id="fullImageDrop">
+          <input type="file" id="fullImageInput" accept="image/*">
+          <div class="drop-zone-prompt">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="m21 15-5-5L5 21"/>
+            </svg>
+            <span>drop image here or <strong>click to browse</strong></span>
+          </div>
+          <img id="fullImagePreview" class="preview-img hidden" alt="Full puzzle preview">
+        </div>
+        <button class="paste-btn" id="fullPasteBtn">paste screenshot here (click, then Ctrl+V)</button>
+      </div>
+
+      <div class="upload-card" id="pieceImageCard">
+        <h2>puzzle piece screenshot</h2>
+        <div class="drop-zone" id="pieceImageDrop">
+          <input type="file" id="pieceImageInput" accept="image/*">
+          <div class="drop-zone-prompt">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M5 3h4l2 3h4l2-3h4"/>
+              <rect x="3" y="6" width="18" height="15" rx="2"/>
+              <circle cx="12" cy="14" r="4"/>
+            </svg>
+            <span>drop piece here or <strong>click to browse</strong></span>
+          </div>
+          <img id="pieceImagePreview" class="preview-img hidden" alt="Piece preview">
+        </div>
+        <button class="paste-btn" id="piecePasteBtn">paste screenshot here (click, then Ctrl+V)</button>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <section class="controls">
+      <button id="analyzeBtn" disabled>analyze</button>
+      <button id="clearBtn" class="secondary">clear</button>
+      <label class="checkbox-label">
+        <input type="checkbox" id="rotationCheck"> test rotations (0°, 90°, 180°, 270°)
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" id="trimCheck" checked> auto-trim piece background
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" id="multiMatchCheck"> show top 5 matches
+      </label>
+    </section>
+
+    <!-- Status -->
+    <div id="status" class="status hidden"></div>
+    <div id="progressBar" class="progress-bar hidden">
+      <div id="progressFill" class="progress-fill"></div>
+    </div>
+
+    <!-- Results -->
+    <section id="resultsSection" class="results-section hidden">
+      <h2>results</h2>
+      <div class="result-info" id="resultInfo"></div>
+      <div class="canvas-container">
+        <canvas id="resultCanvas"></canvas>
+      </div>
+      <div id="matchList" class="match-list"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>runs entirely in your browser. no data is stored anywhere.</p>
+  </footer>
+
+  <!-- OpenCV.js loaded async -->
+  <script id="opencvScript" async src="https://docs.opencv.org/4.9.0/opencv.js" type="text/javascript"></script>
+  <script src="script.js"></script>
+</body>
+</html>
