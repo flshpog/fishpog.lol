@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>aGeMan</title>
+
+<!-- Open Graph / Link Preview -->
+<meta property="og:title" content="aGeMan" />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="https://ageman.pages.dev/preview.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:description" content="Interactive photorealistic face demo built with three.js." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="aGeMan" />
+<meta name="twitter:image" content="https://ageman.pages.dev/preview.jpg" />
+
+<!-- IMPORT MAP -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: #000;
+  }
+
+  /* Blurry background image behind the canvas. Put a background.jpg next to this HTML. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: url('background.jpg') center/cover no-repeat;
+    filter: blur(6px) saturate(0.9) contrast(0.95);
+    transform: scale(1.06);
+    opacity: 0.95;
+    z-index: -1;
+  }
+
+  #ui {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    background: rgba(0,0,0,0.6);
+    padding: 12px;
+    border-radius: 10px;
+    color: #fff;
+    width: 240px;
+    font-family: system-ui, sans-serif;
+    user-select: none;
+  }
+
+  #ui label {
+    font-size: 12px;
+    display: block;
+    margin-top: 8px;
+    opacity: 0.9;
+  }
+
+
+  #ui input {
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  #ui .section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.15);
+  }
+
+  #ui .hint {
+    font-size: 11px;
+    opacity: 0.75;
+    margin-top: 6px;
+    line-height: 1.2;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+  <label>Left / Right</label>
+  <input id="xSlider" type="range" min="-1" max="1" step="0.01" value="0">
+
+  <label>Up / Down</label>
+  <input id="ySlider" type="range" min="-1" max="1" step="0.01" value="0">
+
+  <label>Zoom</label>
+  <!-- negative = further out, positive = closer -->
+  <input id="zSlider" type="range" min="-2.0" max="1.2" step="0.01" value="0">
+
+  <label>Lighting</label>
+  <input id="lightSlider" type="range" min="0" max="1" step="0.01" value="0.45">
+
+  <label>Mouth</label>
+  <input id="jawSlider" type="range" min="0" max="1" step="0.01" value="0">
+</div>
+
+<!-- Licensing / Attribution (collapsible, subtle, bottom-right) -->
+<div id="license-wrap" style="position:fixed; right:12px; bottom:12px; width:200px; font-family:system-ui, sans-serif; color:#ddd;">
+  <details style="background:rgba(0,0,0,0.45); border-radius:8px; padding:6px;">
+    <summary style="cursor:pointer; font-size:11px; opacity:0.6; list-style:none;">ⓘ Credits</summary>
+    <div style="margin-top:6px; font-size:11px; line-height:1.35; opacity:0.8;">
+      <div>
+        <strong>Suit:</strong> “Fake G‑Man” by <em>fake gman</em> (CC‑BY)<br>
+        <a href="https://sketchfab.com/3d-models/suit-563b5009b3e343d0bc06fcd17121809a" target="_blank" rel="noopener" style="color:#9cf;">Sketchfab</a>
+      </div>
+      <div style="margin-top:4px;">
+        <strong>Head:</strong> “G‑Man Skibidi Toilet” by <em>magnusplayer2</em> (CC‑BY)<br>
+        <a href="https://sketchfab.com/3d-models/g-man-skibidi-toilet-full-face-rig-3790675d8f6a4212a8191b3429a87379" target="_blank" rel="noopener" style="color:#9cf;">Sketchfab</a>
+      </div>
+      <div style="margin-top:6px; opacity:0.7;">
+        Assets modified. Built with <strong>three.js</strong> (MIT).
+      </div>
+    </div>
+  </details>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
+
+import { FilmPass } from 'three/addons/postprocessing/FilmPass.js';
+import { RGBShiftShader } from 'three/addons/shaders/RGBShiftShader.js';
+import { VignetteShader } from 'three/addons/shaders/VignetteShader.js';
+import { ColorCorrectionShader } from 'three/addons/shaders/ColorCorrectionShader.js';
+import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+
+/* ───────── DOM ───────── */
+const xSlider = document.getElementById('xSlider');
+const ySlider = document.getElementById('ySlider');
+const zSlider = document.getElementById('zSlider');
+const lightSlider = document.getElementById('lightSlider');
+const jawSlider = document.getElementById('jawSlider');
+
+
+/* ───────── STATE ───────── */
+let scene, camera, renderer, composer;
+let ssaoPass, fxaaPass, filmPass, rgbShiftPass, vignettePass, colorPass;
+
+// Lights (so we can adjust with slider)
+let ambientLight, keyLight, fillLight, rimLight;
+
+// Extra light aimed from the camera to make face lighting adjustments obvious
+let headCamLight;
+
+// Track head materials so the Lighting slider can affect the FACE strongly
+const headMaterials = new Map(); // uuid -> { mat, baseEnv }
+const headUnlitMaterials = new Map(); // uuid -> { mat, baseColor }
+
+
+// Suit + head anchoring
+let characterRoot;
+let suitRoot;
+let suitModel = null;
+
+// Head anchor: fixed at origin in character space
+let headAnchor;
+let headPivot;
+let headModelRoot;
+
+let riggedMeshes = [];
+let clock = new THREE.Clock();
+let t = 0;
+
+// Jaw control
+let jawTarget = 0;
+let jawCurrent = 0;
+
+// Camera defaults + limits
+const CAMERA_BASE_Z = 3.2;
+const CAMERA_MIN_Z  = 2.2;
+const CAMERA_MAX_Z  = 5.6;
+
+// Facing
+const MODEL_BASE_YAW = 0; // set to Math.PI if your head faces away
+
+// Hardcode the correct face variant you identified:
+// "#1 rig001  (v=0.03, d=0.21)"
+const HARD_FACE_INDEX = 1;
+
+// Suit base scale (we hardcode final scale below)
+const SUIT_BASE_SCALE = 1.0;
+
+// Shadow catcher
+let shadowCatcher;
+
+init();
+animate();
+
+function init() {
+
+  scene = new THREE.Scene();
+  scene.background = null;
+
+  camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(0, 0.08, CAMERA_BASE_Z);
+  camera.lookAt(0, 0.10, 0);
+  // Add camera to scene so we can attach a "camera light" to it
+  scene.add(camera);
+
+  renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+  renderer.setClearColor(0x000000, 0);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.92;
+
+  // Shadows (disabled: avoids odd background shadow artifacts)
+  renderer.shadowMap.enabled = false;
+
+  document.body.appendChild(renderer.domElement);
+
+  // PBR environment (no HDR needed)
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envTex = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+  scene.environment = envTex;
+  pmrem.dispose();
+
+  // Lights
+  ambientLight = new THREE.AmbientLight(0xffffff, 0.12);
+  scene.add(ambientLight);
+
+  keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
+  keyLight.position.set(2.2, 2.6, 3.8);
+  keyLight.castShadow = false;
+  keyLight.shadow.mapSize.set(1024, 1024);
+  keyLight.shadow.bias = -0.0002;
+  keyLight.shadow.normalBias = 0.02;
+  scene.add(keyLight);
+
+  fillLight = new THREE.DirectionalLight(0xffffff, 0.28);
+  fillLight.position.set(-2.5, 1.0, 2.8);
+  scene.add(fillLight);
+
+  rimLight = new THREE.DirectionalLight(0xffffff, 0.18);
+  rimLight.position.set(-2.0, 2.2, -2.5);
+  scene.add(rimLight);
+
+  // Camera-attached light: ensures Lighting slider affects the FACE even if the face material is unlit/baked.
+  headCamLight = new THREE.PointLight(0xffffff, 0.0, 25, 2);
+  camera.add(headCamLight);
+  headCamLight.position.set(0, 0, 0);
+
+  // Shadow catcher removed (it created a weird blob shadow against the 2D background)
+  shadowCatcher = null;
+
+  // Character root (the whole person: suit + head). We rotate THIS.
+  characterRoot = new THREE.Group();
+  scene.add(characterRoot);
+
+  // Suit root
+  suitRoot = new THREE.Group();
+  characterRoot.add(suitRoot);
+
+  // Head anchor fixed at origin
+  headAnchor = new THREE.Group();
+  characterRoot.add(headAnchor);
+
+  // Head pivot (look sliders)
+  headPivot = new THREE.Group();
+  headAnchor.add(headPivot);
+
+  // Head model root
+  headModelRoot = new THREE.Group();
+  headPivot.add(headModelRoot);
+
+  // Load suit.glb
+  new GLTFLoader().load('suit.glb', (gltf) => {
+    const suit = gltf.scene;
+    suitModel = suit;
+    suitRoot.add(suit);
+
+    suit.traverse((o) => {
+      if (o.isMesh) {
+        o.castShadow = false;
+        o.receiveShadow = false;
+        if (o.material?.roughness !== undefined) o.material.roughness = Math.max(o.material.roughness, 0.6);
+        if (o.material?.metalness !== undefined) o.material.metalness = Math.min(o.material.metalness, 0.2);
+      }
+    });
+
+    // Reposition suit so its neck point is near origin.
+    suit.updateMatrixWorld(true);
+    const suitBox = new THREE.Box3().setFromObject(suit);
+    const suitSize = suitBox.getSize(new THREE.Vector3());
+    const suitCenter = suitBox.getCenter(new THREE.Vector3());
+
+    const neckPoint = new THREE.Vector3(
+      suitCenter.x,
+      suitBox.max.y - 0.08 * suitSize.y,
+      suitCenter.z
+    );
+
+    suit.position.sub(neckPoint);
+
+    window.__suit = suit;
+    window.__neckPoint = neckPoint;
+  }, undefined, (err) => {
+    console.error('Failed to load suit.glb:', err);
+  });
+
+  // Load head (untitled.glb)
+  new GLTFLoader().load('untitled.glb', (gltf) => {
+    headModelRoot.clear();
+
+    const model = gltf.scene;
+    headModelRoot.add(model);
+
+    // Candidates = top-level children containing a SkinnedMesh with Jaw morph target
+    const faceCandidates = [];
+    for (const child of model.children) {
+      let hasJaw = false;
+      child.traverse((o) => {
+        if (hasJaw) return;
+        if (o.isSkinnedMesh && o.morphTargetDictionary && Object.prototype.hasOwnProperty.call(o.morphTargetDictionary, 'Jaw')) {
+          hasJaw = true;
+        }
+      });
+      if (hasJaw) faceCandidates.push(child);
+    }
+
+    // Hide all candidate faces except the hardcoded one
+    if (faceCandidates.length) {
+      for (let i = 0; i < faceCandidates.length; i++) {
+        faceCandidates[i].visible = (i === HARD_FACE_INDEX);
+      }
+    }
+
+    const chosen = faceCandidates[HARD_FACE_INDEX] || null;
+    if (!chosen) {
+      console.warn('Hardcoded face index not found; showing full head model. Candidates:', faceCandidates.map(c => c.name));
+    }
+
+    const measureTarget = chosen || model;
+
+    headModelRoot.updateMatrixWorld(true);
+
+    // Scale the head internally to a reference height (keeps jaw + look stable)
+    const preBox = new THREE.Box3().setFromObject(measureTarget);
+    const preSize = preBox.getSize(new THREE.Vector3());
+    const targetHeight = 1.85;
+    const scale = (preSize.y > 0) ? (targetHeight / preSize.y) : 1;
+    headModelRoot.scale.setScalar(scale);
+
+    headModelRoot.updateMatrixWorld(true);
+
+    // Center the head around origin
+    const box = new THREE.Box3().setFromObject(measureTarget);
+    const center = box.getCenter(new THREE.Vector3());
+    headModelRoot.position.set(-center.x, -center.y, -center.z);
+
+    // Small forward nudge
+    headModelRoot.position.z -= 0.25;
+
+    // Lift slightly (eyes up)
+    headModelRoot.position.y += 0.06;
+
+    // Materials + morph targets (only chosen subtree)
+    riggedMeshes = [];
+    (chosen || headModelRoot).traverse((o) => {
+      if (!(o.isMesh || o.isSkinnedMesh)) return;
+
+      if (o.isMesh || o.isSkinnedMesh) {
+        o.castShadow = true;
+        o.receiveShadow = false;
+      }
+
+      if (o.material) {
+        o.material.metalness = 0.0;
+        if (o.material.roughness !== undefined) {
+          o.material.roughness = Math.max(o.material.roughness, 0.78);
+        }
+        if (o.material.emissiveIntensity !== undefined) {
+          o.material.emissiveIntensity = Math.min(o.material.emissiveIntensity, 0.20);
+        }
+        if (o.material.envMapIntensity !== undefined) {
+          o.material.envMapIntensity = Math.min(0.8, Math.max(0.35, o.material.envMapIntensity));
+        }
+
+        // Remember material(s) so Lighting slider can drive it noticeably.
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        for (const m of mats) {
+          if (!m || !m.uuid) continue;
+
+          // Lit (PBR) materials
+          if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
+            const baseEnv = (m.envMapIntensity !== undefined) ? m.envMapIntensity : 0.6;
+            if (!headMaterials.has(m.uuid)) headMaterials.set(m.uuid, { mat: m, baseEnv });
+            continue;
+          }
+
+          // Unlit/baked materials (ignore lights) — drive their base color so slider still has effect.
+          if (m.color && !headUnlitMaterials.has(m.uuid)) {
+            headUnlitMaterials.set(m.uuid, { mat: m, baseColor: m.color.clone() });
+          }
+        }
+      }
+
+      if (o.morphTargetDictionary && o.morphTargetInfluences) {
+        if (Object.prototype.hasOwnProperty.call(o.morphTargetDictionary, 'Jaw')) {
+          riggedMeshes.push(o);
+        }
+      }
+    });
+
+    // Start closed
+    jawTarget = 0;
+    jawCurrent = 0;
+    jawSlider.value = '0';
+    setJaw(0);
+
+    window.__head = model;
+    window.__face = chosen;
+  }, undefined, (err) => {
+    console.error('Failed to load head GLB:', err);
+  });
+
+  // ───────── Post-processing realism stack ─────────
+  composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+
+  ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
+  ssaoPass.kernelRadius = 10;
+  ssaoPass.minDistance = 0.002;
+  ssaoPass.maxDistance = 0.10;
+  composer.addPass(ssaoPass);
+
+  colorPass = new ShaderPass(ColorCorrectionShader);
+  if (colorPass.uniforms?.powRGB?.value?.set) colorPass.uniforms.powRGB.value.set(1.035, 1.035, 1.035);
+  if (colorPass.uniforms?.mulRGB?.value?.set) colorPass.uniforms.mulRGB.value.set(0.93, 0.93, 0.93);
+  composer.addPass(colorPass);
+
+  filmPass = new FilmPass(0, 0, 0, false);
+  composer.addPass(filmPass);
+  if (filmPass.uniforms?.nIntensity) filmPass.uniforms.nIntensity.value = 0.028;
+  if (filmPass.uniforms?.sIntensity) filmPass.uniforms.sIntensity.value = 0.018;
+  if (filmPass.uniforms?.sCount) filmPass.uniforms.sCount.value = 600;
+
+  rgbShiftPass = new ShaderPass(RGBShiftShader);
+  if (rgbShiftPass.uniforms?.amount) rgbShiftPass.uniforms.amount.value = 0.00020;
+  composer.addPass(rgbShiftPass);
+
+  vignettePass = new ShaderPass(VignetteShader);
+  if (vignettePass.uniforms?.offset) vignettePass.uniforms.offset.value = 0.35;
+  if (vignettePass.uniforms?.darkness) vignettePass.uniforms.darkness.value = 0.9;
+  composer.addPass(vignettePass);
+
+  fxaaPass = new ShaderPass(FXAAShader);
+  composer.addPass(fxaaPass);
+  updateFXAA();
+
+  window.addEventListener('resize', onResize);
+
+  jawSlider.oninput = () => {
+    jawTarget = Number(jawSlider.value);
+  };
+}
+
+function updateFXAA() {
+  if (!fxaaPass?.material?.uniforms?.resolution) return;
+  const pixelRatio = renderer.getPixelRatio();
+  fxaaPass.material.uniforms.resolution.value.set(
+    1 / (window.innerWidth * pixelRatio),
+    1 / (window.innerHeight * pixelRatio)
+  );
+}
+
+function onResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+
+  ssaoPass?.setSize?.(window.innerWidth, window.innerHeight);
+
+  updateFXAA();
+}
+
+function setJaw(value01) {
+  for (const m of riggedMeshes) {
+    const idx = m.morphTargetDictionary?.Jaw;
+    if (idx !== undefined && m.morphTargetInfluences) {
+      m.morphTargetInfluences[idx] = value01;
+    }
+  }
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const dt = clock.getDelta();
+  t += dt;
+
+  // Requested microsway magnitude
+  const micro = 0.005;
+
+  // Apply fixed suit alignment (MOVE SUIT; head stays focus)
+  if (suitRoot) {
+    const suitX = -0.15;
+    const suitY = -4.1;
+    const suitZ = 1.3;
+    const suitScale = 1.4;
+
+    suitRoot.position.set(suitX, suitY, suitZ);
+    suitRoot.rotation.set(0, 0, 0);
+    suitRoot.scale.set(suitScale, suitScale, suitScale);
+  }
+
+  // Look sliders rotate the WHOLE character so suit stays anchored to head
+  if (characterRoot) {
+    // Allow full ±90° left/right rotation
+    const yaw = Number(xSlider.value) * (Math.PI / 2);
+    const pitch = Number(ySlider.value) * 0.45;
+
+    characterRoot.rotation.y = MODEL_BASE_YAW + yaw + Math.sin(t * 3.0) * micro;
+    characterRoot.rotation.x = pitch + Math.sin(t * 2.5) * micro;
+    characterRoot.rotation.z = Math.sin(t * 1.7) * (micro * 0.55);
+
+    characterRoot.position.set(0, 0, 0);
+  }
+
+  // Lighting slider: make it OBVIOUS and useful across displays.
+  // We drive (1) direct lights, (2) exposure, and (3) face envMap intensity.
+  // 0 = moody/dim, 1 = bright. Default 0.6.
+  const L = Number(lightSlider.value);
+  const Lc = Math.min(1, Math.max(0, L));
+
+  // Curves so low end has fine control and high end ramps harder.
+  const Lsoft = Math.pow(Lc, 1.15);
+  const Lhard = Math.pow(Lc, 2.0);
+
+  // Direct lights: wider dynamic range (so it's actually visible on the face)
+  if (ambientLight) ambientLight.intensity = 0.03 + Lsoft * 0.55;   // 0.03 .. 0.58
+  if (keyLight)     keyLight.intensity     = 0.20 + Lsoft * 3.30;   // 0.20 .. 3.50
+  if (fillLight)    fillLight.intensity    = 0.05 + Lsoft * 1.45;   // 0.05 .. 1.50
+  if (rimLight)     rimLight.intensity     = 0.00 + Lsoft * 1.20;   // 0.00 .. 1.20
+
+  // Camera-attached light: makes face response obvious across displays
+  if (headCamLight) headCamLight.intensity = 0.00 + Lsoft * 6.0;    // 0 .. 6
+
+  // Face material env contribution (often what makes skin "read" correctly).
+  for (const { mat, baseEnv } of headMaterials.values()) {
+    if (!mat) continue;
+    if (mat.envMapIntensity !== undefined) {
+      mat.envMapIntensity = baseEnv * (0.55 + Lsoft * 1.55); // ~0.55x .. ~2.10x
+    }
+  }
+
+  // Unlit/baked face materials: drive base color luminance
+  for (const { mat, baseColor } of headUnlitMaterials.values()) {
+    if (!mat || !mat.color || !baseColor) continue;
+    mat.color.copy(baseColor).multiplyScalar(0.55 + Lsoft * 1.25);
+  }
+
+  // Exposure: broader so you can correct for bright/dim monitors.
+
+  const baseExp = 0.70 + Lsoft * 0.70; // 0.70 .. 1.40
+  renderer.toneMappingExposure = baseExp + Math.sin(t * 0.25) * 0.008 * (0.5 + 0.5 * (1 - Lhard));
+
+  // Camera dolly zoom, clamped (positive slider zooms IN)
+  const desiredCamZ = THREE.MathUtils.clamp(CAMERA_BASE_Z - Number(zSlider.value), CAMERA_MIN_Z, CAMERA_MAX_Z);
+  camera.position.z += (desiredCamZ - camera.position.z) * 0.18;
+  camera.lookAt(0, 0.10, 0);
+
+  // Smooth jaw
+  jawCurrent += (jawTarget - jawCurrent) * 0.18;
+  setJaw(jawCurrent);
+
+  composer.render();
+}
+</script>
+
+</body>
+</html>
