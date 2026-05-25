@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="../images/pogger.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>stuff</title>
+<style>
+body {
+    background: linear-gradient(336deg, #7d7dff, #adadee);
+    background-size: 400% 400%;
+    animation: gradient 6s ease infinite;
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Nunito', sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+    box-sizing: border-box;
+}
+
+@keyframes gradient {
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+}
+
+h1 {
+    color: #fff;
+    font-weight: 800;
+    font-size: 2.5rem;
+    margin: 0 0 8px;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.15);
+}
+
+.tag {
+    color: #fff;
+    opacity: 0.85;
+    margin-bottom: 32px;
+    font-weight: 600;
+}
+
+.hub {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    width: 100%;
+    max-width: 720px;
+}
+
+.card {
+    background: rgba(255,255,255,0.85);
+    border-radius: 14px;
+    padding: 22px 20px;
+    text-decoration: none;
+    color: #2a2a55;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    display: block;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+}
+
+.card h2 {
+    margin: 0 0 6px;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.card p {
+    margin: 0;
+    font-size: 0.92rem;
+    opacity: 0.75;
+    font-weight: 600;
+}
+
+.back {
+    margin-top: 28px;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    opacity: 0.85;
+}
+.back:hover { opacity: 1; text-decoration: underline; }
+</style>
+</head>
+<body>
+    <h1>stuff</h1>
+    <p class="tag">little things i made</p>
+
+    <div class="hub">
+        <a class="card" href="piecefinder/index.html">
+            <h2>puzzle piece locator</h2>
+            <p>find where a piece belongs in your puzzle</p>
+        </a>
+        <a class="card" href="bat4m/index.html">
+            <h2>BAT4M cheat sheet</h2>
+            <p>accounting reference</p>
+        </a>
+        <a class="card" href="bat4m/study_notes.html">
+            <h2>Saskan study notes</h2>
+            <p>BAT4M — Saskan Enterprises</p>
+        </a>
+        <a class="card" href="bat4m/chapters/2.pdf">
+            <h2>chapter 2</h2>
+            <p>BAT4M — pdf</p>
+        </a>
+        <a class="card" href="bat4m/chapters/3.pdf">
+            <h2>chapter 3</h2>
+            <p>BAT4M — pdf</p>
+        </a>
+        <a class="card" href="bat4m/chapters/4.pdf">
+            <h2>chapter 4</h2>
+            <p>BAT4M — pdf</p>
+        </a>
+        <a class="card" href="bat4m/chapters/5.pdf">
+            <h2>chapter 5</h2>
+            <p>BAT4M — pdf</p>
+        </a>
+    </div>
+
+    <a class="back" href="../index.html">← back</a>
+</body>
+</html>

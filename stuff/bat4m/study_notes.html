@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Saskan Enterprises — Study Notes</title>
+<style>
+  body {
+    font-family: Georgia, serif;
+    background: #ffffff;
+    color: #000000;
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 0 25px 60px;
+    line-height: 1.55;
+    font-size: 15px;
+  }
+  h1 {
+    font-size: 24px;
+    border-bottom: 2px solid #000;
+    padding-bottom: 6px;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    color: #555;
+    font-size: 13px;
+    margin-bottom: 26px;
+  }
+  h2 {
+    font-size: 18px;
+    color: #222;
+    margin-top: 32px;
+    border-bottom: 1px solid #999;
+    padding-bottom: 4px;
+  }
+  h3 {
+    font-size: 15px;
+    margin-top: 18px;
+    margin-bottom: 6px;
+    color: #333;
+  }
+  table {
+    border-collapse: collapse;
+    margin: 10px 0 14px;
+    font-size: 14px;
+    width: 100%;
+  }
+  table, th, td {
+    border: 1px solid #777;
+  }
+  th, td {
+    padding: 6px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #eee;
+    font-weight: bold;
+  }
+  td.num, th.num { text-align: right; }
+  td.ctr, th.ctr { text-align: center; }
+  .je {
+    font-family: "Courier New", Courier, monospace;
+    background: #f6f6f6;
+    border: 1px solid #999;
+    padding: 8px 14px;
+    margin: 6px 0 10px;
+    white-space: pre;
+    font-size: 13.5px;
+    overflow-x: auto;
+  }
+  .calc {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 13.5px;
+    background: #f6f6f6;
+    padding: 2px 6px;
+    border: 1px solid #ccc;
+  }
+  .rule {
+    background: #f3f3f3;
+    border: 1px solid #aaa;
+    border-left: 4px solid #444;
+    padding: 10px 14px;
+    margin: 12px 0;
+    font-size: 14.5px;
+  }
+  ol li, ul li { margin-bottom: 5px; }
+  .x-mark { color: #a33; font-weight: bold; font-family: "Courier New", monospace; }
+</style>
+</head>
+<body>
+
+<h1>Saskan Enterprises — Part 2 Study Notes</h1>
+<div class="subtitle">Posting rules, journal decisions, and the full sequence for Oct 31 trial balance</div>
+
+<!-- ================================================== -->
+<h2>1. The full Part 2 sequence</h2>
+
+<ol>
+  <li><strong>Fix Oct 25 Amy Ihrig</strong> (CR Journal) → Cash $2,548 / Sales Discount $52 / A/R Cr $2,600. Re-foot and re-crossfoot the CR Journal.</li>
+  <li><strong>Post individual items from Oct 25–31</strong> (blank PR columns):
+    <ul>
+      <li>CR Oct 25 Amy Ihrig $2,600 → A/R subledger, PR = ✓</li>
+      <li>Purchases Oct 26 Sunshine $8,100 → A/P subledger, PR = ✓</li>
+      <li>CD Oct 31 Jamie Green $2,020 → Sales Salaries Expense (621), PR = 621</li>
+      <li>CD Oct 31 Countryside Electric $710 → Utilities Expense (690), PR = 690</li>
+    </ul>
+  </li>
+  <li><strong>Post column totals at month-end</strong> — for each of the 4 special journals, take each column total to its GL account and write the account number under the total.</li>
+  <li><strong>Mark "Other Accounts" totals with <span class="x-mark">(X)</span></strong> — never posted, because each line was already posted individually.</li>
+  <li><strong>Schedule of A/R</strong> — should equal A/R control (<span class="calc">$8,900</span>).</li>
+  <li><strong>Schedule of A/P</strong> — should equal A/P control (<span class="calc">$16,675</span>).</li>
+  <li><strong>Trial Balance</strong> — list every GL account with its ending balance. Total Dr = Total Cr.</li>
+</ol>
+
+<!-- ================================================== -->
+<h2>2. The Amy Ihrig fix — why it was wrong</h2>
+
+<p>Amy's account walk-through:</p>
+<table>
+  <tr><th>Date</th><th>Event</th><th class="num">Change</th><th class="num">Balance</th></tr>
+  <tr><td>Oct 15</td><td>Sold her $3,100 of merch (SJ)</td><td class="num">+3,100</td><td class="num">$3,100</td></tr>
+  <tr><td>Oct 20</td><td>Returned $500 defective (GJ)</td><td class="num">−500</td><td class="num">$2,600</td></tr>
+  <tr><td>Oct 25</td><td>She pays within 10-day window</td><td class="num">?</td><td class="num">?</td></tr>
+</table>
+
+<p>Discount terms 2/10, n/30 apply to what she <strong>actually owes</strong> ($2,600), not the original invoice ($3,100).</p>
+
+<h3>Correct entry:</h3>
+<div class="je">Cash                                  2,548
+Sales Discount                           52
+   Accounts Receivable — Amy Ihrig       2,600</div>
+
+<h3>Wrong entry (what was originally written):</h3>
+<div class="je">Cash                                  3,038
+Sales Discount                           62
+   Accounts Receivable — Amy Ihrig       3,100</div>
+
+<div class="rule"><strong>Why it's wrong:</strong> crediting Amy's A/R for $3,100 when she only owes $2,600 sends her subledger balance to −$500. A customer can't owe negative money — that would mean you owe her, which isn't true.</div>
+
+<!-- ================================================== -->
+<h2>3. Daily vs Monthly posting — the rule</h2>
+
+<div class="rule">
+<strong>Does the GL account have its own dedicated column in a special journal?</strong>
+<ul>
+  <li><strong>YES</strong> → posted <strong>monthly</strong> (column total only, at month-end)</li>
+  <li><strong>NO — it's in "Other Accounts"</strong> → posted <strong>daily</strong> (each line individually)</li>
+  <li><strong>In the General Journal</strong> → posted <strong>daily</strong> (both Dr and Cr legs)</li>
+</ul>
+</div>
+
+<h3>Why it works this way:</h3>
+<ul>
+  <li>High-volume accounts (Cash, A/R, A/P, Sales, MI) get dedicated columns so you batch them up. One posting per month instead of 50.</li>
+  <li>Occasional accounts (Rent, Utilities, Equipment) sit in "Other Accounts." The column total there is meaningless (mixed accounts) — that's why it gets (X) and lines get posted individually.</li>
+  <li>GJ entries are always unusual (returns, adjustments) and have no column system, so they post immediately.</li>
+</ul>
+
+<h3>Posting cheat table for Saskan's accounts:</h3>
+<table>
+  <tr><th>Account</th><th class="ctr">Daily?</th><th class="ctr">Monthly?</th><th>Reason</th></tr>
+  <tr><td>Cash (101)</td><td class="ctr">—</td><td class="ctr">✓</td><td>Has columns in CR and CD</td></tr>
+  <tr><td>A/R (106)</td><td class="ctr">from GJ returns</td><td class="ctr">✓</td><td>Column in SJ and CR + GJ returns</td></tr>
+  <tr><td>Merch. Inv. (119)</td><td class="ctr">from GJ returns</td><td class="ctr">✓</td><td>Column in SJ, CR, PJ, CD + GJ returns</td></tr>
+  <tr><td>Office Supplies (124)</td><td class="ctr">from GJ return ($40)</td><td class="ctr">✓ ($615)</td><td>Column in PJ + GJ return</td></tr>
+  <tr><td>Store Equipment (165)</td><td class="ctr">✓ ($6,700 Other Accts)</td><td class="ctr">—</td><td>No column — sat in Other Accts of PJ</td></tr>
+  <tr><td>A/P (201)</td><td class="ctr">from GJ returns</td><td class="ctr">✓</td><td>Column in PJ and CD + GJ returns</td></tr>
+  <tr><td>Sales (413)</td><td class="ctr">—</td><td class="ctr">✓</td><td>Column in SJ and CR</td></tr>
+  <tr><td>Sales R&amp;A (414)</td><td class="ctr">✓ (GJ)</td><td class="ctr">—</td><td>Only appears in GJ</td></tr>
+  <tr><td>Sales Discounts (415)</td><td class="ctr">—</td><td class="ctr">✓</td><td>Column in CR</td></tr>
+  <tr><td>COGS (502)</td><td class="ctr">from GJ return</td><td class="ctr">✓</td><td>Column in SJ and CR + GJ return</td></tr>
+  <tr><td>Sales Salaries Exp (621)</td><td class="ctr">✓ (Other Accts CD)</td><td class="ctr">—</td><td>No column — sat in Other Accts of CD</td></tr>
+  <tr><td>Rent Expense (640)</td><td class="ctr">✓ (Other Accts CD)</td><td class="ctr">—</td><td>No column — sat in Other Accts of CD</td></tr>
+  <tr><td>Utilities (690)</td><td class="ctr">✓ (Other Accts CD)</td><td class="ctr">—</td><td>No column — sat in Other Accts of CD</td></tr>
+</table>
+
+<!-- ================================================== -->
+<h2>4. What goes in the General Journal</h2>
+
+<p>Anything that doesn't fit in one of the four special journals.</p>
+
+<h3>The 4 special journals only handle:</h3>
+<ul>
+  <li><strong>Sales Journal</strong> → credit sales only</li>
+  <li><strong>Cash Receipts</strong> → anything where cash comes in</li>
+  <li><strong>Purchases Journal</strong> → credit purchases only</li>
+  <li><strong>Cash Disbursements</strong> → anything where cash goes out</li>
+</ul>
+
+<h3>Common GJ entries:</h3>
+<ol>
+  <li>Sales returns from customers</li>
+  <li>Purchase returns to suppliers</li>
+  <li>Adjusting entries (depreciation, accruals, supplies used)</li>
+  <li>Closing entries (year-end)</li>
+  <li>Correcting entries</li>
+  <li>Owner contributions/withdrawals of non-cash assets</li>
+  <li>Any transaction with no cash AND no credit sale/purchase</li>
+</ol>
+
+<h3>Saskan's 6 GJ entries — all returns:</h3>
+<table>
+  <tr><th>Date</th><th>What</th><th>Why GJ</th></tr>
+  <tr><td>Oct 4</td><td>Return merch to Fireside</td><td>Purchase return — no cash, no credit purchase</td></tr>
+  <tr><td>Oct 9</td><td>Marge Craig returned — A/R side</td><td>Sales return</td></tr>
+  <tr><td>Oct 9</td><td>Marge Craig returned — COGS/MI side</td><td>Perpetual inventory reversal</td></tr>
+  <tr><td>Oct 17</td><td>Return merch to Shore</td><td>Purchase return</td></tr>
+  <tr><td>Oct 18</td><td>Return office supplies to Brown</td><td>Purchase return (supplies)</td></tr>
+  <tr><td>Oct 20</td><td>Amy Ihrig returned defective merch</td><td>Sales return</td></tr>
+</table>
+
+<!-- ================================================== -->
+<h2>5. "Which journal?" decision test</h2>
+
+<div class="rule">
+Run through these in order — first match wins:
+<ol>
+  <li>Does it involve <strong>cash coming in</strong>? → <strong>Cash Receipts Journal</strong></li>
+  <li>Does it involve <strong>cash going out</strong>? → <strong>Cash Disbursements Journal</strong></li>
+  <li>Is it a <strong>credit sale of merchandise</strong>? → <strong>Sales Journal</strong></li>
+  <li>Is it a <strong>credit purchase</strong>? → <strong>Purchases Journal</strong></li>
+  <li>Otherwise → <strong>General Journal</strong></li>
+</ol>
+</div>
+
+<!-- ================================================== -->
+<h2>6. Key target numbers for Saskan (Oct 31)</h2>
+
+<table>
+  <tr><th>What</th><th class="num">Amount</th></tr>
+  <tr><td>Schedule of A/R total (= A/R control)</td><td class="num">$8,900</td></tr>
+  <tr><td>Schedule of A/P total (= A/P control)</td><td class="num">$16,675</td></tr>
+  <tr><td>CR Journal Cash Dr total (after Amy fix)</td><td class="num">$81,122</td></tr>
+  <tr><td>CR Journal Sales Discount Dr total (after Amy fix)</td><td class="num">$258</td></tr>
+  <tr><td>CR Journal A/R Cr total (after Amy fix)</td><td class="num">$12,900</td></tr>
+  <tr><td>Total October Dr activity</td><td class="num">$129,427</td></tr>
+  <tr><td>Total October Cr activity</td><td class="num">$129,427</td></tr>
+</table>
+
+</body>
+</html>
