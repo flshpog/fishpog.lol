@@ -1,65 +1,613 @@
-
-<!-- dont look please dont look -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="images/pogger.png">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>yep that's the one</title>
-<style>
-body {
-background: linear-gradient(336deg, #7d7dff, #adadee);
-background-size: 400% 400%;
--webkit-animation: gradient 6s ease infinite;
--moz-animation: gradient 6s ease infinite;
-animation: gradient 6s ease infinite;
-}
-@-webkit-keyframes gradient {
-    0%{background-position:0% 50%}
-    50%{background-position:100% 50%}
-    100%{background-position:0% 50%}
-}
-@-moz-keyframes gradient {
-    0%{background-position:0% 50%}
-    50%{background-position:100% 50%}
-    100%{background-position:0% 50%}
-}
-@keyframes gradient {
-    0%{background-position:0% 50%}
-    50%{background-position:100% 50%}
-    100%{background-position:0% 50%}
-}
-.castratebavvy {
-    position: fixed;
-    left: 10px;
-    bottom: 10px;
-}
-.sentances {
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items:center;
-    height: 100vh;
-    margin: 0;
-}
-p {
-    font-family: 'Nunito', sans-serif;
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>!</title>
+  <link rel="icon" type="image/x-icon" href="images/pogger.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #0a0a0a;
+      overflow: hidden;
+    }
+    body {
+      font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+      font-weight: 800;
+      color: #f5f5f5;
+      user-select: none;
+    }
+
+    /* ---- the exclamation mark ---- */
+    #mark {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(6rem, 22vw, 16rem);
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      transition: transform 0.25s ease, text-shadow 0.3s ease;
+      text-shadow: 0 0 0 transparent;
+      z-index: 3;
+    }
+    #mark:hover  { transform: translate(-50%, -50%) scale(1.04); text-shadow: 0 0 28px rgba(255,255,255,0.35); }
+    #mark:active { transform: translate(-50%, -50%) scale(0.97); }
+    /* beat 1: slide off the top of the screen */
+    #mark.slideoff {
+      transform: translate(-50%, -50%) translateY(-130vh);
+      transition: transform 0.45s cubic-bezier(0.55, 0, 0.85, 0.35);
+      pointer-events: none;
+    }
+
+    /* ---- the FISHPOG wordmark ---- */
+    #fishpog {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: baseline;
+      font-weight: 800;
+      font-size: clamp(3rem, 13vw, 10rem);
+      line-height: 1;
+      letter-spacing: -0.01em;
+      z-index: 1;
+      white-space: nowrap;
+    }
+    #fishpog span {
+      color: #000;            /* black by default; JS flashes the color on the beat */
+      opacity: 0;
+      transform: translateY(0.12em) scale(0.92);
+      transition: opacity 0.18s ease, transform 0.28s cubic-bezier(0.22, 1.3, 0.4, 1);
+      will-change: color, opacity, transform;
+    }
+    #fishpog span.show { opacity: 1; transform: translateY(0) scale(1); }
+
+    /* ---- bottom nav buttons ---- */
+    #nav {
+      position: fixed;
+      left: 50%;
+      bottom: 5vh;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 2.4rem;
+      z-index: 4;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.45s ease;
+    }
+    #nav.show { opacity: 1; pointer-events: auto; }
+
+    .navgroup { position: relative; }
+
+    #nav a {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      color: #cdcbe8;
+      cursor: pointer;
+      text-shadow: 0 1px 12px rgba(0, 0, 0, 0.75);
+      transition: color 0.2s ease, transform 0.12s ease, opacity 0.2s ease;
+    }
+    #nav a:hover  { color: #fff; }
+    #nav a:active { transform: scale(0.95); }
+
+    .trigger { font-size: clamp(0.9rem, 2.5vw, 1.1rem); }
+    .trigger.active { color: #fff; }
+
+    /* dropdown that rises above its trigger */
+    .menu {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      margin-bottom: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.55rem;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .menu.open { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+    .menu a { font-size: clamp(0.8rem, 2.2vw, 0.98rem); color: #bcb9da; }
+
+    /* easter egg: barely visible */
+    .hidden-link { opacity: 0.05; font-size: 0.7rem; letter-spacing: 0.1em; }
+    .hidden-link:hover { opacity: 0.5; }
+
+    /* ---- looping storm video, behind everything; fades in when the storm hits ---- */
+    #bg {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 1.1s ease;
+      pointer-events: none;
+      z-index: 0;
+    }
+    #bg.show { opacity: 1; }
+
+    /* ---- rain canvas (sits above the text; drops splash on the wordmark) ---- */
+    #rain {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+    }
+  </style>
 </head>
 <body>
-<div class="sentances">
-    <p>
-    <b>
-    i deleted the website because i'm tired of it being ugly and vibecoded.
-    <br>
-    one day i'll finish the new one, for now it'll just be this
-    </b>
-    </p>
-</div>
+  <video id="bg" loop muted playsinline preload="auto">
+    <source src="images/storm.mp4" type="video/mp4">
+  </video>
+  <div id="mark" role="button" aria-label="Click the exclamation mark">!</div>
+
+  <div id="fishpog">
+    <span id="fish">fish</span><span id="pog">pog</span>
+  </div>
+
+  <nav id="nav">
+    <div class="navgroup">
+      <div class="menu" id="menu-friends">
+        <a href="https://bingbof.lol" target="_blank" rel="noopener">bingbof</a>
+        <a href="https://soph.gay" target="_blank" rel="noopener">soph</a>
+        <a href="https://coolsite.cv" target="_blank" rel="noopener">cv</a>
+        <a href="https://nitzamusic.com" target="_blank" rel="noopener">nitsu</a>
+      </div>
+      <a href="#" class="trigger" data-menu="friends">friends</a>
+    </div>
+
+    <div class="navgroup">
+      <div class="menu" id="menu-projects">
+        <a href="https://accidentalwatermelon.org" target="_blank" rel="noopener">taw</a>
+        <a href="https://fiovivor.org" target="_blank" rel="noopener">fiovivor</a>
+        <a href="https://soph.gay/manifesto" target="_blank" rel="noopener">my other projects</a>
+        <a href="https://s.soggy.cat" class="hidden-link" target="_blank" rel="noopener">hm?</a>
+      </div>
+      <a href="#" class="trigger" data-menu="projects">projects</a>
+    </div>
+  </nav>
+
+  <canvas id="rain"></canvas>
+
+  <script>
+  (() => {
+    'use strict';
+
+    // ====================== TUNABLES ======================
+    const LOOP_LEAD   = 0.05;  // start the loop this many sec before the intro ends
+    const INTRO_BEATS = 4;     // the 4-count lives in newloopintro.mp3
+
+    // flash = live beat/onset visualizer: reacts to ENERGY SPIKES above a
+    // rolling baseline, so constant bass doesn't keep it lit -- only hits flash.
+    const FLASH_BASELINE = 0.06;  // how fast the baseline adapts (lower = flashes linger)
+    const FLASH_SENS     = 6.5;   // how strongly a spike maps to a flash (higher = touchier)
+    const FLASH_GAMMA    = 0.6;   // <1 = small spikes still show
+    const FLASH_MAX      = 0.3;   // peak brightness of a flash (0..1). lower = dimmer
+    const FLASH_ATTACK   = 0.28;  // how fast a flash swells up (lower = smoother rise)
+    const FLASH_RELEASE  = 0.08;  // how fast it eases back to black (lower = smoother fade)
+    const FLASH_FLOOR    = 0.0;   // resting brightness (0 = fully black between hits)
+    // frequency bands (bin indices; ~43 Hz per bin at fftSize 1024 / 44.1kHz)
+    const FISH_BAND = [1, 5];    // kick / bass      -> fish (#7d7dff)
+    const POG_BAND  = [30, 95];  // snare / highs    -> pog  (#beb5ff)
+
+    // rain
+    const RAIN_DENSITY = 600;  // drops spawned per second (storm = heavy)
+    const RAIN_MIN_VY  = 950;  // px/sec
+    const RAIN_MAX_VY  = 1600;
+    const RAIN_WIND    = 220;  // horizontal drift (px/sec) -> slanted, wind-blown streaks
+    const MASK_ALPHA   = 50;   // pixel opacity (0-255) that counts as "letter" for collisions
+    const MASK_OFFSET_Y = 0;   // nudge the collision mask vertically if it's slightly off
+
+    // muffle (music)
+    const FOCUSED_FREQ = 22050, UNFOCUSED_FREQ = 700, UNFOCUSED_MULT = 0.7, RAMP_TIME = 0.4;
+    // muffle (rain — always muffled, muffles further on tab-out)
+    const RAIN_FOCUSED_FREQ = 1500, RAIN_UNFOCUSED_FREQ = 500, RAIN_BASE_GAIN = 0.6;
+
+    const INTRO_URL = 'images/newloopintro.mp3';
+    const LOOP_URL  = 'images/newloop.mp3';
+    const RAIN_URL  = 'images/rain.mp3';
+
+    // flash target colors (base is black, so the rendered color = target * intensity)
+    const FISH_RGB = [125, 125, 255]; // #7d7dff
+    const POG_RGB  = [190, 181, 255]; // #beb5ff
+
+    // ====================== ELEMENTS ======================
+    const mark    = document.getElementById('mark');
+    const fishpog = document.getElementById('fishpog');
+    const fishEl  = document.getElementById('fish');
+    const pogEl   = document.getElementById('pog');
+    const nav     = document.getElementById('nav');
+    const bg      = document.getElementById('bg');
+    const canvas  = document.getElementById('rain');
+    const cx      = canvas.getContext('2d');
+
+    // ====================== AUDIO GRAPH ======================
+    let audioContext = null;
+    const audioNodes = []; // { filter, gain, focusedFreq, unfocusedFreq, baseGain }
+    let musicFilter = null, rainFilter = null;
+    let started = false;
+
+    function makeChain(focusedFreq, unfocusedFreq, baseGain) {
+      const filter = audioContext.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = focusedFreq;
+      filter.Q.value = 0.707;
+      const gain = audioContext.createGain();
+      gain.gain.value = baseGain;
+      filter.connect(gain);
+      gain.connect(audioContext.destination);
+      audioNodes.push({ filter, gain, focusedFreq, unfocusedFreq, baseGain });
+      return filter;
+    }
+
+    function buildGraph() {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      audioContext = new Ctx();
+      musicFilter = makeChain(FOCUSED_FREQ, UNFOCUSED_FREQ, 1.0);
+      rainFilter  = makeChain(RAIN_FOCUSED_FREQ, RAIN_UNFOCUSED_FREQ, RAIN_BASE_GAIN);
+
+      // visualizer tap: full-spectrum, independent of the muffle filter/gain
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.6;
+      freqData = new Uint8Array(analyser.frequencyBinCount);
+    }
+
+    function ensureAudioContextRunning() {
+      if (!audioContext || audioContext.state === 'running') return;
+      audioContext.resume().catch(() => {});
+    }
+
+    function applyAudioFilter() {
+      if (!audioContext) return;
+      const tabUnfocused = document.hidden || !document.hasFocus();
+      const t = audioContext.currentTime + RAMP_TIME;
+      for (const n of audioNodes) {
+        const targetFreq = tabUnfocused ? n.unfocusedFreq : n.focusedFreq;
+        const targetGain = tabUnfocused ? n.baseGain * UNFOCUSED_MULT : n.baseGain;
+        try {
+          n.filter.frequency.cancelScheduledValues(audioContext.currentTime);
+          n.gain.gain.cancelScheduledValues(audioContext.currentTime);
+          n.filter.frequency.linearRampToValueAtTime(targetFreq, t);
+          n.gain.gain.linearRampToValueAtTime(targetGain, t);
+        } catch (e) { /* ignore */ }
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      document.body.classList.toggle('tab-hidden', document.hidden);
+      applyAudioFilter();
+    });
+    window.addEventListener('blur',  applyAudioFilter);
+    window.addEventListener('focus', applyAudioFilter);
+    ['pointerdown', 'touchstart', 'click', 'keydown'].forEach(evt =>
+      window.addEventListener(evt, ensureAudioContextRunning));
+
+    async function loadBuffer(url) {
+      const res = await fetch(url);
+      const arr = await res.arrayBuffer();
+      return await audioContext.decodeAudioData(arr);
+    }
+
+    // ====================== ANALYSER (visualizer) ======================
+    let analyser = null;
+    let freqData = null;
+    let levFish = 0, levPog = 0;     // current flash brightness
+    let avgFish = 0, avgPog = 0;     // rolling baseline energy per band
+    let flashActive = false;
+
+    function bandEnergy(lo, hi) {
+      let sum = 0;
+      for (let i = lo; i <= hi; i++) sum += freqData[i];
+      return sum / ((hi - lo + 1) * 255); // 0..1
+    }
+
+    // ====================== TIMELINE ======================
+    let timeline = [];       // { t (audio time), fired, fn }
+
+    function fireDue() {
+      if (!audioContext) return;
+      const now = audioContext.currentTime;
+      for (const ev of timeline) {
+        if (!ev.fired && now >= ev.t) { ev.fired = true; ev.fn(); }
+      }
+    }
+
+    // ====================== RAIN ======================
+    let rainActive = false;
+    let drops = [];
+    let splashes = [];
+    let spawnAcc = 0;
+    let W = 0, H = 0, dpr = 1;
+    let topY = null;   // per-column (CSS px) top surface of the wordmark; Infinity = no letter
+
+    // Rasterize "fishpog" to an offscreen canvas and record, for each x column,
+    // the y of the highest opaque pixel. Drops use this to land on the real glyphs.
+    function buildTextMask() {
+      const r = fishpog.getBoundingClientRect();
+      if (!(r.width > 0) || !W) { topY = null; return; }
+
+      const mc = document.createElement('canvas');
+      mc.width = W; mc.height = H;
+      const m = mc.getContext('2d');
+
+      const cs = getComputedStyle(fishEl);
+      m.font = cs.fontWeight + ' ' + parseFloat(cs.fontSize) + 'px ' + cs.fontFamily;
+      m.textAlign = 'center';
+      m.textBaseline = 'middle';
+      try { m.letterSpacing = cs.letterSpacing; } catch (e) { /* not supported */ }
+      m.fillStyle = '#fff';
+      m.fillText('fishpog', r.left + r.width / 2, r.top + r.height / 2 + MASK_OFFSET_Y);
+
+      const data = m.getImageData(0, 0, W, H).data;
+      const arr = new Float32Array(W).fill(Infinity);
+      for (let y = 0; y < H; y++) {
+        const row = y * W * 4;
+        for (let x = 0; x < W; x++) {
+          if (arr[x] === Infinity && data[row + x * 4 + 3] > MASK_ALPHA) arr[x] = y;
+        }
+      }
+      topY = arr;
+    }
+    // re-rasterize once webfonts are ready so the mask matches the real glyphs
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => { if (rainActive) buildTextMask(); });
+    }
+
+    function resizeCanvas() {
+      dpr = Math.max(1, window.devicePixelRatio || 1);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (rainActive) buildTextMask();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function spawnDrop() {
+      const vy = RAIN_MIN_VY + Math.random() * (RAIN_MAX_VY - RAIN_MIN_VY);
+      // spawn across an over-wide band so wind-drift still covers the screen edges
+      drops.push({
+        x: Math.random() * (W + 300) - 150,
+        y: -20 - Math.random() * 40,
+        len: 14 + Math.random() * 22,
+        vy: vy,
+        vx: RAIN_WIND * (0.75 + Math.random() * 0.5),
+      });
+    }
+
+    function spawnSplash(x, y) {
+      const n = 5 + (Math.random() * 4 | 0);
+      for (let i = 0; i < n; i++) {
+        const ang = (-Math.PI / 2) + (Math.random() - 0.5) * 2.2; // mostly upward, fanned
+        const sp  = 60 + Math.random() * 170;
+        splashes.push({
+          x, y,
+          vx: Math.cos(ang) * sp,
+          vy: Math.sin(ang) * sp,
+          life: 0.35 + Math.random() * 0.3,
+          age: 0,
+        });
+      }
+    }
+
+    function updateRain(dt) {
+      // spawn
+      spawnAcc += dt * RAIN_DENSITY;
+      while (spawnAcc >= 1) { spawnDrop(); spawnAcc -= 1; }
+
+      cx.clearRect(0, 0, W, H);
+
+      // drops — d.x/d.y is the leading (bottom) tip; streak trails up-wind
+      cx.lineWidth = 1.3;
+      cx.strokeStyle = 'rgba(120, 120, 130, 0.5)';
+      cx.beginPath();
+      const kept = [];
+      for (const d of drops) {
+        d.x += d.vx * dt;
+        d.y += d.vy * dt;
+
+        // land on the actual glyph surface in this column, else fall to the floor
+        let stopY = H;
+        if (topY) {
+          const xi = d.x | 0;
+          if (xi >= 0 && xi < W && topY[xi] !== Infinity) stopY = topY[xi];
+        }
+
+        if (d.y >= stopY) {
+          spawnSplash(d.x, stopY);
+          continue; // drop consumed
+        }
+        const k = d.len / d.vy;                 // time to span the streak length
+        cx.moveTo(d.x - d.vx * k, d.y - d.len);  // tail (up-wind)
+        cx.lineTo(d.x, d.y);                      // head
+        kept.push(d);
+      }
+      cx.stroke();
+      drops = kept;
+
+      // splashes
+      const keptS = [];
+      for (const s of splashes) {
+        s.age += dt;
+        if (s.age >= s.life) continue;
+        s.vy += 900 * dt;            // gravity
+        s.x  += s.vx * dt;
+        s.y  += s.vy * dt;
+        const a = 1 - s.age / s.life;
+        cx.fillStyle = 'rgba(110, 110, 110, ' + (a * 0.7).toFixed(3) + ')';
+        cx.fillRect(s.x, s.y, 2, 2);
+        keptS.push(s);
+      }
+      splashes = keptS;
+    }
+
+    // ====================== FLASH ======================
+    function lerpColor(rgb, i) {
+      return 'rgb(' + Math.round(rgb[0] * i) + ',' + Math.round(rgb[1] * i) + ',' + Math.round(rgb[2] * i) + ')';
+    }
+
+    // map a positive energy spike (above baseline) to a 0..1 flash target
+    function spikeToTarget(spike) {
+      let x = spike * FLASH_SENS;
+      if (x <= 0) return 0;
+      if (x > 1) x = 1;
+      return Math.pow(x, FLASH_GAMMA);
+    }
+
+    // attack/release smoothing: snap up on hits, ease back down to black
+    function smooth(level, target) {
+      const k = target > level ? FLASH_ATTACK : FLASH_RELEASE;
+      return level + (target - level) * k;
+    }
+
+    function updateFlash() {
+      if (!flashActive || !analyser) return;
+      analyser.getByteFrequencyData(freqData);
+
+      const eF = bandEnergy(FISH_BAND[0], FISH_BAND[1]);
+      const eP = bandEnergy(POG_BAND[0],  POG_BAND[1]);
+
+      // adapt the rolling baseline; flash only on energy ABOVE it (the transient)
+      avgFish += (eF - avgFish) * FLASH_BASELINE;
+      avgPog  += (eP - avgPog)  * FLASH_BASELINE;
+
+      levFish = smooth(levFish, spikeToTarget(eF - avgFish));
+      levPog  = smooth(levPog,  spikeToTarget(eP - avgPog));
+
+      fishEl.style.color = lerpColor(FISH_RGB, FLASH_FLOOR + levFish * FLASH_MAX);
+      pogEl.style.color  = lerpColor(POG_RGB,  FLASH_FLOOR + levPog  * FLASH_MAX);
+    }
+
+    // ====================== MAIN LOOP ======================
+    let lastTs = 0;
+    function frame(ts) {
+      const dt = lastTs ? Math.min(0.05, (ts - lastTs) / 1000) : 0;
+      lastTs = ts;
+      fireDue();
+      updateFlash();
+      if (rainActive) updateRain(dt);
+      requestAnimationFrame(frame);
+    }
+
+    // ====================== TIMELINE ACTIONS ======================
+    function slideExclamOff() { mark.classList.add('slideoff'); }
+    function showFish()       { fishEl.classList.add('show'); }
+    function showPog()        { pogEl.classList.add('show'); }
+    function showNav()        { nav.classList.add('show'); }
+
+    let rainBufRef = null;
+    function startRainAndFlash() {
+      flashActive = true;
+      bg.classList.add('show');   // fade the storm video in with the downbeat
+      buildTextMask();
+      if (rainBufRef && audioContext) {
+        const src = audioContext.createBufferSource();
+        src.buffer = rainBufRef;
+        src.loop = true;
+        src.connect(rainFilter);
+        src.start();
+      }
+      rainActive = true;
+    }
+
+    // ====================== START ======================
+    async function start() {
+      if (started) return;
+      started = true;
+
+      // kick off video playback now, on the user gesture (it stays hidden until the storm)
+      bg.play().catch(() => {});
+
+      try { buildGraph(); }
+      catch (e) { console.error('Web Audio unavailable', e); return; }
+      ensureAudioContextRunning();
+      applyAudioFilter();
+      resizeCanvas();
+
+      let introBuf, loopBuf, rainBuf;
+      try {
+        [introBuf, loopBuf, rainBuf] = await Promise.all([
+          loadBuffer(INTRO_URL), loadBuffer(LOOP_URL), loadBuffer(RAIN_URL),
+        ]);
+      } catch (e) {
+        console.error('Audio failed to load/decode (needs http, not file://):', e);
+        return;
+      }
+      rainBufRef = rainBuf;
+
+      const introBeat = introBuf.duration / INTRO_BEATS;
+      const now = audioContext.currentTime + 0.06;
+
+      // music: intro once, then the loop (gaplessly, brought in slightly early).
+      // each source also feeds the analyser so the flash reacts to the real signal.
+      const introSrc = audioContext.createBufferSource();
+      introSrc.buffer = introBuf;
+      introSrc.connect(musicFilter);
+      introSrc.connect(analyser);
+      introSrc.start(now);
+
+      const loopStart = now + introBuf.duration - LOOP_LEAD;
+      const loopSrc = audioContext.createBufferSource();
+      loopSrc.buffer = loopBuf;
+      loopSrc.loop = true;
+      loopSrc.connect(musicFilter);
+      loopSrc.connect(analyser);
+      loopSrc.start(Math.max(now, loopStart));
+
+      // 4-count: each beat triggers one thing; rain + flash land on the downbeat
+      timeline = [
+        { t: now + 0 * introBeat, fired: false, fn: slideExclamOff }, // 1
+        { t: now + 1 * introBeat, fired: false, fn: showFish },        // 2
+        { t: now + 2 * introBeat, fired: false, fn: showPog },         // 3
+        { t: now + 3 * introBeat, fired: false, fn: showNav },         // 4
+        { t: now + INTRO_BEATS * introBeat, fired: false, fn: startRainAndFlash },
+      ];
+
+      requestAnimationFrame(frame);
+    }
+
+    mark.addEventListener('click', start);
+
+    // ====================== NAV DROPDOWNS ======================
+    const triggers = document.querySelectorAll('#nav .trigger');
+    const menus = {
+      friends:  document.getElementById('menu-friends'),
+      projects: document.getElementById('menu-projects'),
+    };
+    function closeMenus() {
+      for (const m of Object.values(menus)) m.classList.remove('open');
+      triggers.forEach(t => t.classList.remove('active'));
+    }
+    triggers.forEach(t => {
+      t.addEventListener('click', (e) => {
+        e.preventDefault();
+        const m = menus[t.dataset.menu];
+        const wasOpen = m.classList.contains('open');
+        closeMenus();
+        if (!wasOpen) { m.classList.add('open'); t.classList.add('active'); }
+      });
+    });
+    // click anywhere outside the nav closes any open menu
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#nav')) closeMenus();
+    });
+  })();
+  </script>
 </body>
 </html>
