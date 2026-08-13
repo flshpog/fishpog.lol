@@ -3,8 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chase the Lights - Practice Tool</title>
+    <title>Chase the Lights</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg: #faf9f7;
+            --ink: #14161a;
+            --muted: #6f747c;
+            --rule: #dedbd5;
+            --field: #fff;
+            --accent: #a5182c;
+            --font: 'Nunito', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #101215;
+                --ink: #e9e7e2;
+                --muted: #939aa3;
+                --rule: #282c33;
+                --field: #171a1e;
+                --accent: #ff7d8a;
+            }
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,222 +36,242 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            min-height: 100vh;
-            color: #e0e0e0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: var(--font);
+            font-size: 17px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .page {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 60px 22px 100px;
         }
 
         h1 {
-            font-size: 2rem;
-            margin-bottom: 10px;
-            color: #fff;
-            text-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.015em;
         }
 
-        .subtitle {
-            color: #888;
-            margin-bottom: 30px;
-            font-size: 0.9rem;
+        .lede {
+            font-size: 18px;
+            color: var(--muted);
+            margin-top: 6px;
         }
 
-        /* Reference Section */
-        .reference-container {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 16px;
-            padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        hr {
+            border: 0;
+            border-top: 1px solid var(--rule);
+            margin: 28px 0;
         }
 
-        .pattern-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+        .eyebrow {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
         }
 
-        .pattern-item {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            overflow: hidden;
-            transition: all 0.3s ease;
+        /* Pattern rows */
+        .pattern {
+            border-bottom: 1px solid var(--rule);
         }
 
-        .pattern-item:hover {
-            border-color: rgba(255, 204, 0, 0.3);
+        .pattern:first-child {
+            border-top: 1px solid var(--rule);
         }
 
-        .pattern-header {
+        .pattern-head {
+            width: 100%;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 15px 20px;
+            gap: 16px;
+            padding: 16px 2px;
+            background: none;
+            border: 0;
+            font: inherit;
+            color: inherit;
+            text-align: left;
             cursor: pointer;
-            transition: background 0.3s ease;
         }
 
-        .pattern-header:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .pattern-lights {
+        .bits {
             display: flex;
-            gap: 6px;
+            gap: 4px;
+            flex: 0 0 auto;
         }
 
-        .pattern-lights .mini-light {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            background: #2a2a3e;
-            border: 1px solid #3a3a4e;
+        .bit {
+            width: 17px;
+            height: 17px;
+            border: 1px solid var(--rule);
+            border-radius: 2px;
         }
 
-        .pattern-lights .mini-light.on {
-            background: #ffcc00;
-            border-color: #ffdd44;
-            box-shadow: 0 0 8px rgba(255, 204, 0, 0.4);
+        .bit.on {
+            background: var(--ink);
+            border-color: var(--ink);
         }
 
-        .pattern-arrow {
-            color: #666;
-            transition: transform 0.3s ease;
+        .code {
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
         }
 
-        .pattern-item.open .pattern-arrow {
-            transform: rotate(180deg);
+        .meta {
+            margin-left: auto;
+            color: var(--muted);
+            font-size: 16px;
         }
 
-        .pattern-solution {
+        .mark {
+            flex: 0 0 auto;
+            width: 16px;
+            font-size: 20px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .mark::after { content: '+'; }
+        .pattern.open .mark::after { content: '−'; }
+        .pattern-head:hover .mark { color: var(--ink); }
+
+        .pattern-body {
             display: none;
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            background: rgba(0, 0, 0, 0.2);
+            padding: 4px 2px 24px;
         }
 
-        .pattern-item.open .pattern-solution {
-            display: block;
-        }
+        .pattern.open .pattern-body { display: block; }
 
-        .solution-grid-container {
+        .cols {
             display: flex;
-            gap: 30px;
-            align-items: flex-start;
+            gap: 36px;
             flex-wrap: wrap;
         }
 
-        .mini-grid {
+        .col-title { margin-bottom: 10px; }
+
+        .grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(5, 38px);
             gap: 4px;
         }
 
-        .mini-grid .mini-light {
-            width: 28px;
-            height: 28px;
-            border-radius: 4px;
-            background: #2a2a3e;
-            border: 1px solid #3a3a4e;
+        .cell {
+            width: 38px;
+            height: 38px;
+            border: 1px solid var(--rule);
+            border-radius: 3px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.6rem;
-            color: white;
-            font-weight: bold;
+            font-size: 15px;
+            font-weight: 700;
+            color: transparent;
         }
 
-        .mini-grid .mini-light.on {
-            background: #ffcc00;
-            border-color: #ffdd44;
+        .cell.on {
+            background: var(--ink);
+            border-color: var(--ink);
         }
 
-        .mini-grid .mini-light.click {
-            background: #4CAF50;
-            border-color: #66BB6A;
+        .cell.click {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--bg);
         }
 
-        .solution-moves {
-            flex: 1;
-            min-width: 200px;
+        .seq { flex: 1 1 240px; }
+
+        .seq-row {
+            display: flex;
+            gap: 14px;
+            padding: 3px 0;
         }
 
-        .solution-moves-title {
-            color: #888;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
+        .seq-row .lbl {
+            flex: 0 0 62px;
+            color: var(--muted);
         }
 
-        .solution-moves-list {
-            font-family: monospace;
-            font-size: 0.85rem;
-            line-height: 1.8;
-            color: #ccc;
+        .seq-row .mv {
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--accent);
         }
 
-        .solution-moves-list .row-moves {
-            margin-bottom: 5px;
+        .legend {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--rule);
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            font-size: 16px;
+            color: var(--muted);
         }
 
-        .solution-moves-list .row-label {
-            color: #888;
-            margin-right: 8px;
+        .legend span {
+            display: flex;
+            align-items: center;
+            gap: 9px;
         }
 
-        .solution-moves-list .move {
-            background: rgba(76, 175, 80, 0.3);
-            padding: 2px 6px;
-            border-radius: 3px;
-            margin-right: 4px;
+        .swatch {
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--rule);
+            border-radius: 2px;
         }
 
-        .header-pattern-code {
-            font-family: monospace;
-            color: #ffcc00;
-            font-size: 0.9rem;
-            margin-left: 15px;
-        }
-
-        .total-moves {
-            color: #888;
-            font-size: 0.8rem;
-            margin-top: 10px;
-        }
+        .swatch.on { background: var(--ink); border-color: var(--ink); }
+        .swatch.click { background: var(--accent); border-color: var(--accent); }
 
         footer {
-            margin-top: 40px;
-            color: #555;
-            font-size: 0.85rem;
+            margin-top: 44px;
+            padding-top: 18px;
+            border-top: 1px solid var(--rule);
+            font-size: 15px;
+            color: var(--muted);
         }
 
         footer a {
-            color: #ffcc00;
+            color: var(--accent);
             text-decoration: none;
+            border-bottom: 1px solid var(--rule);
         }
 
-        footer a:hover {
-            text-decoration: underline;
+        footer a:hover { border-bottom-color: var(--accent); }
+
+        @media (max-width: 520px) {
+            .cols { gap: 24px; }
+            .meta { display: none; }
+            .pattern-head { gap: 12px; }
         }
     </style>
 </head>
 <body>
-    <h1>Chase the Lights</h1>
-    <p class="subtitle">Reference for bottom-row patterns</p>
+    <div class="page">
+        <h1>Chase the Lights</h1>
+        <p class="lede">Bottom-row patterns and the moves that clear them.</p>
+        <hr>
 
-    <div class="reference-container">
-        <div class="pattern-list" id="pattern-list">
-            <!-- Patterns will be generated by JS -->
+        <div id="pattern-list"></div>
+
+        <div class="legend">
+            <span><i class="swatch on"></i> lit</span>
+            <span><i class="swatch click"></i> press, in the numbered order</span>
         </div>
-    </div>
 
-    <footer>
-        Practice tool for <a href="https://lightsout.ir" target="_blank">Lights Out</a>
-    </footer>
+        <footer>
+            Practice tool for <a href="https://lightsout.ir" target="_blank" rel="noopener">Lights Out</a>
+        </footer>
+    </div>
 
     <script>
         // Column names for display
@@ -348,69 +392,68 @@
                 if (!solution) return;
 
                 const item = document.createElement('div');
-                item.className = 'pattern-item';
+                item.className = 'pattern';
 
-                // Build mini grid HTML with click markers
-                let miniGridHTML = '';
+                // Build grid with click markers
+                let gridHTML = '';
                 for (let r = 0; r < 5; r++) {
                     for (let c = 0; c < 5; c++) {
                         const isOn = (r === 4 && pattern[c] === '1');
                         const clickNum = solution.clickGrid[r][c];
-                        let classes = 'mini-light';
+                        let classes = 'cell';
                         if (isOn) classes += ' on';
                         if (clickNum > 0) classes += ' click';
-                        miniGridHTML += `<div class="${classes}">${clickNum > 0 ? clickNum : ''}</div>`;
+                        gridHTML += `<div class="${classes}">${clickNum > 0 ? clickNum : ''}</div>`;
                     }
                 }
 
-                // Build moves list HTML
-                let movesHTML = '';
+                // Build move sequence, grouped by row
+                let seqHTML = '';
                 let currentRow = -1;
                 let rowMoves = [];
 
-                solution.moves.forEach((move, idx) => {
+                function flushRow() {
+                    if (rowMoves.length > 0) {
+                        seqHTML += `<div class="seq-row"><span class="lbl">Row ${currentRow + 1}</span><span class="mv">${rowMoves.join(' ')}</span></div>`;
+                    }
+                }
+
+                solution.moves.forEach(move => {
                     if (move.row !== currentRow) {
-                        if (rowMoves.length > 0) {
-                            movesHTML += `<div class="row-moves"><span class="row-label">Row ${currentRow + 1}:</span>${rowMoves.map(m => `<span class="move">${m}</span>`).join('')}</div>`;
-                        }
+                        flushRow();
                         currentRow = move.row;
                         rowMoves = [];
                     }
                     rowMoves.push(`${COLS[move.col]}${move.row + 1}`);
                 });
-
-                if (rowMoves.length > 0) {
-                    movesHTML += `<div class="row-moves"><span class="row-label">Row ${currentRow + 1}:</span>${rowMoves.map(m => `<span class="move">${m}</span>`).join('')}</div>`;
-                }
+                flushRow();
 
                 item.innerHTML = `
-                    <div class="pattern-header">
-                        <div style="display: flex; align-items: center;">
-                            <div class="pattern-lights">
-                                ${pattern.split('').map(bit =>
-                                    `<div class="mini-light ${bit === '1' ? 'on' : ''}"></div>`
-                                ).join('')}
-                            </div>
-                            <span class="header-pattern-code">${pattern}</span>
-                        </div>
-                        <span class="pattern-arrow">▼</span>
-                    </div>
-                    <div class="pattern-solution">
-                        <div class="solution-grid-container">
+                    <button type="button" class="pattern-head">
+                        <span class="bits">
+                            ${pattern.split('').map(bit =>
+                                `<span class="bit ${bit === '1' ? 'on' : ''}"></span>`
+                            ).join('')}
+                        </span>
+                        <span class="code">${pattern}</span>
+                        <span class="meta">${solution.totalMoves} moves</span>
+                        <span class="mark"></span>
+                    </button>
+                    <div class="pattern-body">
+                        <div class="cols">
                             <div>
-                                <div class="solution-moves-title">Grid (numbers = click order)</div>
-                                <div class="mini-grid">${miniGridHTML}</div>
+                                <div class="eyebrow col-title">Grid</div>
+                                <div class="grid">${gridHTML}</div>
                             </div>
-                            <div class="solution-moves">
-                                <div class="solution-moves-title">Move Sequence</div>
-                                <div class="solution-moves-list">${movesHTML}</div>
-                                <div class="total-moves">Total: ${solution.totalMoves} moves</div>
+                            <div class="seq">
+                                <div class="eyebrow col-title">Sequence</div>
+                                ${seqHTML}
                             </div>
                         </div>
                     </div>
                 `;
 
-                item.querySelector('.pattern-header').addEventListener('click', () => {
+                item.querySelector('.pattern-head').addEventListener('click', () => {
                     item.classList.toggle('open');
                 });
 

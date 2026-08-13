@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Che ore sono? (F17)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #faf9f7;
+            --ink: #14161a;
+            --muted: #6f747c;
+            --rule: #dedbd5;
+            --field: #fff;
+            --accent: #a5182c;
+            --warn-bg: #fbecee;
+            --font: 'Nunito', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #101215;
+                --ink: #e9e7e2;
+                --muted: #939aa3;
+                --rule: #282c33;
+                --field: #171a1e;
+                --accent: #ff7d8a;
+                --warn-bg: #1f1618;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--ink);
+            font-family: var(--font);
+            font-size: 17px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .page {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 60px 22px 100px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.015em;
+        }
+
+        .lede {
+            font-size: 18px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid var(--rule);
+            margin: 28px 0;
+        }
+
+        .eyebrow {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        /* Clock block */
+        .clock {
+            margin-bottom: 28px;
+        }
+
+        .clock-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--rule);
+        }
+
+        .clock-head strong {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .clock-body {
+            display: flex;
+            gap: 28px;
+            align-items: flex-start;
+        }
+
+        .dial-box {
+            flex: 0 0 auto;
+            width: 132px;
+            text-align: center;
+        }
+
+        .dial {
+            width: 132px;
+            height: 132px;
+            display: block;
+            color: var(--ink);
+        }
+
+        .dial-caption {
+            margin-top: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            min-height: 1.2em;
+        }
+
+        .fields {
+            flex: 1 1 auto;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 7px;
+        }
+
+        .time-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            font-family: var(--font);
+            font-size: 18px;
+            color: var(--ink);
+            background: var(--field);
+            border: 1px solid var(--rule);
+            border-radius: 5px;
+            padding: 10px 13px;
+            outline: none;
+        }
+
+        input[type="text"] {
+            font-variant-numeric: tabular-nums;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--ink);
+        }
+
+        select {
+            appearance: none;
+            background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                              linear-gradient(135deg, currentColor 50%, transparent 50%);
+            background-position: calc(100% - 18px) center, calc(100% - 12px) center;
+            background-size: 6px 6px, 6px 6px;
+            background-repeat: no-repeat;
+            padding-right: 36px;
+        }
+
+        .toggle {
+            display: flex;
+            flex: 0 0 auto;
+        }
+
+        .toggle button {
+            font-family: var(--font);
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            background: var(--field);
+            border: 1px solid var(--rule);
+            padding: 0 16px;
+            cursor: pointer;
+        }
+
+        .toggle button:first-child { border-radius: 5px 0 0 5px; }
+        .toggle button:last-child { border-radius: 0 5px 5px 0; margin-left: -1px; }
+
+        .toggle button:hover { color: var(--ink); }
+
+        .toggle button.on {
+            background: var(--ink);
+            border-color: var(--ink);
+            color: var(--bg);
+            position: relative;
+        }
+
+        .err {
+            color: var(--accent);
+            font-size: 15px;
+            margin-top: 10px;
+            min-height: 1em;
+        }
+
+        /* Action */
+        .go {
+            width: 100%;
+            font-family: var(--font);
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--bg);
+            background: var(--ink);
+            border: 1px solid var(--ink);
+            border-radius: 5px;
+            padding: 15px;
+            cursor: pointer;
+        }
+
+        .go:hover { opacity: 0.85; }
+
+        /* Result */
+        .result { display: none; }
+        .result.show { display: block; }
+
+        .answer {
+            padding: 28px 0 24px;
+            text-align: center;
+            border-bottom: 1px solid var(--rule);
+        }
+
+        .answer-cmd {
+            font-size: 46px;
+            font-weight: 800;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+        }
+
+        .answer-plain {
+            font-size: 19px;
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        .answer-hint {
+            font-size: 14px;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            margin-top: 14px;
+        }
+
+        .warn {
+            background: var(--warn-bg);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 5px 5px 0;
+            padding: 12px 14px;
+            margin-top: 20px;
+            font-size: 16px;
+            line-height: 1.55;
+            text-align: left;
+        }
+
+        .work { padding-top: 18px; }
+
+        .work-title { margin-bottom: 12px; }
+
+        .row {
+            display: flex;
+            gap: 16px;
+            padding: 3px 0;
+        }
+
+        .row dt {
+            flex: 0 0 44%;
+            color: var(--muted);
+        }
+
+        .row dd { flex: 1 1 auto; }
+
+        .row.total {
+            margin-top: 8px;
+            padding-top: 10px;
+            border-top: 1px solid var(--rule);
+        }
+
+        .row.total dd { color: var(--accent); }
+
+        .note { color: var(--muted); }
+
+        .ink { color: var(--ink); }
+
+        footer {
+            margin-top: 44px;
+            padding-top: 18px;
+            border-top: 1px solid var(--rule);
+            font-size: 15px;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        @media (max-width: 520px) {
+            .clock-body { flex-direction: column; align-items: center; }
+            .fields { width: 100%; }
+            .answer-cmd { font-size: 34px; }
+            .row { flex-direction: column; gap: 0; }
+            .row dt { flex: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <h1>Che ore sono?</h1>
+        <p class="lede">F17: time difference between two clocks.</p>
+        <hr>
+
+        <section class="clock">
+            <div class="clock-head">
+                <strong>Clock 1</strong>
+                <span class="eyebrow">top / earlier</span>
+            </div>
+            <div class="clock-body">
+                <div class="dial-box">
+                    <svg class="dial" id="face1" viewBox="0 0 200 200"></svg>
+                    <div class="dial-caption" id="cap1">AM GMT</div>
+                </div>
+                <div class="fields">
+                    <div>
+                        <label for="time1">Time</label>
+                        <div class="time-row">
+                            <input type="text" id="time1" placeholder="11:30" autocomplete="off" spellcheck="false">
+                            <div class="toggle" id="ampm1">
+                                <button type="button" data-v="AM" class="on">AM</button>
+                                <button type="button" data-v="PM">PM</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="tz1">Timezone</label>
+                        <select id="tz1"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="err" id="err1"></div>
+        </section>
+
+        <section class="clock">
+            <div class="clock-head">
+                <strong>Clock 2</strong>
+                <span class="eyebrow">bottom / later</span>
+            </div>
+            <div class="clock-body">
+                <div class="dial-box">
+                    <svg class="dial" id="face2" viewBox="0 0 200 200"></svg>
+                    <div class="dial-caption" id="cap2">AM GMT</div>
+                </div>
+                <div class="fields">
+                    <div>
+                        <label for="time2">Time</label>
+                        <div class="time-row">
+                            <input type="text" id="time2" placeholder="11:30" autocomplete="off" spellcheck="false">
+                            <div class="toggle" id="ampm2">
+                                <button type="button" data-v="AM" class="on">AM</button>
+                                <button type="button" data-v="PM">PM</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="tz2">Timezone</label>
+                        <select id="tz2"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="err" id="err2"></div>
+        </section>
+
+        <button type="button" class="go" id="calc">Calculate</button>
+
+        <div class="result" id="result"></div>
+
+        <footer>
+            Format <span class="ink">?q#-hrs-mins</span>. No leading zeroes, except an exact hour,
+            which ends in -00. Replace # with the round number.
+        </footer>
+    </div>
+
+    <script>
+        // Offsets in minutes, exactly as the host listed them. No DST, no Intl APIs.
+        const ZONES = [
+            { code: 'BIT',  off: -720 },
+            { code: 'HST',  off: -600 },
+            { code: 'MART', off: -570 },
+            { code: 'PST',  off: -480 },
+            { code: 'AST',  off: -240 },
+            { code: 'UYT',  off: -180 },
+            { code: 'NDT',  off: -150 },
+            { code: 'EGT',  off:  -60 },
+            { code: 'GMT',  off:    0 },
+            { code: 'WAT',  off:   60 },
+            { code: 'TRT',  off:  180 },
+            { code: 'YEKT', off:  300 },
+            { code: 'IST',  off:  330 },
+            { code: 'KGT',  off:  360 },
+            { code: 'CXT',  off:  420 },
+            { code: 'SGT',  off:  480 },
+            { code: 'JST',  off:  540 },
+            { code: 'FJT',  off:  720 },
+            { code: 'LINT', off:  840 }
+        ];
+
+        const pad2 = n => String(n).padStart(2, '0');
+
+        function offsetLabel(off) {
+            const sign = off < 0 ? '-' : '+';
+            const a = Math.abs(off);
+            const h = Math.floor(a / 60);
+            const m = a % 60;
+            return m ? `UTC${sign}${h}:${pad2(m)}` : `UTC${sign}${h}`;
+        }
+
+        function signedDuration(mins) {
+            const sign = mins < 0 ? '−' : '+';
+            const a = Math.abs(mins);
+            return `${sign}${Math.floor(a / 60)}:${pad2(a % 60)}`;
+        }
+
+        // 0..1439 -> "5:00 PM"
+        function fmt12(mins) {
+            const h24 = Math.floor(mins / 60);
+            const m = mins % 60;
+            const mer = h24 < 12 ? 'AM' : 'PM';
+            let h = h24 % 12;
+            if (h === 0) h = 12;
+            return `${h}:${pad2(m)} ${mer}`;
+        }
+
+        function fmtDuration(mins) {
+            const h = Math.floor(mins / 60);
+            const m = mins % 60;
+            const hp = `${h} hour${h === 1 ? '' : 's'}`;
+            if (m === 0) return hp;
+            return `${hp} ${m} minute${m === 1 ? '' : 's'}`;
+        }
+
+        // Accepts 11:30 / 11.30 / 11-30 / 1130 / 530 / 5 / 11:30pm / 23:30
+        // Returns { h12, m, forced } or { error }
+        function parseTime(raw) {
+            let s = String(raw).trim().toLowerCase().replace(/\s+/g, '');
+            if (!s) return { error: 'Enter a time.' };
+
+            let forced = null;
+            const mer = s.match(/(a|p)\.?m\.?$/);
+            if (mer) {
+                forced = mer[1] === 'a' ? 'AM' : 'PM';
+                s = s.slice(0, mer.index);
+            }
+
+            let h, m;
+            const colon = s.match(/^(\d{1,2})[:.\-](\d{1,2})$/);
+            if (colon) {
+                h = +colon[1];
+                m = +colon[2];
+            } else if (/^\d{1,2}$/.test(s)) {
+                h = +s;
+                m = 0;
+            } else if (/^\d{3,4}$/.test(s)) {
+                h = +s.slice(0, -2);
+                m = +s.slice(-2);
+            } else {
+                return { error: 'Use a format like 11:30, 1130 or 5.' };
+            }
+
+            if (m > 59) return { error: 'Minutes must be 0–59.' };
+            if (h > 23) return { error: 'Hour must be 1–12.' };
+
+            // Tolerate 24-hour entry: it pins AM/PM for us.
+            if (h === 0) { h = 12; if (!forced) forced = 'AM'; }
+            else if (h > 12) { h -= 12; if (!forced) forced = 'PM'; }
+
+            return { h12: h, m: m, forced: forced };
+        }
+
+        // ---- Clock face rendering ----
+        const SVGNS = 'http://www.w3.org/2000/svg';
+
+        function el(name, attrs) {
+            const node = document.createElementNS(SVGNS, name);
+            for (const k in attrs) node.setAttribute(k, attrs[k]);
+            return node;
+        }
+
+        function drawFace(svg, h12, m) {
+            while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+            svg.appendChild(el('circle', {
+                cx: 100, cy: 100, r: 94,
+                fill: 'none', stroke: 'currentColor', 'stroke-width': 1.5
+            }));
+
+            for (let i = 0; i < 60; i++) {
+                const major = i % 5 === 0;
+                const a = (i * 6) * Math.PI / 180;
+                const outer = 94, inner = major ? 84 : 89;
+                svg.appendChild(el('line', {
+                    x1: 100 + Math.sin(a) * inner,
+                    y1: 100 - Math.cos(a) * inner,
+                    x2: 100 + Math.sin(a) * outer,
+                    y2: 100 - Math.cos(a) * outer,
+                    stroke: 'currentColor',
+                    'stroke-width': major ? 3 : 1.5,
+                    'stroke-opacity': major ? 1 : 0.3
+                }));
+            }
+
+            for (const n of [12, 3, 6, 9]) {
+                const a = (n * 30) * Math.PI / 180;
+                const t = el('text', {
+                    x: 100 + Math.sin(a) * 68,
+                    y: 100 - Math.cos(a) * 68,
+                    fill: 'currentColor',
+                    'font-family': 'inherit',
+                    'font-size': 21,
+                    'font-weight': 700,
+                    'text-anchor': 'middle',
+                    'dominant-baseline': 'central'
+                });
+                t.textContent = n;
+                svg.appendChild(t);
+            }
+
+            if (h12 === null) return; // invalid / empty input: bare dial
+
+            svg.appendChild(el('line', {
+                x1: 100, y1: 100, x2: 100, y2: 56,
+                stroke: 'currentColor', 'stroke-width': 7, 'stroke-linecap': 'butt',
+                transform: `rotate(${((h12 % 12) + m / 60) * 30} 100 100)`
+            }));
+            svg.appendChild(el('line', {
+                x1: 100, y1: 100, x2: 100, y2: 26,
+                stroke: 'currentColor', 'stroke-width': 3, 'stroke-linecap': 'butt',
+                transform: `rotate(${m * 6} 100 100)`
+            }));
+            svg.appendChild(el('circle', { cx: 100, cy: 100, r: 4, fill: 'currentColor' }));
+        }
+
+        // ---- Wiring ----
+        function makeClock(n) {
+            const input = document.getElementById('time' + n);
+            const tz = document.getElementById('tz' + n);
+            const ampm = document.getElementById('ampm' + n);
+            const face = document.getElementById('face' + n);
+            const cap = document.getElementById('cap' + n);
+            const err = document.getElementById('err' + n);
+
+            ZONES.forEach(z => {
+                const o = document.createElement('option');
+                o.value = z.code;
+                o.textContent = `${z.code}  ${offsetLabel(z.off)}`;
+                tz.appendChild(o);
+            });
+            tz.value = 'GMT';
+
+            const clock = {
+                get meridiem() {
+                    return ampm.querySelector('.on').dataset.v;
+                },
+                setMeridiem(v) {
+                    ampm.querySelectorAll('button').forEach(b => {
+                        b.classList.toggle('on', b.dataset.v === v);
+                    });
+                },
+                get zone() {
+                    return ZONES.find(z => z.code === tz.value);
+                },
+                // { minutes, h12, m, meridiem, zone } or { error }
+                read() {
+                    const p = parseTime(input.value);
+                    if (p.error) return { error: p.error };
+                    if (p.forced) clock.setMeridiem(p.forced);
+                    const mer = clock.meridiem;
+                    const h24 = (p.h12 % 12) + (mer === 'PM' ? 12 : 0);
+                    return {
+                        minutes: h24 * 60 + p.m,
+                        h12: p.h12,
+                        m: p.m,
+                        meridiem: mer,
+                        zone: clock.zone
+                    };
+                },
+                showError(msg) {
+                    err.textContent = msg || '';
+                },
+                refresh() {
+                    const p = parseTime(input.value);
+                    if (p.error) {
+                        drawFace(face, null, 0);
+                    } else {
+                        if (p.forced) clock.setMeridiem(p.forced);
+                        drawFace(face, p.h12, p.m);
+                    }
+                    cap.textContent = `${clock.meridiem} ${tz.value}`;
+                }
+            };
+
+            input.addEventListener('input', clock.refresh);
+            tz.addEventListener('change', clock.refresh);
+            ampm.addEventListener('click', e => {
+                const btn = e.target.closest('button');
+                if (!btn) return;
+                clock.setMeridiem(btn.dataset.v);
+                clock.refresh();
+            });
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') calculate();
+            });
+
+            clock.refresh();
+            return clock;
+        }
+
+        const c1 = makeClock(1);
+        const c2 = makeClock(2);
+        const resultBox = document.getElementById('result');
+
+        function row(k, v, cls) {
+            return `<div class="row ${cls || ''}"><dt>${k}</dt><dd>${v}</dd></div>`;
+        }
+
+        function calculate() {
+            const a = c1.read();
+            const b = c2.read();
+            c1.showError(a.error);
+            c2.showError(b.error);
+            if (a.error || b.error) {
+                resultBox.classList.remove('show');
+                return;
+            }
+
+            const shift = b.zone.off - a.zone.off;
+            const shifted = a.minutes + shift;
+            const aInB = ((shifted % 1440) + 1440) % 1440;
+            let dayNote = 'same day';
+            if (shifted >= 1440) dayNote = 'next day';
+            else if (shifted < 0) dayNote = 'previous day';
+
+            const diff = ((b.minutes - aInB) % 1440 + 1440) % 1440;
+            const hrs = Math.floor(diff / 60);
+            const mins = diff % 60;
+            const cmd = `?q#-${hrs}-${mins === 0 ? '00' : mins}`;
+            const crosses = b.minutes < aInB;
+
+            let html = '<div class="answer">';
+            html += `<div class="answer-cmd">${cmd}</div>`;
+            html += `<div class="answer-plain">${fmtDuration(diff)}</div>`;
+            html += `<div class="answer-hint">replace # with the round number</div>`;
+            if (diff === 0) {
+                html += `<div class="warn">Zero difference: both clocks land on the same instant.
+                    The top clock is supposed to be earlier, so check the times, the AM/PM labels
+                    and the timezones.</div>`;
+            }
+            html += '</div>';
+
+            html += '<dl class="work"><div class="eyebrow work-title">Working</div>';
+            html += row('Clock 1', `${fmt12(a.minutes)} ${a.zone.code}`);
+            html += row(`Shift ${a.zone.code} → ${b.zone.code}`, signedDuration(shift));
+            html += row(`Clock 1 in ${b.zone.code}`,
+                `${fmt12(aInB)} <span class="note">(${dayNote})</span>`);
+            html += row('Clock 2', `${fmt12(b.minutes)} ${b.zone.code}`);
+            html += row(
+                `${fmt12(b.minutes)} − ${fmt12(aInB)}`,
+                `${fmtDuration(diff)}${crosses ? ' <span class="note">(crosses midnight)</span>' : ''}`,
+                'total'
+            );
+            html += '</dl>';
+
+            resultBox.innerHTML = html;
+            resultBox.classList.add('show');
+        }
+
+        document.getElementById('calc').addEventListener('click', calculate);
+    </script>
+</body>
+</html>
