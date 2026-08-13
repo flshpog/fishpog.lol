@@ -23,7 +23,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
     const push = () =>
       pushData(token)
         .then(() => setLastSync(new Date().toISOString()))
-        .catch(() => {}); // silent — user can always push manually
+        .catch(() => {}); // silent - user can always push manually
     const id = setInterval(push, 3 * 60 * 1000);
     // Also push on tab close
     window.addEventListener("beforeunload", push);
@@ -46,7 +46,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
       <div className="flex h-screen overflow-hidden">
         <Sidebar />
 
-        {/* Mobile backdrop — closes sidebar on tap */}
+        {/* Mobile backdrop - closes sidebar on tap */}
         {sidebarOpen && (
           <div
             className="fixed inset-0 z-20 bg-black/30 lg:hidden"

@@ -39,7 +39,7 @@ const FRESH: Pick<
 
 function todayStr() {
   const now = new Date();
-  // ACNH new day starts at 5 AM — before 5 AM still counts as yesterday
+  // ACNH new day starts at 5 AM - before 5 AM still counts as yesterday
   if (now.getHours() < 5) {
     now.setDate(now.getDate() - 1);
   }

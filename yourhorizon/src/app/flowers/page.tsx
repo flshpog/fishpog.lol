@@ -152,7 +152,7 @@ export default function FlowersPage() {
             </div>
           ) : (
             <p className="text-sm text-text-muted">
-              This is a seed flower — available from Nook&apos;s Cranny or Leif.
+              This is a seed flower - available from Nook&apos;s Cranny or Leif.
             </p>
           )}
 

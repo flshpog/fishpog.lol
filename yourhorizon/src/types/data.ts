@@ -69,7 +69,7 @@ export interface NormalizedArt extends BaseRecord {
   fakeImageUri?: string;
 }
 
-/** Item (~24,000 total with variants — furniture, clothing, wallpaper, tools, etc.) */
+/** Item (~24,000 total with variants - furniture, clothing, wallpaper, tools, etc.) */
 export interface NormalizedItem extends BaseRecord {
   category: string;
   source: string;

@@ -330,7 +330,7 @@ const MYSTERY_ISLANDS = [
   {id:1,name:"Big Pond Island",rarity:"Common (9%)",desc:"A large fidget-spinner-shaped pond full of fish. Starter island."},
   {id:2,name:"Short River Island",rarity:"Common (9%)",desc:"A river starts on a small second layer in the north and flows east. Starter island."},
   {id:3,name:"Short River & Pond Island",rarity:"Common (9%)",desc:"Like Short River but with a pond in the southwest. Starter island."},
-  {id:4,name:"Bamboo Island",rarity:"Common (10%)",desc:"Covered in bamboo — the only place to find it. No fruit/hardwood trees."},
+  {id:4,name:"Bamboo Island",rarity:"Common (10%)",desc:"Covered in bamboo - the only place to find it. No fruit/hardwood trees."},
   {id:5,name:"Sister Fruit Island",rarity:"Common (10%)",desc:"Filled with a fruit type different from your native fruit (19 trees)."},
   {id:6,name:"Waterfall Island",rarity:"Common (10%)",desc:"Three layers with a river cascading counter-clockwise. Great for rare river fish."},
   {id:7,name:"Big Fish Island",rarity:"Uncommon (3%)",desc:"Circle river, spawns rare large fish (size 4+). 1x daily max. Requires Vaulting Pole."},
@@ -367,7 +367,7 @@ const FLOWER_BREEDS = {
       {from:"Red + Red",result:"Black (25%)"},
       {from:"Orange + Orange",result:"Purple (6.25%, higher with Mystery Island hybrids)"},
     ],
-    note:"Tulips are moderately simple. Purple is the rarest — use Mystery Island hybrids for a 25% chance."
+    note:"Tulips are moderately simple. Purple is the rarest - use Mystery Island hybrids for a 25% chance."
   },
   pansies: {
     colors: ["Red","White","Yellow","Orange","Blue","Purple"],
@@ -377,7 +377,7 @@ const FLOWER_BREEDS = {
       {from:"Blue + Red (seed)",result:"Hybrid Red"},
       {from:"Hybrid Red + Hybrid Red",result:"Purple (25%)"},
     ],
-    note:"Purple pansies require Hybrid Reds. Seed reds CANNOT produce purple — you must first breed blue × seed red."
+    note:"Purple pansies require Hybrid Reds. Seed reds CANNOT produce purple - you must first breed blue × seed red."
   },
   cosmos: {
     colors: ["Red","White","Yellow","Orange","Pink","Black"],
@@ -417,7 +417,7 @@ const FLOWER_BREEDS = {
       {from:"Hybrid Red + Hybrid Red",result:"Special Blue"},
       {from:"Special Blue + Special Blue",result:"Purple (25%)"},
     ],
-    note:"Windflowers have NO yellow — orange is a default, not a hybrid. Purple requires Special Blue windflowers."
+    note:"Windflowers have NO yellow - orange is a default, not a hybrid. Purple requires Special Blue windflowers."
   },
   mums: {
     colors: ["Red","White","Yellow","Orange","Pink","Purple","Green"],
@@ -1195,7 +1195,7 @@ function ListsTab({ state, update }) {
   return (
     <div>
       <h2 style={{ marginBottom:4 }}>📋 Custom Lists</h2>
-      <p style={{ color:"#6b9e86", marginBottom:24, fontSize:14 }}>Create lists for anything — wishlist, to-do, trade offers, etc.</p>
+      <p style={{ color:"#6b9e86", marginBottom:24, fontSize:14 }}>Create lists for anything - wishlist, to-do, trade offers, etc.</p>
 
       <div style={{ display:"flex", gap:20 }}>
         {/* List sidebar */}
@@ -1307,7 +1307,7 @@ function CatalogTab({ state, update }) {
         <div className="card" style={{ textAlign:"center", padding:48, color:"#9dc5b0" }}>
           <div style={{ fontSize:48, marginBottom:12 }}>🗂️</div>
           <p style={{ fontSize:15 }}>Paste your nook.lol URL above to view your catalog</p>
-          <p style={{ fontSize:13, marginTop:8 }}>Your data stays private — we just embed the page.</p>
+          <p style={{ fontSize:13, marginTop:8 }}>Your data stays private - we just embed the page.</p>
         </div>
       )}
     </div>
@@ -1381,7 +1381,7 @@ function FlowersTab() {
             <li>5 unique visitors watering = maximum 80% daily breed chance</li>
             <li>Mystery island flowers can provide better starting genetics</li>
             <li>Separate hybrid flowers from seeds to avoid contamination</li>
-            {selected==="roses" && <li>🌹 Blue roses are the rarest flower in the game — be patient!</li>}
+            {selected==="roses" && <li>🌹 Blue roses are the rarest flower in the game - be patient!</li>}
             {selected==="windflowers" && <li>🌺 No yellow windflowers exist; orange is a base color</li>}
             {selected==="mums" && <li>💛 Use hybrid yellows (Red × Yellow) for green mums, not seed yellows</li>}
           </ul>

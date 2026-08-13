@@ -162,7 +162,7 @@ export function CritterGrid({ category, tableName, showAvailability = false }: C
             toggleDonated(item.id);
           }}
         >
-          {/* C/D badge — absolute top-left, never affects card height */}
+          {/* C/D badge - absolute top-left, never affects card height */}
           {status !== "not-caught" && (
             <div className="absolute top-1.5 left-1.5 flex gap-px">
               {status === "caught" && (

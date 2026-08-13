@@ -1,5 +1,5 @@
 /* ===================================================================
-   Puzzle Piece Locator — client-side template matching with OpenCV.js
+   Puzzle Piece Locator - client-side template matching with OpenCV.js
    =================================================================== */
 
 // --------------- DOM refs ---------------
@@ -50,7 +50,7 @@ function waitForOpenCV() {
 
 // Also handle the onRuntimeInitialized callback pattern
 if (typeof cv === "undefined") {
-  // cv not loaded yet — the script tag is async
+  // cv not loaded yet - the script tag is async
   document.getElementById("opencvScript").addEventListener("load", () => {
     if (cv.getBuildInformation) {
       cvReady = true;
@@ -283,7 +283,7 @@ function detectBgColor(src) {
 /**
  * Create a binary mask from a piece image: 255 where the piece is, 0 for background.
  * Also trims the image and mask to the bounding box of the piece.
- * Returns { trimmedSrc, mask } — caller must delete both.
+ * Returns { trimmedSrc, mask } - caller must delete both.
  */
 function createPieceMask(src) {
   const [bgB, bgG, bgR] = detectBgColor(src);
@@ -391,7 +391,7 @@ function matchAtRotation(fullGray, pieceColor, pieceMask, angle) {
 
   const result = new cv.Mat();
 
-  // Use masked template matching — TM_CCORR_NORMED supports masks
+  // Use masked template matching - TM_CCORR_NORMED supports masks
   // The mask must be single-channel and same size as template
   cv.matchTemplate(fullGray, pieceGray, result, cv.TM_CCORR_NORMED, rotatedMask);
 
@@ -444,7 +444,7 @@ analyzeBtn.addEventListener("click", async () => {
 
   // Wait for OpenCV
   if (!cvReady) {
-    showStatus("Loading OpenCV.js — please wait...", "");
+    showStatus("Loading OpenCV.js - please wait...", "");
     await waitForOpenCV();
   }
 
@@ -486,7 +486,7 @@ analyzeBtn.addEventListener("click", async () => {
       pieceMat = result.trimmedSrc;
       pieceMask = result.mask;
     } else {
-      // No trim — full white mask (match everything)
+      // No trim - full white mask (match everything)
       pieceMask = new cv.Mat(pieceMat.rows, pieceMat.cols, cv.CV_8UC1, new cv.Scalar(255));
     }
 
@@ -533,7 +533,7 @@ analyzeBtn.addEventListener("click", async () => {
     showProgress(85);
 
     if (!bestResult) {
-      showStatus("No match found — piece may be too large or incompatible.", "error");
+      showStatus("No match found - piece may be too large or incompatible.", "error");
       fullMat.delete();
       fullGray.delete();
       pieceMat.delete();
@@ -595,7 +595,7 @@ analyzeBtn.addEventListener("click", async () => {
       ctx.restore();
     }
 
-    // Draw best match — bright green, thick, with corner brackets
+    // Draw best match - bright green, thick, with corner brackets
     ctx.save();
     const green = "#00e6c8";
     const bx = best.x, by = best.y;
@@ -737,7 +737,7 @@ analyzeBtn.addEventListener("click", async () => {
     }
 
     resultsSection.classList.remove("hidden");
-    showStatus(`Match found — ${(best.confidence * 100).toFixed(1)}% confidence at (${best.x}, ${best.y})`, "success");
+    showStatus(`Match found - ${(best.confidence * 100).toFixed(1)}% confidence at (${best.x}, ${best.y})`, "success");
     showProgress(100);
 
     // Cleanup

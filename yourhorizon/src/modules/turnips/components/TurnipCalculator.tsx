@@ -107,7 +107,7 @@ export function TurnipCalculator() {
               type="number"
               value={currentWeek.prices[i]?.am ?? ""}
               onChange={(e) => setPrice(i, "am", e.target.value ? Number(e.target.value) : null)}
-              placeholder="—"
+              placeholder="-"
               className="w-full px-2 py-1.5 rounded bg-bg-input border border-border text-text text-xs text-center focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           ))}
@@ -120,7 +120,7 @@ export function TurnipCalculator() {
               type="number"
               value={currentWeek.prices[i]?.pm ?? ""}
               onChange={(e) => setPrice(i, "pm", e.target.value ? Number(e.target.value) : null)}
-              placeholder="—"
+              placeholder="-"
               className="w-full px-2 py-1.5 rounded bg-bg-input border border-border text-text text-xs text-center focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           ))}
@@ -137,7 +137,7 @@ export function TurnipCalculator() {
                 <div className="flex-1">
                   <p className="text-sm text-text-muted">Best potential sell window</p>
                   <p className="text-lg font-bold text-text">
-                    {prediction.bestDay.label} — up to {prediction.bestDay.max} bells
+                    {prediction.bestDay.label} - up to {prediction.bestDay.max} bells
                   </p>
                 </div>
                 <div className="text-right">

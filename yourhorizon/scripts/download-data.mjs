@@ -34,7 +34,7 @@ function saveJSON(filename, data) {
 }
 
 // ============================================================
-// Normalizers — convert ACNHAPI format to our schema
+// Normalizers - convert ACNHAPI format to our schema
 // ============================================================
 
 /** Convert ACNHAPI object-keyed format to array, preserving the key as _fileName */
@@ -102,7 +102,7 @@ async function downloadVillagers() {
     imageUri: v.photoImage ?? "",
   }));
 
-  // 3.0 update villagers (Jan 2026) — not yet in Norviah dataset
+  // 3.0 update villagers (Jan 2026) - not yet in Norviah dataset
   const update3Villagers = [
     { id: "cece", name: "Cece", species: "Squirrel", personality: "Peppy", hobby: "Play", birthday: "5/28", gender: "Female", catchphrase: "drip ink", iconUri: "https://dodo.ac/np/images/a/af/Cece_NH_Villager_Icon.png", imageUri: "https://dodo.ac/np/images/thumb/e/ec/Cece%27s_Photo_NH_Texture.png/128px-Cece%27s_Photo_NH_Texture.png" },
     { id: "viche", name: "Viché", species: "Squirrel", personality: "Normal", hobby: "Music", birthday: "7/7", gender: "Female", catchphrase: "lip-synch", iconUri: "https://dodo.ac/np/images/c/ca/Vich%C3%A9_NH_Villager_Icon.png", imageUri: "https://dodo.ac/np/images/thumb/4/4f/Vich%C3%A9%27s_Photo_NH_Texture.png/128px-Vich%C3%A9%27s_Photo_NH_Texture.png" },
@@ -476,7 +476,7 @@ function createMysteryIslands() {
   saveJSON("mystery-islands.json", data);
 }
 
-// createNPCVisitors removed — now using downloadNPCVisitors() from Norviah above
+// createNPCVisitors removed - now using downloadNPCVisitors() from Norviah above
 
 async function downloadDIYRecipes() {
   console.log("\n[DIY Recipes]");
@@ -511,7 +511,7 @@ async function main() {
   await downloadArt();
   await downloadSongs();
 
-  // Norviah Items — all item categories with variant expansion (~20k items)
+  // Norviah Items - all item categories with variant expansion (~20k items)
   await downloadAllItems();
 
   // Norviah-sourced datasets

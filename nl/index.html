@@ -406,7 +406,7 @@ function init() {
             continue;
           }
 
-          // Unlit/baked materials (ignore lights) — drive their base color so slider still has effect.
+          // Unlit/baked materials (ignore lights) - drive their base color so slider still has effect.
           if (m.color && !headUnlitMaterials.has(m.uuid)) {
             headUnlitMaterials.set(m.uuid, { mat: m, baseColor: m.color.clone() });
           }

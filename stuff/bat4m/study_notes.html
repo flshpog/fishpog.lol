@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Saskan Enterprises — Study Notes</title>
+<title>Saskan Enterprises - Study Notes</title>
 <style>
   body {
     font-family: Georgia, serif;
@@ -89,7 +89,7 @@
 </head>
 <body>
 
-<h1>Saskan Enterprises — Part 2 Study Notes</h1>
+<h1>Saskan Enterprises - Part 2 Study Notes</h1>
 <div class="subtitle">Posting rules, journal decisions, and the full sequence for Oct 31 trial balance</div>
 
 <!-- ================================================== -->
@@ -105,15 +105,15 @@
       <li>CD Oct 31 Countryside Electric $710 → Utilities Expense (690), PR = 690</li>
     </ul>
   </li>
-  <li><strong>Post column totals at month-end</strong> — for each of the 4 special journals, take each column total to its GL account and write the account number under the total.</li>
-  <li><strong>Mark "Other Accounts" totals with <span class="x-mark">(X)</span></strong> — never posted, because each line was already posted individually.</li>
-  <li><strong>Schedule of A/R</strong> — should equal A/R control (<span class="calc">$8,900</span>).</li>
-  <li><strong>Schedule of A/P</strong> — should equal A/P control (<span class="calc">$16,675</span>).</li>
-  <li><strong>Trial Balance</strong> — list every GL account with its ending balance. Total Dr = Total Cr.</li>
+  <li><strong>Post column totals at month-end</strong> - for each of the 4 special journals, take each column total to its GL account and write the account number under the total.</li>
+  <li><strong>Mark "Other Accounts" totals with <span class="x-mark">(X)</span></strong> - never posted, because each line was already posted individually.</li>
+  <li><strong>Schedule of A/R</strong> - should equal A/R control (<span class="calc">$8,900</span>).</li>
+  <li><strong>Schedule of A/P</strong> - should equal A/P control (<span class="calc">$16,675</span>).</li>
+  <li><strong>Trial Balance</strong> - list every GL account with its ending balance. Total Dr = Total Cr.</li>
 </ol>
 
 <!-- ================================================== -->
-<h2>2. The Amy Ihrig fix — why it was wrong</h2>
+<h2>2. The Amy Ihrig fix - why it was wrong</h2>
 
 <p>Amy's account walk-through:</p>
 <table>
@@ -128,23 +128,23 @@
 <h3>Correct entry:</h3>
 <div class="je">Cash                                  2,548
 Sales Discount                           52
-   Accounts Receivable — Amy Ihrig       2,600</div>
+   Accounts Receivable - Amy Ihrig       2,600</div>
 
 <h3>Wrong entry (what was originally written):</h3>
 <div class="je">Cash                                  3,038
 Sales Discount                           62
-   Accounts Receivable — Amy Ihrig       3,100</div>
+   Accounts Receivable - Amy Ihrig       3,100</div>
 
-<div class="rule"><strong>Why it's wrong:</strong> crediting Amy's A/R for $3,100 when she only owes $2,600 sends her subledger balance to −$500. A customer can't owe negative money — that would mean you owe her, which isn't true.</div>
+<div class="rule"><strong>Why it's wrong:</strong> crediting Amy's A/R for $3,100 when she only owes $2,600 sends her subledger balance to −$500. A customer can't owe negative money - that would mean you owe her, which isn't true.</div>
 
 <!-- ================================================== -->
-<h2>3. Daily vs Monthly posting — the rule</h2>
+<h2>3. Daily vs Monthly posting - the rule</h2>
 
 <div class="rule">
 <strong>Does the GL account have its own dedicated column in a special journal?</strong>
 <ul>
   <li><strong>YES</strong> → posted <strong>monthly</strong> (column total only, at month-end)</li>
-  <li><strong>NO — it's in "Other Accounts"</strong> → posted <strong>daily</strong> (each line individually)</li>
+  <li><strong>NO - it's in "Other Accounts"</strong> → posted <strong>daily</strong> (each line individually)</li>
   <li><strong>In the General Journal</strong> → posted <strong>daily</strong> (both Dr and Cr legs)</li>
 </ul>
 </div>
@@ -152,26 +152,26 @@ Sales Discount                           62
 <h3>Why it works this way:</h3>
 <ul>
   <li>High-volume accounts (Cash, A/R, A/P, Sales, MI) get dedicated columns so you batch them up. One posting per month instead of 50.</li>
-  <li>Occasional accounts (Rent, Utilities, Equipment) sit in "Other Accounts." The column total there is meaningless (mixed accounts) — that's why it gets (X) and lines get posted individually.</li>
+  <li>Occasional accounts (Rent, Utilities, Equipment) sit in "Other Accounts." The column total there is meaningless (mixed accounts) - that's why it gets (X) and lines get posted individually.</li>
   <li>GJ entries are always unusual (returns, adjustments) and have no column system, so they post immediately.</li>
 </ul>
 
 <h3>Posting cheat table for Saskan's accounts:</h3>
 <table>
   <tr><th>Account</th><th class="ctr">Daily?</th><th class="ctr">Monthly?</th><th>Reason</th></tr>
-  <tr><td>Cash (101)</td><td class="ctr">—</td><td class="ctr">✓</td><td>Has columns in CR and CD</td></tr>
+  <tr><td>Cash (101)</td><td class="ctr">-</td><td class="ctr">✓</td><td>Has columns in CR and CD</td></tr>
   <tr><td>A/R (106)</td><td class="ctr">from GJ returns</td><td class="ctr">✓</td><td>Column in SJ and CR + GJ returns</td></tr>
   <tr><td>Merch. Inv. (119)</td><td class="ctr">from GJ returns</td><td class="ctr">✓</td><td>Column in SJ, CR, PJ, CD + GJ returns</td></tr>
   <tr><td>Office Supplies (124)</td><td class="ctr">from GJ return ($40)</td><td class="ctr">✓ ($615)</td><td>Column in PJ + GJ return</td></tr>
-  <tr><td>Store Equipment (165)</td><td class="ctr">✓ ($6,700 Other Accts)</td><td class="ctr">—</td><td>No column — sat in Other Accts of PJ</td></tr>
+  <tr><td>Store Equipment (165)</td><td class="ctr">✓ ($6,700 Other Accts)</td><td class="ctr">-</td><td>No column - sat in Other Accts of PJ</td></tr>
   <tr><td>A/P (201)</td><td class="ctr">from GJ returns</td><td class="ctr">✓</td><td>Column in PJ and CD + GJ returns</td></tr>
-  <tr><td>Sales (413)</td><td class="ctr">—</td><td class="ctr">✓</td><td>Column in SJ and CR</td></tr>
-  <tr><td>Sales R&amp;A (414)</td><td class="ctr">✓ (GJ)</td><td class="ctr">—</td><td>Only appears in GJ</td></tr>
-  <tr><td>Sales Discounts (415)</td><td class="ctr">—</td><td class="ctr">✓</td><td>Column in CR</td></tr>
+  <tr><td>Sales (413)</td><td class="ctr">-</td><td class="ctr">✓</td><td>Column in SJ and CR</td></tr>
+  <tr><td>Sales R&amp;A (414)</td><td class="ctr">✓ (GJ)</td><td class="ctr">-</td><td>Only appears in GJ</td></tr>
+  <tr><td>Sales Discounts (415)</td><td class="ctr">-</td><td class="ctr">✓</td><td>Column in CR</td></tr>
   <tr><td>COGS (502)</td><td class="ctr">from GJ return</td><td class="ctr">✓</td><td>Column in SJ and CR + GJ return</td></tr>
-  <tr><td>Sales Salaries Exp (621)</td><td class="ctr">✓ (Other Accts CD)</td><td class="ctr">—</td><td>No column — sat in Other Accts of CD</td></tr>
-  <tr><td>Rent Expense (640)</td><td class="ctr">✓ (Other Accts CD)</td><td class="ctr">—</td><td>No column — sat in Other Accts of CD</td></tr>
-  <tr><td>Utilities (690)</td><td class="ctr">✓ (Other Accts CD)</td><td class="ctr">—</td><td>No column — sat in Other Accts of CD</td></tr>
+  <tr><td>Sales Salaries Exp (621)</td><td class="ctr">✓ (Other Accts CD)</td><td class="ctr">-</td><td>No column - sat in Other Accts of CD</td></tr>
+  <tr><td>Rent Expense (640)</td><td class="ctr">✓ (Other Accts CD)</td><td class="ctr">-</td><td>No column - sat in Other Accts of CD</td></tr>
+  <tr><td>Utilities (690)</td><td class="ctr">✓ (Other Accts CD)</td><td class="ctr">-</td><td>No column - sat in Other Accts of CD</td></tr>
 </table>
 
 <!-- ================================================== -->
@@ -198,12 +198,12 @@ Sales Discount                           62
   <li>Any transaction with no cash AND no credit sale/purchase</li>
 </ol>
 
-<h3>Saskan's 6 GJ entries — all returns:</h3>
+<h3>Saskan's 6 GJ entries - all returns:</h3>
 <table>
   <tr><th>Date</th><th>What</th><th>Why GJ</th></tr>
-  <tr><td>Oct 4</td><td>Return merch to Fireside</td><td>Purchase return — no cash, no credit purchase</td></tr>
-  <tr><td>Oct 9</td><td>Marge Craig returned — A/R side</td><td>Sales return</td></tr>
-  <tr><td>Oct 9</td><td>Marge Craig returned — COGS/MI side</td><td>Perpetual inventory reversal</td></tr>
+  <tr><td>Oct 4</td><td>Return merch to Fireside</td><td>Purchase return - no cash, no credit purchase</td></tr>
+  <tr><td>Oct 9</td><td>Marge Craig returned - A/R side</td><td>Sales return</td></tr>
+  <tr><td>Oct 9</td><td>Marge Craig returned - COGS/MI side</td><td>Perpetual inventory reversal</td></tr>
   <tr><td>Oct 17</td><td>Return merch to Shore</td><td>Purchase return</td></tr>
   <tr><td>Oct 18</td><td>Return office supplies to Brown</td><td>Purchase return (supplies)</td></tr>
   <tr><td>Oct 20</td><td>Amy Ihrig returned defective merch</td><td>Sales return</td></tr>
@@ -213,7 +213,7 @@ Sales Discount                           62
 <h2>5. "Which journal?" decision test</h2>
 
 <div class="rule">
-Run through these in order — first match wins:
+Run through these in order - first match wins:
 <ol>
   <li>Does it involve <strong>cash coming in</strong>? → <strong>Cash Receipts Journal</strong></li>
   <li>Does it involve <strong>cash going out</strong>? → <strong>Cash Disbursements Journal</strong></li>
