@@ -93,6 +93,21 @@
     .custom .grid input:last-child { grid-column: 1 / -1; }
     .custom input { padding: 10px 12px; font-size: .95rem; }
     .muted { color: var(--muted); font-weight: 600; }
+    .chips.disabled { opacity: .35; pointer-events: none; }
+
+    /* ---- SolSeekers ---- */
+    .ss {
+      margin-top: 36px; padding: 18px 20px; border-radius: 16px;
+      background: linear-gradient(135deg, #1a1a1a 0%, #1d2a33 100%);
+      border: 1px solid #2a3a44; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .ss img { width: 44px; height: 44px; }
+    .ss .text { flex: 1; min-width: 200px; }
+    .ss h2 { margin: 0 0 4px; font-size: 1.1rem; }
+    .ss p { margin: 0; color: var(--muted); font-size: .92rem; }
+    .ss button { background: #6896aa; color: #0a0a0a; }
+    .ss button:hover { background: #7fa9bb; }
+    .ss button.on { background: #fff; color: #0a0a0a; box-shadow: 0 0 0 2px #6896aa; }
     .small { font-size: .82rem; margin: 8px 0 12px; }
     @media (max-width: 480px) { .custom .grid { grid-template-columns: 1fr; } }
     .out a { color: var(--green-bright); text-decoration: none; }
@@ -266,6 +281,15 @@
       </dl>
     </section>
 
+    <section class="ss">
+      <img src="solseekerslogo.png" alt="">
+      <div class="text">
+        <h2>or make it a SolSeekers embed</h2>
+        <p>Compact card, cover colour fading into SolSeekers blue, logo instead of the play button. Still uses the width slider.</p>
+      </div>
+      <button id="ssbtn">solseekers</button>
+    </section>
+
     <footer>spotify tracks, albums, playlists, artists, episodes, shows and short links · youtube videos · soundcloud tracks and sets · apple music songs and albums · <a href="https://fishpog.lol">fishpog.lol</a></footer>
   </main>
 
@@ -354,7 +378,8 @@
       if (!path) return null;
       const tokens = [];
       if (mode) tokens.push(mode);
-      if (mode === '' && layout !== 'tall') tokens.push(layout);
+      if (mode === '' && solseekers) tokens.push('solseekers');
+      else if (mode === '' && layout !== 'tall') tokens.push(layout);
       if (mode === '' && width !== 400) tokens.push('w' + width);
       return `${BASE}${tokens.map((t) => t + '/').join('')}${path}${q ? '?' + q : ''}`;
     }
@@ -437,9 +462,11 @@
 
       if (mode === '' || mode === 'preview') {
         const overlay = previewOk ? '<div class="play"></div>' : '';
-        const l = mode === '' ? layout : 'tall';
+        const ss = mode === '' && solseekers;
+        const l = ss ? 'compact' : mode === '' ? layout : 'tall';
         const w = mode === '' ? width : 400;
-        dcEmbed.innerHTML = `<div class="e-widget${l === 'compact' ? ' compact' : ''}" style="width:${w}px"><img src="/media/${mediaPath}.widget.png?layout=${l}&w=${w}${oq}" alt="">${overlay}</div>`;
+        const tq = ss ? '&theme=solseekers' : '';
+        dcEmbed.innerHTML = `<div class="e-widget${l === 'compact' ? ' compact' : ''}" style="width:${w}px"><img src="/media/${mediaPath}.widget.png?layout=${l}&w=${w}${tq}${oq}" alt="">${overlay}</div>`;
         previewNote.textContent = previewOk
           ? 'Discord draws its own play button over the picture. Click it and the 30 second preview plays in place.'
           : mode === 'preview'
@@ -475,7 +502,22 @@
       document.getElementById('size').classList.toggle('show', mode === '');
       update();
     });
+    // SolSeekers theme: compact card, gradient to the game colour, logo instead of controls.
+    let solseekers = false;
+    const ssBtn = document.getElementById('ssbtn');
+    ssBtn.addEventListener('click', () => {
+      solseekers = !solseekers;
+      ssBtn.classList.toggle('on', solseekers);
+      if (solseekers && mode !== '') {
+        mode = '';
+        document.querySelectorAll('#chips .chip').forEach((c) => c.classList.toggle('on', c.dataset.mode === ''));
+        document.getElementById('size').classList.add('show');
+      }
+      document.getElementById('layouts').classList.toggle('disabled', solseekers);
+      update();
+    });
     document.getElementById('layouts').addEventListener('click', (e) => {
+      if (solseekers) return;
       const chip = e.target.closest('.chip');
       if (!chip) return;
       layout = chip.dataset.layout;
@@ -533,6 +575,7 @@
       document.querySelectorAll('#chips .chip').forEach((c) => c.classList.toggle('on', c.dataset.mode === mode));
       document.getElementById('size').classList.toggle('show', mode === '');
     }
+    if (params.get('ss') === '1') ssBtn.click();
     if (params.get('l') === 'compact') {
       layout = 'compact';
       document.querySelectorAll('#layouts .chip').forEach((c) => c.classList.toggle('on', c.dataset.layout === layout));

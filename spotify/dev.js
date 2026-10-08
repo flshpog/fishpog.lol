@@ -14,10 +14,16 @@ http
     console.log(req.method, req.url);
     try {
       const pathname = new URL(req.url, `http://localhost:${PORT}`).pathname;
-      if (pathname === '/' || pathname === '/index.html') {
-        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-        res.end(await readFile(path.join(PUBLIC, 'index.html')));
-        return;
+      // Static files from /public win, like on Vercel.
+      const file = pathname === '/' ? 'index.html' : pathname.slice(1);
+      if (/^[\w.-]+$/.test(file)) {
+        try {
+          const data = await readFile(path.join(PUBLIC, file));
+          const types = { html: 'text/html; charset=utf-8', png: 'image/png', css: 'text/css', js: 'text/javascript', ico: 'image/x-icon' };
+          res.writeHead(200, { 'content-type': types[file.split('.').pop()] || 'application/octet-stream' });
+          res.end(data);
+          return;
+        } catch {}
       }
       const hasBody = !['GET', 'HEAD'].includes(req.method);
       const request = new Request(`http://localhost:${PORT}${req.url}`, {

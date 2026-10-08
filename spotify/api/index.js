@@ -25,7 +25,7 @@ import { spawn } from 'node:child_process';
 import { chmod, copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { LAYOUTS, MAX_WIDTH, MIN_WIDTH, renderWidget, widgetSize } from '../lib/widget.js';
+import { LAYOUTS, MAX_WIDTH, MIN_WIDTH, THEMES, renderWidget, widgetSize } from '../lib/widget.js';
 import { fromAppleMusic, fromSoundCloud, fromYouTube, resolveSoundCloudShort } from '../lib/providers.js';
 import { coverColors } from '../lib/color.js';
 
@@ -122,17 +122,19 @@ function parseTarget(input) {
   let mode = DEFAULT_MODE;
   let layout = 'tall';
   let width = MAX_WIDTH;
+  let theme = 'spotify';
   for (;;) {
     const s = segs[0];
     if (s && MODES.has(s)) mode = segs.shift();
     else if (s === 'rich' || s === 'player') { segs.shift(); mode = 'card'; } // retired modes
     else if (s && LAYOUTS[s]) layout = segs.shift();
+    else if (s === 'solseekers' || s === 'ss') { segs.shift(); theme = 'solseekers'; layout = 'compact'; }
     else if (s && /^w\d{3}$/.test(s)) width = Number(segs.shift().slice(1));
     else if (s && /^intl-[a-z]{2}(-[a-z]+)?$/i.test(s)) segs.shift();
     else if (s === 'embed' || s === 'embed-podcast') segs.shift();
     else break;
   }
-  const opts = { mode, layout, width: Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, width)) };
+  const opts = { mode, layout, theme, width: Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, width)) };
   const [a, b, c, d] = segs;
   // Hand-made: everything comes from ?t= ?a= ?c= ?u=
   if (a === 'custom' && segs.length === 1) return { ...opts, provider: 'custom', type: 'track', id: 'custom', path: 'custom' };
@@ -532,7 +534,8 @@ function renderEmbedPage({ meta, mode, target, origin, over = {} }) {
     // Bare image embed, no text: a painted copy of Spotify's player widget.
     // Any title/description would make Discord wrap it in a card.
     const size = widgetSize(layout, width);
-    const poster = `${origin}/media/${path}.widget.png?layout=${size.layout}&w=${size.width}${oq}`;
+    const themeQ = target.theme && target.theme !== 'spotify' ? `&theme=${target.theme}` : '';
+    const poster = `${origin}/media/${path}.widget.png?layout=${size.layout}&w=${size.width}${themeQ}${oq}`;
     tags.push(
       ['property', 'og:image', poster],
       ['property', 'og:image:type', 'image/png'],
@@ -752,7 +755,8 @@ async function media(segs, params) {
   const target = parseTarget([...segs.slice(0, -1), m[1]]);
   if (!target || !target.path) return text('not found', 404);
   // ?layout=compact&w=320 only applies to the PNG; the video poster is always tall/400.
-  const size = ext === 'png' ? widgetSize(params.get('layout') || 'tall', params.get('w') || MAX_WIDTH) : widgetSize('tall', MAX_WIDTH);
+  const theme = THEMES[params.get('theme')] ? params.get('theme') : 'spotify';
+  const size = ext === 'png' ? widgetSize(theme === 'solseekers' ? 'compact' : params.get('layout') || 'tall', params.get('w') || MAX_WIDTH) : widgetSize('tall', MAX_WIDTH);
   if ((widget && ext === 'jpg') || (!widget && ext === 'png')) return text('not found', 404);
   const meta = await applyOverrides(await getMeta(target), readOverrides(params));
   if (!meta) return text('not found', 404);
@@ -777,6 +781,7 @@ async function media(segs, params) {
         preview: Boolean(meta.pill),
         layout: size.layout,
         width: size.width,
+        theme,
       });
       await writeFile(posterPath, png);
     } else {

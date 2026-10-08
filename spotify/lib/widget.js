@@ -56,9 +56,16 @@ export function widgetSize(layout = 'tall', width = MAX_WIDTH) {
  * @param {number} [o.width]      display width in px, 160..400
  * @returns {Promise<Buffer>} PNG
  */
-export async function renderWidget({ cover, title, subtitle, background = '#282828', subdued = '#b3b3b3', preview = true, layout = 'tall', width = MAX_WIDTH }) {
+export const THEMES = { spotify: {}, solseekers: { color: '#6896aa' } };
+let logoPromise;
+function solseekersLogo() {
+  return (logoPromise ||= loadImage(fileURLToPath(new URL('../assets/solseekerslogo.png', import.meta.url))));
+}
+
+export async function renderWidget({ cover, title, subtitle, background = '#282828', subdued = '#b3b3b3', preview = true, layout = 'tall', width = MAX_WIDTH, theme = 'spotify' }) {
   ensureFonts();
-  const size = widgetSize(layout, width);
+  const ss = theme === 'solseekers'; // SolSeekers: compact only, gradient to the game colour, logo instead of controls
+  const size = widgetSize(ss ? 'compact' : layout, width);
   const { S } = size;
   const W = size.canvas.width;
   const H = size.canvas.height;
@@ -69,7 +76,14 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   ctx.fillStyle = DISCORD_BG;
   ctx.fillRect(0, 0, W, H);
   roundRect(ctx, 0, 0, W, H, 12 * S);
-  ctx.fillStyle = background;
+  if (ss) {
+    const g = ctx.createLinearGradient(0, 0, W, 0);
+    g.addColorStop(0, background);
+    g.addColorStop(1, THEMES.solseekers.color);
+    ctx.fillStyle = g;
+  } else {
+    ctx.fillStyle = background;
+  }
   ctx.fill();
 
   const d = size.layout === 'tall'
@@ -110,18 +124,27 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   }
   ctx.restore();
 
-  // Spotify glyph, top right.
-  const glyph = d.glyph * S;
-  ctx.save();
-  ctx.translate(W - d.pad * S - glyph, d.pad * S);
-  ctx.scale(glyph / 24, glyph / 24);
-  ctx.fillStyle = '#ffffff';
-  ctx.fill(new Path2D(SPOTIFY_PATH));
-  ctx.restore();
+  // Top right: Spotify glyph, or the SolSeekers logo filling the right edge.
+  let rightReserve;
+  if (ss) {
+    const logo = await solseekersLogo();
+    const lh = 62 * S;
+    ctx.drawImage(logo, W - 9 * S - lh, (80 * S - lh) / 2, lh, lh);
+    rightReserve = lh + 9 * S;
+  } else {
+    const glyph = d.glyph * S;
+    ctx.save();
+    ctx.translate(W - d.pad * S - glyph, d.pad * S);
+    ctx.scale(glyph / 24, glyph / 24);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill(new Path2D(SPOTIFY_PATH));
+    ctx.restore();
+    rightReserve = d.pad * S + glyph;
+  }
 
   // Text column.
   const x = d.textX * S;
-  const maxText = W - x - d.pad * S - glyph - 12 * S;
+  const maxText = W - x - rightReserve - 12 * S;
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = '#ffffff';
   ctx.font = `${d.titleSize * S}px "Figtree Bold"`;
@@ -143,6 +166,8 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     ctx.fillStyle = '#ffffff';
     drawSpaced(ctx, label, x + p.padX * S, (p.y + p.baseline) * S, spacing);
   }
+
+  if (ss) return canvas.toBuffer('image/png'); // no play controls on the SolSeekers card
 
   // "···" and the play button, bottom right, aligned with the cover's bottom edge.
   const playR = d.playR * S;

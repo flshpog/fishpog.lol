@@ -45,6 +45,13 @@ Mode and size tokens go in front as usual: `/compact/w300/yt/dQw4w9WgXcQ`. Swapp
 domain by hand on a YouTube (`/watch?v=ID`) or Apple Music (`/us/album/slug/123?i=456`)
 link also works.
 
+## SolSeekers theme
+
+`/solseekers/<target>` (or `/ss/`) paints the compact card with a horizontal gradient from
+the cover's tint to SolSeekers blue `#6896aa`, and puts the SolSeekers logo
+(`assets/solseekerslogo.png`) where the Spotify glyph and play button would be. Width tokens
+still apply; the layout is always compact. The landing page has a separate SolSeekers toggle.
+
 ## Overriding text and cover
 
 Sources get things wrong (YouTube titles are a mess, YouTube's oEmbed sometimes refuses
