@@ -1,17 +1,23 @@
-// Renders a look-alike of Spotify's compact (80px) embed player as a PNG.
-// Discord shows native Spotify links as that exact widget inside an iframe; we
+// Renders a look-alike of Spotify's standard (152px) embed player as a PNG.
+// Discord shows native Spotify links as Spotify's widget inside an iframe; we
 // can't get an iframe from a third-party domain, so we paint the widget and
 // ship it as the poster of a bare video embed instead.
 //
-// Canvas is 1000x200, i.e. the 400x80 widget at 2.5x so it stays crisp.
+// Discord reserves roughly 150px of height for a 400px-wide video player, which
+// is why this uses Spotify's 152px variant rather than the 80px compact one:
+// the compact one left a big empty strip underneath.
+//
+// Canvas is 1000x380, i.e. the 400x152 widget at 2.5x so it stays crisp.
 
 import { GlobalFonts, createCanvas, loadImage, Path2D } from '@napi-rs/canvas';
 import { fileURLToPath } from 'node:url';
 
 const S = 2.5;
-const W = 400 * S;
-const H = 80 * S;
-const DISCORD_BG = '#313338'; // dark-theme chat background, shows through the rounded corners
+const BASE_W = 400;
+const BASE_H = 152;
+const W = BASE_W * S;
+const H = BASE_H * S;
+const DISCORD_BG = '#000000'; // behind the rounded corners; black blends with every dark theme best
 
 // Spotify glyph (Simple Icons), 24x24 viewBox.
 const SPOTIFY_PATH =
@@ -43,7 +49,6 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext('2d');
 
-  // Outside the rounded card: Discord's chat background.
   ctx.fillStyle = DISCORD_BG;
   ctx.fillRect(0, 0, W, H);
 
@@ -52,57 +57,57 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   ctx.fillStyle = background;
   ctx.fill();
 
-  // Cover art, 56x56 at (12,12), radius 4.
+  // Cover art, 120x120 at (16,16), radius 6.
   const art = await loadImage(cover);
   ctx.save();
-  roundRect(ctx, 12 * S, 12 * S, 56 * S, 56 * S, 4 * S);
+  roundRect(ctx, 16 * S, 16 * S, 120 * S, 120 * S, 6 * S);
   ctx.clip();
-  ctx.drawImage(art, 12 * S, 12 * S, 56 * S, 56 * S);
+  ctx.drawImage(art, 16 * S, 16 * S, 120 * S, 120 * S);
   ctx.restore();
 
-  // Spotify glyph, top right (16px, white).
-  const glyph = 16 * S;
+  // Spotify glyph, top right (21px, white).
+  const glyph = 21 * S;
   ctx.save();
-  ctx.translate(W - 12 * S - glyph, 12 * S);
+  ctx.translate(W - 16 * S - glyph, 16 * S);
   ctx.scale(glyph / 24, glyph / 24);
   ctx.fillStyle = '#ffffff';
   ctx.fill(new Path2D(SPOTIFY_PATH));
   ctx.restore();
 
   // Text column.
-  const x = 80 * S;
-  const maxText = W - x - 12 * S - glyph - 12 * S;
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `${16 * S}px "Figtree Bold"`;
+  const x = 152 * S;
+  const maxText = W - x - 16 * S - glyph - 12 * S;
   ctx.textBaseline = 'alphabetic';
-  ctx.fillText(ellipsize(ctx, title, maxText), x, 30 * S);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `${20 * S}px "Figtree Bold"`;
+  ctx.fillText(ellipsize(ctx, title, maxText), x, 42 * S);
 
   ctx.fillStyle = subdued;
-  ctx.font = `${12 * S}px "Figtree Medium"`;
-  ctx.fillText(ellipsize(ctx, subtitle, maxText), x, 46 * S);
+  ctx.font = `${14 * S}px "Figtree Medium"`;
+  ctx.fillText(ellipsize(ctx, subtitle, maxText), x, 64 * S);
 
   if (preview) {
-    ctx.font = `${9 * S}px "Figtree Bold"`;
+    ctx.font = `${10 * S}px "Figtree Bold"`;
     const label = 'PREVIEW';
-    const tw = ctx.measureText(label).width + 2 * S; // crude letter-spacing
-    const pw = tw + 12 * S;
-    const ph = 14 * S;
-    const py = 54 * S;
-    roundRect(ctx, x, py, pw, ph, 3 * S);
+    const tw = ctx.measureText(label).width + 3 * S;
+    const pw = tw + 14 * S;
+    const ph = 18 * S;
+    const py = 78 * S;
+    roundRect(ctx, x, py, pw, ph, 4 * S);
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.fill();
     ctx.fillStyle = '#ffffff';
-    drawSpaced(ctx, label, x + 6 * S, py + 10.5 * S, 0.5 * S);
+    drawSpaced(ctx, label, x + 7 * S, py + 13 * S, 0.5 * S);
   }
 
-  // "···" and the play button, bottom right.
-  const cy = 62 * S;
-  const playR = 12 * S;
-  const playCx = W - 12 * S - playR;
+  // "···" and the play button, bottom right, vertically aligned with the cover's bottom edge.
+  const playR = 18 * S;
+  const cy = 136 * S - playR;
+  const playCx = W - 16 * S - playR;
   ctx.fillStyle = '#ffffff';
   for (let i = 0; i < 3; i++) {
     ctx.beginPath();
-    ctx.arc(playCx - playR - 14 * S - i * 6 * S, cy, 1.6 * S, 0, Math.PI * 2);
+    ctx.arc(playCx - playR - 18 * S - i * 7 * S, cy, 2 * S, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.beginPath();
@@ -111,10 +116,10 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   ctx.fill();
   ctx.fillStyle = '#000000';
   ctx.beginPath();
-  const t = 5 * S;
-  ctx.moveTo(playCx - t * 0.7, cy - t);
+  const t = 7 * S;
+  ctx.moveTo(playCx - t * 0.65, cy - t);
   ctx.lineTo(playCx + t * 1.0, cy);
-  ctx.lineTo(playCx - t * 0.7, cy + t);
+  ctx.lineTo(playCx - t * 0.65, cy + t);
   ctx.closePath();
   ctx.fill();
 

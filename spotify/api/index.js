@@ -338,8 +338,8 @@ function renderEmbedPage({ meta, mode, type, id, origin }) {
       ['property', 'og:video:type', 'video/mp4'],
       ['property', 'og:video:width', String(WIDGET_WIDTH)],
       ['property', 'og:video:height', String(WIDGET_HEIGHT)],
+      // No title/description on purpose: any text makes Discord wrap the video in a card.
       ['name', 'twitter:card', 'player'],
-      ['name', 'twitter:title', meta.title],
       ['name', 'twitter:image', poster],
       ['name', 'twitter:player', mp4],
       ['name', 'twitter:player:width', String(WIDGET_WIDTH)],

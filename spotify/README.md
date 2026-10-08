@@ -21,7 +21,7 @@ Prefix the path with a mode. Bare paths use `DEFAULT_MODE` (env var, defaults to
 | mode | url | what Discord gets |
 | --- | --- | --- |
 | `card` | `/track/ID` | Spotify's own metadata, 1:1. Compact card, cover on the right. |
-| `widget` | `/widget/track/ID` | A painted copy of Spotify's 80px player widget (what Discord shows natively, via iframe) as the poster of a bare video embed, with the 30 s preview as the video. Rendered with `@napi-rs/canvas` using Spotify's own tint colours. Tracks and episodes only. |
+| `widget` | `/widget/track/ID` | A painted copy of Spotify's 152px player widget (Discord shows the real one natively, via iframe) as the poster of a bare video embed, with the 30 s preview as the video. Rendered with `@napi-rs/canvas` using Spotify's own tint colours. No title tags, since any text makes Discord wrap the video in a card. Tracks and episodes only. |
 | `video` | `/video/track/ID` | Same card plus a generated MP4 (cover art on Spotify's tinted background + the 30 s preview) so there's a real inline play button. Tracks and episodes only; other types fall back to `card`. |
 | `rich` | `/rich/track/ID` | Card, but the oEmbed document handed to Discord is Spotify's genuine one (`type: rich` with the `open.spotify.com/embed` iframe). Experimental. |
 | `player` | `/player/track/ID` | Card plus `twitter:card=player` pointing at the Spotify embed iframe. Experimental. |
@@ -40,7 +40,7 @@ redirects to the same path on `open.spotify.com`.
 - `/oembed?url=...` oEmbed document (provider name/url for Discord)
 - `/media/track/ID.jpg` 1280x720 poster
 - `/media/track/ID.mp4` poster + 30 s preview, h264/aac
-- `/media/track/ID.widget.png` 1000x200 painted Spotify widget
+- `/media/track/ID.widget.png` 1000x380 painted Spotify widget
 - `/media/track/ID.widget.mp4` widget + 30 s preview
 - `/api/meta/track/ID` the resolved metadata as JSON (debugging)
 
