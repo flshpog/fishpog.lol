@@ -57,6 +57,9 @@ export function widgetSize(layout = 'tall', width = MAX_WIDTH) {
  * @returns {Promise<Buffer>} PNG
  */
 export const THEMES = { spotify: {}, solseekers: { color: '#6896aa' } };
+// Bump whenever the painted output changes: it's put in every media URL so
+// Vercel's CDN and Discord's image cache stop serving the old picture.
+export const RENDER_VERSION = 5;
 let logoPromise;
 function solseekersLogo() {
   return (logoPromise ||= loadImage(fileURLToPath(new URL('../assets/solseekerslogo.png', import.meta.url))));
@@ -142,7 +145,7 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     // Sample a strip (the rightmost ~8% of the cover) rather than one column, then
     // blur it vertically with a wide gaussian so the fade reads as smooth tones
     // instead of stripes of individual pixel rows.
-    const stripW = Math.max(1, Math.round(cvS * 0.08));
+    const stripW = Math.max(4, Math.round(cvS * 0.12));
     const strip = ctx.getImageData(Math.round(x0) - stripW, Math.round(cvY), stripW, rows).data;
     const rowRgb = new Float64Array(rows * 3);
     for (let r = 0; r < rows; r++) {
@@ -153,14 +156,41 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
       }
       rowRgb[r * 3] = R / stripW; rowRgb[r * 3 + 1] = G / stripW; rowRgb[r * 3 + 2] = B / stripW;
     }
-    const sigma = 6 * S; // ~15px at full size
+    // How busy is the edge? Calm edges (a wall, a sky) get a wide dissolve and a
+    // light blur so the scene seems to continue. Busy edges (buildings, text)
+    // keep the art crisp and get a heavy blur, so the background is a few broad
+    // tones taken from the cover rather than smeared detail.
+    // The signal that matters is horizontal structure inside the strip: if the
+    // colour changes a lot left-to-right within the edge (windows, letters,
+    // objects), stretching it sideways produces smears. Measured on 4px blocks
+    // so film grain doesn't count. A plain wall or sky scores ~3, a painting ~20.
+    const blk = 4;
+    const bw = Math.max(1, Math.floor(stripW / blk));
+    const bh = Math.max(1, Math.floor(rows / blk));
+    let hStd = 0;
+    for (let by = 0; by < bh; by++) {
+      const bl = [];
+      for (let bx = 0; bx < bw; bx++) {
+        const m = [0, 0, 0];
+        for (let y = 0; y < blk; y++) for (let x = 0; x < blk; x++) for (let ch = 0; ch < 3; ch++) m[ch] += strip[((by * blk + y) * stripW + bx * blk + x) * 4 + ch] / (blk * blk);
+        bl.push(m);
+      }
+      const mean = [0, 1, 2].map((ch) => bl.reduce((a, b) => a + b[ch], 0) / bw);
+      hStd += Math.sqrt(bl.reduce((a, b) => a + ((b[0] - mean[0]) ** 2 + (b[1] - mean[1]) ** 2 + (b[2] - mean[2]) ** 2) / 3, 0) / bw);
+    }
+    hStd /= bh;
+    const busy = Math.min(1, Math.max(0, (hStd - 6) / 12)); // 0 calm (<=6) .. 1 busy (>=18)
+    const ease = busy * busy * (3 - 2 * busy);
+    if (process.env.DEBUG_WIDGET) console.log(`edge: hStd=${hStd.toFixed(1)} busy=${ease.toFixed(2)}`);
+
+    const sigma = (6 + 20 * ease) * S; // ~15px calm .. ~65px busy at full size
     const radius = Math.round(sigma * 3);
     const weights = [];
     for (let k = -radius; k <= radius; k++) weights.push(Math.exp(-(k * k) / (2 * sigma * sigma)));
     const target = hexToRgb(THEMES.solseekers.color);
     // Dissolve the cover's right edge into its own averaged colour over this many
     // px, so there's no hard vertical seam where the picture stops.
-    const fadeW = cvS * 0.35;
+    const fadeW = cvS * (0.35 - 0.29 * ease);
     const xs = x0 - fadeW;
     const fadeStop = fadeW / (W - xs);
     ctx.save();

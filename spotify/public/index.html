@@ -466,7 +466,7 @@
         const l = ss ? 'compact' : mode === '' ? layout : 'tall';
         const w = mode === '' ? width : 400;
         const tq = ss ? '&theme=solseekers' : '';
-        dcEmbed.innerHTML = `<div class="e-widget${l === 'compact' ? ' compact' : ''}" style="width:${w}px"><img src="/media/${mediaPath}.widget.png?layout=${l}&w=${w}${tq}${oq}" alt="">${overlay}</div>`;
+        dcEmbed.innerHTML = `<div class="e-widget${l === 'compact' ? ' compact' : ''}" style="width:${w}px"><img src="/media/${mediaPath}.widget.png?layout=${l}&w=${w}${tq}&v=${meta.v || 0}${oq}" alt="">${overlay}</div>`;
         previewNote.textContent = previewOk
           ? 'Discord draws its own play button over the picture. Click it and the 30 second preview plays in place.'
           : mode === 'preview'
@@ -479,7 +479,7 @@
       const provider = '<div class="e-provider">Spotify</div>';
 
       if (videoOk) {
-        const poster = `/media/${mediaPath}.jpg?x=1${oq}`;
+        const poster = `/media/${mediaPath}.jpg?v=${meta.v || 0}${oq}`;
         dcEmbed.innerHTML = `<div class="embed plain">${provider}${title}${desc}
           <div class="e-video"><img src="${poster}" alt=""><div class="play"></div><div class="pill">0:30</div></div></div>`;
         previewNote.textContent = 'Clicking play in Discord plays the 30 second preview inline.';

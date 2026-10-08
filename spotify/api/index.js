@@ -25,7 +25,7 @@ import { spawn } from 'node:child_process';
 import { chmod, copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { LAYOUTS, MAX_WIDTH, MIN_WIDTH, THEMES, renderWidget, widgetSize } from '../lib/widget.js';
+import { LAYOUTS, MAX_WIDTH, MIN_WIDTH, RENDER_VERSION, THEMES, renderWidget, widgetSize } from '../lib/widget.js';
 import { fromAppleMusic, fromSoundCloud, fromYouTube, resolveSoundCloudShort } from '../lib/providers.js';
 import { coverColors } from '../lib/color.js';
 
@@ -534,7 +534,7 @@ function renderEmbedPage({ meta, mode, target, origin, over = {} }) {
     // Bare image embed, no text: a painted copy of Spotify's player widget.
     // Any title/description would make Discord wrap it in a card.
     const size = widgetSize(layout, width);
-    const themeQ = target.theme && target.theme !== 'spotify' ? `&theme=${target.theme}` : '';
+    const themeQ = (target.theme && target.theme !== 'spotify' ? `&theme=${target.theme}` : '') + `&v=${RENDER_VERSION}`;
     const poster = `${origin}/media/${path}.widget.png?layout=${size.layout}&w=${size.width}${themeQ}${oq}`;
     tags.push(
       ['property', 'og:image', poster],
@@ -548,8 +548,8 @@ function renderEmbedPage({ meta, mode, target, origin, over = {} }) {
     // Same picture as the poster of a bare video with the 30s preview.
     // Discord's player has a ~150px minimum height, so this is always the tall layout.
     const size = widgetSize('tall', MAX_WIDTH);
-    const mp4 = `${origin}/media/${path}.widget.mp4?x=1${oq}`;
-    const poster = `${origin}/media/${path}.widget.png?x=1${oq}`;
+    const mp4 = `${origin}/media/${path}.widget.mp4?v=${RENDER_VERSION}${oq}`;
+    const poster = `${origin}/media/${path}.widget.png?v=${RENDER_VERSION}${oq}`;
     tags.push(
       ['property', 'og:type', 'video.other'],
       ['property', 'og:image', poster],
@@ -585,8 +585,8 @@ function renderEmbedPage({ meta, mode, target, origin, over = {} }) {
   if (bare) {
     // handled above
   } else if (mode === 'video') {
-    const mp4 = `${origin}/media/${path}.mp4?x=1${oq}`;
-    const poster = `${origin}/media/${path}.jpg?x=1${oq}`;
+    const mp4 = `${origin}/media/${path}.mp4?v=${RENDER_VERSION}${oq}`;
+    const poster = `${origin}/media/${path}.jpg?v=${RENDER_VERSION}${oq}`;
     tags.push(
       ['property', 'og:image', poster],
       ['property', 'og:image:width', '1280'],
@@ -738,7 +738,7 @@ async function apiMeta(segs, params) {
   const target = await resolveTarget(parsed);
   if (!target) return json({ error: 'short link did not resolve' }, 404);
   const meta = await applyOverrides(await getMeta(target), readOverrides(params));
-  return meta ? json({ ...meta, path: target.path, provider: target.provider }, 200, CACHE_HTML) : json({ error: 'not found' }, 404);
+  return meta ? json({ ...meta, path: target.path, provider: target.provider, v: RENDER_VERSION }, 200, CACHE_HTML) : json({ error: 'not found' }, 404);
 }
 
 // ---------------------------------------------------------------------------
