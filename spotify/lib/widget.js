@@ -89,12 +89,6 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   // SolSeekers: white outline on the card, matching the logo's stroke weight
   // (the logo's outer ring is ~9px of its 128px, about 4.4 design units here).
   const outline = 4.4 * S;
-  if (ss) {
-    roundRect(ctx, outline / 2, outline / 2, W - outline, H - outline, 12 * S - outline / 2);
-    ctx.lineWidth = outline;
-    ctx.strokeStyle = '#ffffff';
-    ctx.stroke();
-  }
 
   const d = size.layout === 'tall'
     ? { pad: 16, cover: 120, coverR: 6, glyph: 21, textX: 152, titleY: 42, titleSize: 20, subY: 64, subSize: 14, pill: { y: 78, h: 18, size: 10, padX: 7, baseline: 13, r: 4 }, playR: 18, dotR: 2, dotGap: 7, dotOff: 18 }
@@ -138,6 +132,39 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     ctx.stroke();
   }
   ctx.restore();
+
+  if (ss) {
+    // Background: every row starts from the colour at the cover's right edge on
+    // that row and fades across to SolSeekers blue, so the art bleeds into the
+    // card instead of meeting one flat averaged colour.
+    const x0 = cvX + cvS;
+    const col = ctx.getImageData(Math.round(x0) - 1, Math.round(cvY), 1, Math.round(cvS)).data;
+    const rows = Math.round(cvS);
+    const smooth = Math.round(2.4 * S); // light vertical blur so noisy pixels don't band
+    const target = hexToRgb(THEMES.solseekers.color);
+    ctx.save();
+    roundRect(ctx, 0, 0, W, H, 12 * S);
+    ctx.clip();
+    for (let r = 0; r < rows; r++) {
+      let R = 0, G = 0, B = 0, n = 0;
+      for (let k = -smooth; k <= smooth; k++) {
+        const rr = Math.min(rows - 1, Math.max(0, r + k));
+        R += col[rr * 4]; G += col[rr * 4 + 1]; B += col[rr * 4 + 2]; n++;
+      }
+      const g = ctx.createLinearGradient(x0, 0, W, 0);
+      g.addColorStop(0, `rgb(${Math.round(R / n)},${Math.round(G / n)},${Math.round(B / n)})`);
+      g.addColorStop(1, `rgb(${target.r},${target.g},${target.b})`);
+      ctx.fillStyle = g;
+      ctx.fillRect(x0, cvY + r, W - x0, 1.5);
+    }
+    ctx.restore();
+
+    // Card outline on top of everything painted so far.
+    roundRect(ctx, outline / 2, outline / 2, W - outline, H - outline, 12 * S - outline / 2);
+    ctx.lineWidth = outline;
+    ctx.strokeStyle = '#ffffff';
+    ctx.stroke();
+  }
 
   // Top right: Spotify glyph, or the SolSeekers logo filling the right edge.
   let rightReserve;
@@ -215,6 +242,11 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
 
 function clamp(n, lo, hi) {
   return Math.min(hi, Math.max(lo, n));
+}
+
+function hexToRgb(hex) {
+  const n = parseInt(hex.replace('#', ''), 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
 }
 
 // Rounded on the left corners only (cover art flush against the card's left edge).
