@@ -59,7 +59,7 @@ export function widgetSize(layout = 'tall', width = MAX_WIDTH) {
 export const THEMES = { spotify: {}, solseekers: { color: '#6896aa' } };
 // Bump whenever the painted output changes: it's put in every media URL so
 // Vercel's CDN and Discord's image cache stop serving the old picture.
-export const RENDER_VERSION = 7;
+export const RENDER_VERSION = 8;
 let logoPromise;
 function solseekersLogo() {
   return (logoPromise ||= loadImage(fileURLToPath(new URL('../assets/solseekerslogo.png', import.meta.url))));
@@ -181,7 +181,14 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     hStd /= bh;
     const busy = Math.min(1, Math.max(0, (hStd - 6) / 12)); // 0 calm (<=6) .. 1 busy (>=18)
     const ease = busy * busy * (3 - 2 * busy);
-    if (process.env.DEBUG_WIDGET) console.log(`edge: hStd=${hStd.toFixed(1)} busy=${ease.toFixed(2)}`);
+    // A very light edge (white paper, pale sky) can't "continue" into a dark card
+    // without a grey smudge, so it gets a crisp cut like a busy edge does.
+    let avgL = 0;
+    for (let r = 0; r < rows; r++) avgL += (0.299 * rowRgb[r * 3] + 0.587 * rowRgb[r * 3 + 1] + 0.114 * rowRgb[r * 3 + 2]) / 255;
+    avgL /= rows;
+    const light = Math.min(1, Math.max(0, (avgL - 0.62) / 0.2));
+    const cut = Math.max(ease, light);
+    if (process.env.DEBUG_WIDGET) console.log(`edge: hStd=${hStd.toFixed(1)} busy=${ease.toFixed(2)} avgL=${avgL.toFixed(2)} cut=${cut.toFixed(2)}`);
 
     const sigma = (6 + 20 * ease) * S; // ~15px calm .. ~65px busy at full size
     const radius = Math.round(sigma * 3);
@@ -191,10 +198,13 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     // Busy multicoloured edges average to grey. For those, lean on the cover's
     // dominant tint (the Spotify-style histogram pick passed in as `background`)
     // instead of the averaged rows; calm edges keep the row-by-row melt.
-    const dom = hexToRgb(/^#[0-9a-f]{6}$/i.test(background) ? background : '#282828');
+    let dom = hexToRgb(/^#[0-9a-f]{6}$/i.test(background) ? background : '#282828');
+    // Monochrome art gets a neutral grey tint from coverColors; on this card use
+    // the slate that the grey tones also deepen to, so everything is one family.
+    if (rgb2hsl(dom.r, dom.g, dom.b)[1] < 0.06) { const [r, g, b] = hsl2rgb(203, 0.18, 0.26).map(Math.round); dom = { r, g, b }; }
     // Dissolve the cover's right edge into its own averaged colour over this many
     // px, so there's no hard vertical seam where the picture stops.
-    const fadeW = cvS * (0.35 - 0.29 * ease);
+    const fadeW = cvS * (0.35 - 0.31 * cut);
     const xs = x0 - fadeW;
     const fadeStop = fadeW / (W - xs);
     ctx.save();
@@ -216,7 +226,9 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
       const g = ctx.createLinearGradient(xs, 0, W, 0);
       g.addColorStop(0, `rgba(${c},0)`);
       g.addColorStop(fadeStop, `rgb(${c})`);
-      g.addColorStop(Math.min(0.98, fadeStop + 0.22), `rgb(${mid})`);
+      // Calm edges glide into the deep tone over ~22% of the card; cut edges (busy
+      // or very light) get there almost immediately so there's no pale smear.
+      g.addColorStop(Math.min(0.98, fadeStop + 0.03 + 0.19 * (1 - cut)), `rgb(${mid})`);
       g.addColorStop(1, `rgb(${target.r},${target.g},${target.b})`);
       ctx.fillStyle = g;
       ctx.fillRect(xs, cvY + r, W - xs, 1.5);
@@ -315,8 +327,9 @@ function richTone(r, g, b) {
   // How much to intervene: nothing for dark colours, fully for pale/washed ones.
   const pale = Math.min(1, Math.max(0, (l - 0.32) / 0.25));
   if (pale === 0) return [r, g, b].map(Math.round).join(',');
-  const s2 = s < 0.06 ? s : Math.min(0.8, Math.max(0.35, s * 1.2));
-  const deep = hsl2rgb(h, s2, 0.3);
+  // Neutral greys/whites deepen to a dark slate leaning toward SolSeekers blue
+  // rather than flat grey, so the fade into the blue reads as one family.
+  const deep = s < 0.06 ? hsl2rgb(203, 0.18, 0.26) : hsl2rgb(h, Math.min(0.8, Math.max(0.35, s * 1.2)), 0.3);
   return [r, g, b].map((v, i) => Math.round(v + (deep[i] - v) * pale)).join(',');
 }
 
