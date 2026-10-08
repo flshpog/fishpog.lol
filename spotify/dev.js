@@ -19,9 +19,12 @@ http
         res.end(await readFile(path.join(PUBLIC, 'index.html')));
         return;
       }
+      const hasBody = !['GET', 'HEAD'].includes(req.method);
       const request = new Request(`http://localhost:${PORT}${req.url}`, {
         method: req.method,
         headers: req.headers,
+        body: hasBody ? Readable.toWeb(req) : undefined,
+        duplex: hasBody ? 'half' : undefined,
       });
       const out = await (req.method === 'HEAD' ? HEAD(request) : GET(request));
       res.writeHead(out.status, Object.fromEntries(out.headers));

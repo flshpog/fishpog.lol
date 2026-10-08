@@ -55,6 +55,10 @@ export async function GET(request) {
   }
 }
 
+export async function POST(request) {
+  return GET(request);
+}
+
 export async function HEAD(request) {
   const res = await GET(request);
   return new Response(null, { status: res.status, headers: res.headers });
@@ -68,6 +72,14 @@ async function handle(request) {
   const segs = ('/' + rawPath).split('/').filter(Boolean);
 
   if (segs[0] === 'oembed') return oembed(url, origin);
+  if (segs[0] === 'api' && segs[1] === 'shorten') return shorten(request, origin);
+  if (segs[0] === 'c' && segs[1] && segs.length === 2) {
+    // Short link: swap in the stored path + overrides and carry on as normal.
+    const stored = await shortGet(segs[1]);
+    if (!stored) return notFoundShort(origin);
+    segs.splice(0, segs.length, ...stored.p.split('/').filter(Boolean));
+    if (stored.o) url.searchParams.set('o', stored.o);
+  }
   if (segs[0] === 'media') return media(segs.slice(1), url.searchParams);
   if (segs[0] === 'api' && segs[1] === 'meta') return apiMeta(segs.slice(2), url.searchParams);
   if (segs.length === 0) return redirect(origin + '/'); // landing is static; shouldn't hit here
@@ -169,25 +181,88 @@ function parseSwappedDomain(segs, params) {
 // hand-made one at /custom?t=..&a=..&c=..&u=https://where-humans-go
 // ---------------------------------------------------------------------------
 
+// Plain ?t= ?a= ?c= ?u= work, but the landing page packs them into one opaque
+// ?o=<base64url JSON> so the custom text isn't readable in the link.
 function readOverrides(params) {
   const clean = (s) => (s || '').toString().replace(/\s+/g, ' ').trim().slice(0, 200);
-  const c = clean(params.get('c'));
-  const u = clean(params.get('u'));
+  let packed = {};
+  const o = params.get('o');
+  if (o) {
+    try { packed = JSON.parse(Buffer.from(o.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8')) || {}; } catch { packed = {}; }
+  }
+  const c = clean(params.get('c') || packed.c);
+  const u = clean(params.get('u') || packed.u);
   return {
-    title: clean(params.get('t')),
-    artist: clean(params.get('a')),
+    title: clean(params.get('t') || packed.t),
+    artist: clean(params.get('a') || packed.a),
     cover: /^https?:\/\//i.test(c) ? c : '',
     url: /^https?:\/\//i.test(u) ? u : '',
   };
 }
 
+function packOverrides(over) {
+  const obj = {};
+  if (over.title) obj.t = over.title;
+  if (over.artist) obj.a = over.artist;
+  if (over.cover) obj.c = over.cover;
+  if (over.url) obj.u = over.url;
+  if (!Object.keys(obj).length) return '';
+  return Buffer.from(JSON.stringify(obj), 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
 function overrideQuery(over) {
-  const q = new URLSearchParams();
-  if (over.title) q.set('t', over.title);
-  if (over.artist) q.set('a', over.artist);
-  if (over.cover) q.set('c', over.cover);
-  const s = q.toString();
-  return s ? '&' + s : '';
+  const o = packOverrides(over);
+  return o ? '&o=' + o : '';
+}
+
+// ---------------------------------------------------------------------------
+// Short links: /c/<code> -> stored { p: "compact/w300/yt/ID", o: "<packed>" }.
+// Backed by Upstash Redis / Vercel KV over REST if the env vars exist; silently
+// disabled otherwise. No npm dependency.
+// ---------------------------------------------------------------------------
+
+const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '';
+const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '';
+const KV_ENABLED = Boolean(KV_URL && KV_TOKEN);
+const SHORT_TTL = 60 * 60 * 24 * 365; // a year, refreshed on every hit
+
+async function kv(cmd) {
+  const res = await fetchWithTimeout(KV_URL, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${KV_TOKEN}`, 'content-type': 'application/json' },
+    body: JSON.stringify(cmd),
+  });
+  if (!res.ok) throw new Error(`kv ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(`kv: ${data.error}`);
+  return data.result;
+}
+
+async function shortGet(code) {
+  if (!KV_ENABLED || !/^[A-Za-z0-9]{4,12}$/.test(code)) return null;
+  const raw = await kv(['GET', `short:${code}`]).catch(warn('kv get'));
+  if (!raw) return null;
+  kv(['EXPIRE', `short:${code}`, SHORT_TTL]).catch(() => {});
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+async function shorten(request, origin) {
+  if (request.method === 'GET') return json({ enabled: KV_ENABLED });
+  if (!KV_ENABLED) return json({ error: 'short links are not set up on this deployment' }, 503);
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'bad json' }, 400); }
+  const p = String(body?.p || '').replace(/^\/+|\/+$/g, '').slice(0, 300);
+  const o = String(body?.o || '').slice(0, 2000);
+  if (!/^[\w\/.-]+$/.test(p) || !parseTarget(p.split('/').filter(Boolean))) return json({ error: 'bad path' }, 400);
+  if (o && !/^[A-Za-z0-9_-]+$/.test(o)) return json({ error: 'bad overrides' }, 400);
+  const alphabet = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  for (let attempt = 0; attempt < 5; attempt++) {
+    let code = '';
+    for (const b of crypto.getRandomValues(new Uint8Array(6))) code += alphabet[b % alphabet.length];
+    const ok = await kv(['SET', `short:${code}`, JSON.stringify({ p, o }), 'EX', SHORT_TTL, 'NX']).catch(warn('kv set'));
+    if (ok) return json({ code, url: `${origin}/c/${code}` });
+  }
+  return json({ error: 'could not allocate a code' }, 500);
 }
 
 async function applyOverrides(meta, over) {
@@ -595,6 +670,16 @@ function originalUrl(t) {
   if (t.provider === 'sc') return `https://soundcloud.com/${t.id}`;
   if (t.provider === 'am') return `https://music.apple.com/${t.country || 'us'}/song/${t.id}`;
   return `${SPOTIFY}/${t.type}/${t.id}`;
+}
+
+function notFoundShort(origin) {
+  return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Not found</title>
+<meta property="og:title" content="This short link doesn't exist"><meta name="twitter:card" content="summary">
+<meta http-equiv="refresh" content="0;url=${esc(origin)}/"></head>
+<body style="background:#0a0a0a;color:#eee;font-family:system-ui;padding:40px"><p>This short link doesn't exist or has expired. <a style="color:#1db954" href="${esc(origin)}/">Make a new one</a></p></body></html>`, {
+    status: 404,
+    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
+  });
 }
 
 function notFound(origin, target) {

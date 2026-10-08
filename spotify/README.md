@@ -53,6 +53,18 @@ flow through to the card, the widget and the video poster. The tint colour is re
 from a custom cover. With no source at all, `/custom?t=..&a=..&c=..&u=https://where-humans-go`
 makes one from scratch. The landing page has a "customize" panel for this.
 
+The page doesn't put the text in the link as plain `?t=`; it packs the overrides into one
+opaque `?o=<base64url JSON>` so they aren't readable at a glance. Both forms are accepted.
+
+### Short links
+
+`/c/<code>` links (`open.fishpog.lol/c/aB3dE9`) hide everything, including the source and
+the overrides. They need a key-value store: in the Vercel project, Storage → Create →
+Upstash Redis (free tier). That sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`
+(`UPSTASH_REDIS_REST_URL` / `_TOKEN` also work). With those present the landing page shows
+a "short link" button; without them it stays hidden and `GET /api/shorten` reports
+`{"enabled":false}`. Codes live a year, refreshed on every hit.
+
 Also handled: `/intl-xx/` prefixes, `/embed/` paths, `?si=` junk, `spotify.link` short
 links as `/link/CODE`, and albums / playlists / artists / episodes / shows. Anything else
 redirects to the same path on `open.spotify.com`.
