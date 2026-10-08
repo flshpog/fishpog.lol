@@ -158,6 +158,11 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     const weights = [];
     for (let k = -radius; k <= radius; k++) weights.push(Math.exp(-(k * k) / (2 * sigma * sigma)));
     const target = hexToRgb(THEMES.solseekers.color);
+    // Dissolve the cover's right edge into its own averaged colour over this many
+    // px, so there's no hard vertical seam where the picture stops.
+    const fadeW = cvS * 0.35;
+    const xs = x0 - fadeW;
+    const fadeStop = fadeW / (W - xs);
     ctx.save();
     roundRect(ctx, 0, 0, W, H, 12 * S);
     ctx.clip();
@@ -168,11 +173,13 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
         const w = weights[k + radius];
         R += rowRgb[rr * 3] * w; G += rowRgb[rr * 3 + 1] * w; B += rowRgb[rr * 3 + 2] * w; n += w;
       }
-      const g = ctx.createLinearGradient(x0, 0, W, 0);
-      g.addColorStop(0, `rgb(${Math.round(R / n)},${Math.round(G / n)},${Math.round(B / n)})`);
+      const c = `${Math.round(R / n)},${Math.round(G / n)},${Math.round(B / n)}`;
+      const g = ctx.createLinearGradient(xs, 0, W, 0);
+      g.addColorStop(0, `rgba(${c},0)`);
+      g.addColorStop(fadeStop, `rgb(${c})`);
       g.addColorStop(1, `rgb(${target.r},${target.g},${target.b})`);
       ctx.fillStyle = g;
-      ctx.fillRect(x0, cvY + r, W - x0, 1.5);
+      ctx.fillRect(xs, cvY + r, W - xs, 1.5);
     }
     ctx.restore();
 
