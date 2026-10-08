@@ -81,6 +81,17 @@
       padding: 12px 14px; word-break: break-all; font-size: .95rem;
     }
     .out.show { display: block; }
+    .custom { margin-top: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 0 14px; }
+    .custom summary { cursor: pointer; padding: 12px 0; font-weight: 700; list-style: none; }
+    .custom summary::-webkit-details-marker { display: none; }
+    .custom summary::before { content: '+'; display: inline-block; width: 1.2em; color: var(--green-bright); font-weight: 800; }
+    .custom[open] summary::before { content: '–'; }
+    .custom .grid { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; padding-bottom: 4px; }
+    .custom .grid input:last-child { grid-column: 1 / -1; }
+    .custom input { padding: 10px 12px; font-size: .95rem; }
+    .muted { color: var(--muted); font-weight: 600; }
+    .small { font-size: .82rem; margin: 8px 0 12px; }
+    @media (max-width: 480px) { .custom .grid { grid-template-columns: 1fr; } }
     .out a { color: var(--green-bright); text-decoration: none; }
     .out a:hover { text-decoration: underline; }
     .err { color: #ff6b6b; font-size: .9rem; margin: 10px 4px 0; min-height: 1.2em; }
@@ -197,6 +208,16 @@
     <div class="err" id="err"></div>
     <div class="out" id="out"><a id="outlink" href="#" target="_blank" rel="noopener"></a></div>
 
+    <details class="custom" id="custom">
+      <summary>customize text and cover <span class="muted">(optional, fixes anything the source got wrong)</span></summary>
+      <div class="grid">
+        <input id="ct" type="text" placeholder="title" maxlength="200" autocomplete="off">
+        <input id="ca" type="text" placeholder="artist" maxlength="200" autocomplete="off">
+        <input id="cc" type="url" placeholder="cover image url (https://…)" maxlength="500" autocomplete="off">
+      </div>
+      <p class="muted small">Leave the link box empty and fill these in to make one from scratch.</p>
+    </details>
+
     <section class="preview" id="preview">
       <label>how it should look on Discord</label>
       <div class="dc">
@@ -267,7 +288,7 @@
     const YT = /(?:youtu\.be\/|(?:www\.|m\.|music\.)?youtube\.com\/(?:watch\?(?:[^#\s]*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/i;
     const SC = /(?:www\.|m\.)?soundcloud\.com\/([\w-]+)\/(sets\/)?([\w-]+)/i;
     const SC_SHORT = /on\.soundcloud\.com\/([\w-]+)/i;
-    const AM = /music\.apple\.com\/([a-z]{2})\/(?:album|song|playlist)\/[^\/?#\s]*\/?(?:pl\.)?([\w.-]+)(?:\?[^#\s]*?(?:^|[?&])i=(\d+))?/i;
+    const AM = /music\.apple\.com\/([a-z]{2})\/(?:album|song|playlist)\/[^\/?#\s]*\/?(?:pl\.)?([\w.-]+)(?:\?(?:[^#\s]*?&)?i=(\d+))?/i;
 
     function parse(raw) {
       const s = raw.trim();
@@ -299,27 +320,43 @@
     let layout = 'tall';
     let width = 400;
 
+    // Overrides: ?t=title&a=artist&c=cover. Also enough on their own (/custom) with no source link.
+    const ovTitle = document.getElementById('ct');
+    const ovArtist = document.getElementById('ca');
+    const ovCover = document.getElementById('cc');
+    function overrideQuery() {
+      const q = new URLSearchParams();
+      if (ovTitle.value.trim()) q.set('t', ovTitle.value.trim());
+      if (ovArtist.value.trim()) q.set('a', ovArtist.value.trim());
+      const c = ovCover.value.trim();
+      if (/^https?:\/\//i.test(c)) q.set('c', c);
+      return q.toString();
+    }
+
     function convert(raw) {
-      const p = parse(raw);
-      if (!p) return null;
+      const p = raw ? parse(raw) : null;
+      const q = overrideQuery();
+      const path = p ? p.path : q ? 'custom' : null;
+      if (!path) return null;
       const tokens = [];
       if (mode) tokens.push(mode);
       if (mode === '' && layout !== 'tall') tokens.push(layout);
       if (mode === '' && width !== 400) tokens.push('w' + width);
-      return `${BASE}${tokens.map((t) => t + '/').join('')}${p.path}`;
+      return `${BASE}${tokens.map((t) => t + '/').join('')}${path}${q ? '?' + q : ''}`;
     }
 
     function update() {
       const v = input.value.trim();
       const parsed = v ? parse(v) : null;
-      const result = parsed ? convert(v) : null;
+      const q = overrideQuery();
+      const result = parsed || (!v && q) ? convert(v) : null;
       go.disabled = !result;
       err.textContent = v && !result ? "that doesn't look like a Spotify, YouTube, SoundCloud or Apple Music link" : '';
       if (result) {
         outlink.textContent = result;
         outlink.href = result;
         out.classList.add('show');
-        showPreview(parsed.path, result);
+        showPreview(parsed ? parsed.path : 'custom', result, q);
       } else {
         out.classList.remove('show');
         preview.classList.remove('show');
@@ -341,39 +378,46 @@
       return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    async function fetchMeta(path) {
-      if (metaCache.has(path)) return metaCache.get(path);
-      const p = fetch(`/api/meta/${path}`).then(async (r) => {
+    async function fetchMeta(path, q = '') {
+      const key = path + '?' + q;
+      if (metaCache.has(key)) return metaCache.get(key);
+      const p = fetch(`/api/meta/${path}${q ? '?' + q : ''}`).then(async (r) => {
         const body = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(body.error || `HTTP ${r.status}`);
         return body;
       });
-      metaCache.set(path, p);
-      p.catch(() => metaCache.delete(path));
+      metaCache.set(key, p);
+      p.catch(() => metaCache.delete(key));
       return p;
     }
 
-    async function showPreview(path, link) {
+    let previewTimer;
+    async function showPreview(path, link, q = '') {
       const seq = ++previewSeq;
       preview.classList.add('show');
       dcLink.textContent = link;
       dcLink.href = link;
-      dcEmbed.innerHTML = '<div class="skel">fetching from Spotify…</div>';
+      dcEmbed.innerHTML = '<div class="skel">fetching…</div>';
       previewNote.textContent = '';
+      // Debounce: typing in the customize boxes would otherwise fire a request per keystroke.
+      clearTimeout(previewTimer);
+      await new Promise((r) => (previewTimer = setTimeout(r, 250)));
+      if (seq !== previewSeq) return;
       let meta;
       try {
-        meta = await fetchMeta(path);
+        meta = await fetchMeta(path, q);
       } catch (e) {
         if (seq !== previewSeq) return;
-        dcEmbed.innerHTML = `<div class="skel">couldn't load this one (${escapeHtml(e.message)}). Spotify may be having a moment.</div>`;
+        dcEmbed.innerHTML = `<div class="skel">couldn't load this one (${escapeHtml(e.message)}). The source may be having a moment, or fill in the text yourself below.</div>`;
         return;
       }
       if (seq !== previewSeq) return;
-      renderEmbed(meta);
+      renderEmbed(meta, q);
     }
 
-    function renderEmbed(meta) {
-      const mediaPath = meta.path; // e.g. track/ID, yt/ID, sc/user/slug, am/us/ID
+    function renderEmbed(meta, q = '') {
+      const mediaPath = meta.path; // e.g. track/ID, yt/ID, sc/user/slug, am/us/ID, custom
+      const oq = q ? '&' + q : '';
       const videoOk = mode === 'video' && meta.audio;
       const previewOk = mode === 'preview' && meta.audio;
 
@@ -381,7 +425,7 @@
         const overlay = previewOk ? '<div class="play"></div>' : '';
         const l = mode === '' ? layout : 'tall';
         const w = mode === '' ? width : 400;
-        dcEmbed.innerHTML = `<div class="e-widget${l === 'compact' ? ' compact' : ''}" style="width:${w}px"><img src="/media/${mediaPath}.widget.png?layout=${l}&w=${w}" alt="">${overlay}</div>`;
+        dcEmbed.innerHTML = `<div class="e-widget${l === 'compact' ? ' compact' : ''}" style="width:${w}px"><img src="/media/${mediaPath}.widget.png?layout=${l}&w=${w}${oq}" alt="">${overlay}</div>`;
         previewNote.textContent = previewOk
           ? 'Discord draws its own play button over the picture. Click it and the 30 second preview plays in place.'
           : mode === 'preview'
@@ -394,7 +438,7 @@
       const provider = '<div class="e-provider">Spotify</div>';
 
       if (videoOk) {
-        const poster = `/media/${mediaPath}.jpg`;
+        const poster = `/media/${mediaPath}.jpg?x=1${oq}`;
         dcEmbed.innerHTML = `<div class="embed plain">${provider}${title}${desc}
           <div class="e-video"><img src="${poster}" alt=""><div class="play"></div><div class="pill">0:30</div></div></div>`;
         previewNote.textContent = 'Clicking play in Discord plays the 30 second preview inline.';
@@ -407,6 +451,7 @@
     }
 
     input.addEventListener('input', update);
+    for (const el of [ovTitle, ovArtist, ovCover]) el.addEventListener('input', update);
     input.addEventListener('paste', () => setTimeout(update, 0));
     document.getElementById('chips').addEventListener('click', (e) => {
       const chip = e.target.closest('.chip');

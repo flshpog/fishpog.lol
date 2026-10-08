@@ -10,15 +10,33 @@ const TIMEOUT = 6000;
 
 export async function fromYouTube(id) {
   const watch = `https://www.youtube.com/watch?v=${id}`;
-  const res = await fetchWithTimeout(`https://www.youtube.com/oembed?url=${encodeURIComponent(watch)}&format=json`);
-  if (res.status === 404 || res.status === 401) return null;
-  if (!res.ok) throw new Error(`youtube oembed ${res.status}`);
-  const o = await res.json();
+  // YouTube's oEmbed sometimes refuses datacenter IPs; noembed.com is a second
+  // opinion, and if both fail we still return something (the thumbnail always
+  // works) so ?t= and ?a= overrides can fill in the rest.
+  let o = null;
+  try {
+    const res = await fetchWithTimeout(`https://www.youtube.com/oembed?url=${encodeURIComponent(watch)}&format=json`);
+    if (res.status === 404 || res.status === 401) return null; // genuinely no such video
+    if (res.ok) o = await res.json();
+    else console.warn(`youtube oembed ${res.status}`);
+  } catch (err) {
+    console.warn('youtube oembed failed:', err?.message || err);
+  }
+  if (!o) {
+    try {
+      const res = await fetchWithTimeout(`https://noembed.com/embed?url=${encodeURIComponent(watch)}`);
+      const j = res.ok ? await res.json() : null;
+      if (j && j.title && !j.error) o = j;
+    } catch (err) {
+      console.warn('noembed failed:', err?.message || err);
+    }
+  }
+  o = o || { title: '', author_name: '' };
   // maxresdefault only exists for HD uploads; fall back to the 480x360 one.
   let image = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
   const head = await fetchWithTimeout(image, { method: 'HEAD' }).catch(() => null);
   if (!head || !head.ok) image = o.thumbnail_url || `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
-  const author = (o.author_name || '').replace(/\s*-\s*Topic$/i, '');
+  const author = (o.author_name || '').replace(/\s*-\s*Topic$/i, '').replace(/VEVO$/i, '');
   return finish({
     title: o.title,
     name: cleanTitle(o.title, author),

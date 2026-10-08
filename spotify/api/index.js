@@ -27,6 +27,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { LAYOUTS, MAX_WIDTH, MIN_WIDTH, renderWidget, widgetSize } from '../lib/widget.js';
 import { fromAppleMusic, fromSoundCloud, fromYouTube, resolveSoundCloudShort } from '../lib/providers.js';
+import { coverColors } from '../lib/color.js';
 
 const SPOTIFY = 'https://open.spotify.com';
 const TYPES = new Set(['track', 'album', 'playlist', 'artist', 'episode', 'show']);
@@ -68,10 +69,10 @@ async function handle(request) {
 
   if (segs[0] === 'oembed') return oembed(url, origin);
   if (segs[0] === 'media') return media(segs.slice(1), url.searchParams);
-  if (segs[0] === 'api' && segs[1] === 'meta') return apiMeta(segs.slice(2));
+  if (segs[0] === 'api' && segs[1] === 'meta') return apiMeta(segs.slice(2), url.searchParams);
   if (segs.length === 0) return redirect(origin + '/'); // landing is static; shouldn't hit here
 
-  const parsed = parseTarget(segs);
+  const parsed = parseTarget(segs) || parseSwappedDomain(segs, url.searchParams);
   if (!parsed) {
     // Not something we understand: behave like open.spotify.com would.
     return redirect(`${SPOTIFY}/${segs.join('/')}${url.search ? stripOurParams(url) : ''}`);
@@ -81,12 +82,13 @@ async function handle(request) {
   if (!target) return redirect(parsed.link ? `https://spotify.link/${parsed.link}` : `https://on.soundcloud.com/${parsed.scShort}`);
 
   let { mode } = target;
-  const meta = await getMeta(target);
+  const over = readOverrides(url.searchParams);
+  const meta = await applyOverrides(await getMeta(target), over);
   if (!meta) return notFound(origin, target);
 
   if (mode === 'preview' && !meta.audio) mode = 'widget';
   if (mode === 'video' && !meta.audio) mode = 'card';
-  const html = renderEmbedPage({ meta, mode, target, origin });
+  const html = renderEmbedPage({ meta, mode, target, origin, over });
   return new Response(html, {
     status: 200,
     headers: {
@@ -120,6 +122,8 @@ function parseTarget(input) {
   }
   const opts = { mode, layout, width: Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, width)) };
   const [a, b, c, d] = segs;
+  // Hand-made: everything comes from ?t= ?a= ?c= ?u=
+  if (a === 'custom' && segs.length === 1) return { ...opts, provider: 'custom', type: 'track', id: 'custom', path: 'custom' };
   // Spotify
   if (a === 'link' && b) return { ...opts, provider: 'spotify', link: b };
   if (segs.length >= 2 && TYPES.has(a) && /^[A-Za-z0-9]{22}$/.test(b)) {
@@ -139,6 +143,75 @@ function parseTarget(input) {
     return { ...opts, provider: 'am', type: 'track', id: c, country: b.toLowerCase(), path: `am/${b.toLowerCase()}/${c}` };
   }
   return null;
+}
+
+// Someone swapped the domain by hand on a YouTube or Apple Music link:
+//   /watch?v=ID            /shorts/ID
+//   /us/album/slug/123?i=456   /us/song/slug/456
+function parseSwappedDomain(segs, params) {
+  const base = { mode: DEFAULT_MODE, layout: 'tall', width: MAX_WIDTH };
+  const v = params.get('v');
+  if (segs[0] === 'watch' && v && /^[\w-]{11}$/.test(v)) return { ...base, provider: 'yt', type: 'track', id: v, path: `yt/${v}` };
+  if (segs[0] === 'shorts' && segs[1] && /^[\w-]{11}$/.test(segs[1])) return { ...base, provider: 'yt', type: 'track', id: segs[1], path: `yt/${segs[1]}` };
+  if (/^[a-z]{2}$/i.test(segs[0] || '') && /^(album|song)$/.test(segs[1] || '')) {
+    const last = segs[segs.length - 1];
+    const id = params.get('i') || (/^\d+$/.test(last) ? last : null);
+    if (id) {
+      const cc = segs[0].toLowerCase();
+      return { ...base, provider: 'am', type: 'track', id, country: cc, path: `am/${cc}/${id}` };
+    }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Overrides: ?t=Title&a=Artist&c=https://cover.jpg on any link, or a fully
+// hand-made one at /custom?t=..&a=..&c=..&u=https://where-humans-go
+// ---------------------------------------------------------------------------
+
+function readOverrides(params) {
+  const clean = (s) => (s || '').toString().replace(/\s+/g, ' ').trim().slice(0, 200);
+  const c = clean(params.get('c'));
+  const u = clean(params.get('u'));
+  return {
+    title: clean(params.get('t')),
+    artist: clean(params.get('a')),
+    cover: /^https?:\/\//i.test(c) ? c : '',
+    url: /^https?:\/\//i.test(u) ? u : '',
+  };
+}
+
+function overrideQuery(over) {
+  const q = new URLSearchParams();
+  if (over.title) q.set('t', over.title);
+  if (over.artist) q.set('a', over.artist);
+  if (over.cover) q.set('c', over.cover);
+  const s = q.toString();
+  return s ? '&' + s : '';
+}
+
+async function applyOverrides(meta, over) {
+  if (!meta) return meta;
+  if (!over.title && !over.artist && !over.cover && !over.url) return meta;
+  const out = { ...meta };
+  const segs = (meta.description || '').split(' · ').filter(Boolean);
+  if (over.title) { out.title = over.title; out.name = over.title; }
+  if (over.artist) { out.subtitle = over.artist; if (segs.length) segs[0] = over.artist; else segs.push(over.artist, 'Song'); }
+  out.description = segs.join(' · ');
+  if (over.url) out.url = over.url;
+  if (over.cover && over.cover !== meta.image) {
+    out.image = over.cover;
+    out.imageWidth = 640;
+    out.imageHeight = 640;
+    try {
+      const colors = await coverColors(await fetchBuffer(over.cover));
+      out.color = colors.background;
+      out.subdued = colors.subdued;
+    } catch (err) {
+      console.warn('override cover failed:', err?.message || err);
+    }
+  }
+  return out;
 }
 
 // Turn short links into real targets. Returns null if they don't resolve.
@@ -196,6 +269,9 @@ async function getMeta(target) {
   if (hit && hit.expires > Date.now()) return hit.value;
 
   let value = null;
+  if (target.provider === 'custom') {
+    return { title: '', name: '', subtitle: '', description: '', image: null, imageWidth: 640, imageHeight: 640, audio: null, color: '#3a3a3a', subdued: '#b3b3b3', pill: true, ogType: 'music.song', url: SPOTIFY, source: 'custom' };
+  }
   if (target.provider === 'yt') value = await fromYouTube(target.id).catch(warn('youtube'));
   else if (target.provider === 'sc') value = await fromSoundCloud(target.id).catch(warn('soundcloud'));
   else if (target.provider === 'am') value = await fromAppleMusic(target.id, target.country).catch(warn('apple'));
@@ -367,12 +443,13 @@ async function fetchWithTimeout(url, init = {}, ms = FETCH_TIMEOUT_MS) {
 // HTML rendering
 // ---------------------------------------------------------------------------
 
-function renderEmbedPage({ meta, mode, target, origin }) {
+function renderEmbedPage({ meta, mode, target, origin, over = {} }) {
   const { path, layout = 'tall', width = MAX_WIDTH } = target;
   const spotifyUrl = meta.url; // where humans end up (Spotify, YouTube, SoundCloud or Apple)
   const ourUrl = `${origin}/${mode === DEFAULT_MODE ? '' : mode + '/'}${path}`;
   const oembedUrl = `${origin}/oembed?url=${encodeURIComponent(ourUrl)}`;
   const bare = mode === 'widget' || mode === 'preview';
+  const oq = overrideQuery(over); // "&t=..&a=..&c=.." so the media routes apply the same overrides
 
   const tags = [];
 
@@ -380,7 +457,7 @@ function renderEmbedPage({ meta, mode, target, origin }) {
     // Bare image embed, no text: a painted copy of Spotify's player widget.
     // Any title/description would make Discord wrap it in a card.
     const size = widgetSize(layout, width);
-    const poster = `${origin}/media/${path}.widget.png?layout=${size.layout}&w=${size.width}`;
+    const poster = `${origin}/media/${path}.widget.png?layout=${size.layout}&w=${size.width}${oq}`;
     tags.push(
       ['property', 'og:image', poster],
       ['property', 'og:image:type', 'image/png'],
@@ -393,8 +470,8 @@ function renderEmbedPage({ meta, mode, target, origin }) {
     // Same picture as the poster of a bare video with the 30s preview.
     // Discord's player has a ~150px minimum height, so this is always the tall layout.
     const size = widgetSize('tall', MAX_WIDTH);
-    const mp4 = `${origin}/media/${path}.widget.mp4`;
-    const poster = `${origin}/media/${path}.widget.png`;
+    const mp4 = `${origin}/media/${path}.widget.mp4?x=1${oq}`;
+    const poster = `${origin}/media/${path}.widget.png?x=1${oq}`;
     tags.push(
       ['property', 'og:type', 'video.other'],
       ['property', 'og:image', poster],
@@ -430,8 +507,8 @@ function renderEmbedPage({ meta, mode, target, origin }) {
   if (bare) {
     // handled above
   } else if (mode === 'video') {
-    const mp4 = `${origin}/media/${path}.mp4`;
-    const poster = `${origin}/media/${path}.jpg`;
+    const mp4 = `${origin}/media/${path}.mp4?x=1${oq}`;
+    const poster = `${origin}/media/${path}.jpg?x=1${oq}`;
     tags.push(
       ['property', 'og:image', poster],
       ['property', 'og:image:width', '1280'],
@@ -567,12 +644,12 @@ async function oembed(url, origin) {
   );
 }
 
-async function apiMeta(segs) {
+async function apiMeta(segs, params) {
   const parsed = parseTarget(segs);
   if (!parsed) return json({ error: 'bad path' }, 400);
   const target = await resolveTarget(parsed);
   if (!target) return json({ error: 'short link did not resolve' }, 404);
-  const meta = await getMeta(target);
+  const meta = await applyOverrides(await getMeta(target), readOverrides(params));
   return meta ? json({ ...meta, path: target.path, provider: target.provider }, 200, CACHE_HTML) : json({ error: 'not found' }, 404);
 }
 
@@ -592,8 +669,9 @@ async function media(segs, params) {
   // ?layout=compact&w=320 only applies to the PNG; the video poster is always tall/400.
   const size = ext === 'png' ? widgetSize(params.get('layout') || 'tall', params.get('w') || MAX_WIDTH) : widgetSize('tall', MAX_WIDTH);
   if ((widget && ext === 'jpg') || (!widget && ext === 'png')) return text('not found', 404);
-  const meta = await getMeta(target);
-  if (!meta || !meta.image) return text('not found', 404);
+  const meta = await applyOverrides(await getMeta(target), readOverrides(params));
+  if (!meta) return text('not found', 404);
+  if (!meta.image && !(widget && ext === 'png')) return text('not found', 404);
   if (ext === 'mp4' && !meta.audio) return text('no preview available for this item', 404);
 
   const dir = await mkdtemp(path.join(tmpdir(), 'fishpog-'));
@@ -601,7 +679,7 @@ async function media(segs, params) {
     const artPath = path.join(dir, 'art.jpg');
     const posterPath = path.join(dir, widget ? 'poster.png' : 'poster.jpg');
     const [art, audio] = await Promise.all([
-      fetchBuffer(meta.image),
+      meta.image ? fetchBuffer(meta.image) : null,
       ext === 'mp4' ? fetchBuffer(meta.audio) : null,
     ]);
     if (widget) {

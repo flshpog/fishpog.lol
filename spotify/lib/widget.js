@@ -64,7 +64,7 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   const H = size.canvas.height;
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext('2d');
-  const art = await loadImage(cover);
+  const art = cover ? await loadImage(cover) : null;
 
   ctx.fillStyle = DISCORD_BG;
   ctx.fillRect(0, 0, W, H);
@@ -77,13 +77,37 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     : { pad: 12, cover: 56, coverR: 4, glyph: 16, textX: 80, titleY: 30, titleSize: 16, subY: 46, subSize: 12, pill: { y: 54, h: 14, size: 9, padX: 6, baseline: 10.5, r: 3 }, playR: 12, dotR: 1.6, dotGap: 6, dotOff: 14 };
 
   // Cover art, centre-cropped to a square (YouTube thumbnails are 16:9).
-  const side = Math.min(art.width, art.height);
-  const sx = (art.width - side) / 2;
-  const sy = (art.height - side) / 2;
   ctx.save();
   roundRect(ctx, d.pad * S, d.pad * S, d.cover * S, d.cover * S, d.coverR * S);
   ctx.clip();
-  ctx.drawImage(art, sx, sy, side, side, d.pad * S, d.pad * S, d.cover * S, d.cover * S);
+  if (art) {
+    const side = Math.min(art.width, art.height);
+    const sx = (art.width - side) / 2;
+    const sy = (art.height - side) / 2;
+    ctx.drawImage(art, sx, sy, side, side, d.pad * S, d.pad * S, d.cover * S, d.cover * S);
+  } else {
+    // No artwork: a quiet placeholder with a drawn music note (the font has no ♪ glyph).
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillRect(d.pad * S, d.pad * S, d.cover * S, d.cover * S);
+    const cx = (d.pad + d.cover / 2) * S;
+    const cy0 = (d.pad + d.cover / 2) * S;
+    const u = d.cover * S * 0.06; // unit
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath();
+    ctx.ellipse(cx - 2.2 * u, cy0 + 3.2 * u, 2.2 * u, 1.6 * u, -0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + 3.2 * u, cy0 + 2.2 * u, 2.2 * u, 1.6 * u, -0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.lineWidth = 1.1 * u;
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath();
+    ctx.moveTo(cx - 0.3 * u, cy0 + 3.2 * u);
+    ctx.lineTo(cx - 0.3 * u, cy0 - 4.6 * u);
+    ctx.lineTo(cx + 5.1 * u, cy0 - 5.8 * u);
+    ctx.lineTo(cx + 5.1 * u, cy0 + 2.2 * u);
+    ctx.stroke();
+  }
   ctx.restore();
 
   // Spotify glyph, top right.

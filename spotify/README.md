@@ -41,7 +41,17 @@ Humans who click are sent to the original service.
 | `soundcloud.com/user/slug`, `.../user/sets/slug`, `on.soundcloud.com/code` | `/sc/user/slug`, `/sc/user/sets/slug`, `/sc/on/code` | SoundCloud oEmbed |
 | `music.apple.com/cc/album/.../ID?i=TRACK`, `.../song/.../ID` | `/am/cc/ID` (or `/am/ID`, US) | iTunes lookup API (also gives a 30 s preview, so `preview` and `video` work) |
 
-Mode and size tokens go in front as usual: `/compact/w300/yt/dQw4w9WgXcQ`.
+Mode and size tokens go in front as usual: `/compact/w300/yt/dQw4w9WgXcQ`. Swapping the
+domain by hand on a YouTube (`/watch?v=ID`) or Apple Music (`/us/album/slug/123?i=456`)
+link also works.
+
+## Overriding text and cover
+
+Sources get things wrong (YouTube titles are a mess, YouTube's oEmbed sometimes refuses
+datacenter IPs). Any link takes `?t=Title&a=Artist&c=https://cover.jpg` and the overrides
+flow through to the card, the widget and the video poster. The tint colour is recomputed
+from a custom cover. With no source at all, `/custom?t=..&a=..&c=..&u=https://where-humans-go`
+makes one from scratch. The landing page has a "customize" panel for this.
 
 Also handled: `/intl-xx/` prefixes, `/embed/` paths, `?si=` junk, `spotify.link` short
 links as `/link/CODE`, and albums / playlists / artists / episodes / shows. Anything else
