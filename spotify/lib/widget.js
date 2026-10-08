@@ -59,7 +59,7 @@ export function widgetSize(layout = 'tall', width = MAX_WIDTH) {
 export const THEMES = { spotify: {}, solseekers: { color: '#6896aa' } };
 // Bump whenever the painted output changes: it's put in every media URL so
 // Vercel's CDN and Discord's image cache stop serving the old picture.
-export const RENDER_VERSION = 5;
+export const RENDER_VERSION = 6;
 let logoPromise;
 function solseekersLogo() {
   return (logoPromise ||= loadImage(fileURLToPath(new URL('../assets/solseekerslogo.png', import.meta.url))));
@@ -204,9 +204,14 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
         R += rowRgb[rr * 3] * w; G += rowRgb[rr * 3 + 1] * w; B += rowRgb[rr * 3 + 2] * w; n += w;
       }
       const c = `${Math.round(R / n)},${Math.round(G / n)},${Math.round(B / n)}`;
+      // Muted or washed-out edges (pale sky, khaki, grey) make mud when stretched.
+      // Keep the row's hue but push it to a rich, darker tone, like Spotify's tints,
+      // and glide into that just after the cover so the melt stays seamless.
+      const rich = richTone(R / n, G / n, B / n);
       const g = ctx.createLinearGradient(xs, 0, W, 0);
       g.addColorStop(0, `rgba(${c},0)`);
       g.addColorStop(fadeStop, `rgb(${c})`);
+      g.addColorStop(Math.min(0.98, fadeStop + 0.22), `rgb(${rich})`);
       g.addColorStop(1, `rgb(${target.r},${target.g},${target.b})`);
       ctx.fillStyle = g;
       ctx.fillRect(xs, cvY + r, W - xs, 1.5);
@@ -296,6 +301,39 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
 
 function clamp(n, lo, hi) {
   return Math.min(hi, Math.max(lo, n));
+}
+
+// Same hue, but saturated and in a dark-mid lightness band: beige -> warm brown,
+// pale sky -> deep blue, near-grey stays a dark neutral.
+function richTone(r, g, b) {
+  const [h, s, l] = rgb2hsl(r, g, b);
+  // How much to intervene: nothing for dark colours, fully for pale/washed ones.
+  const pale = Math.min(1, Math.max(0, (l - 0.32) / 0.25));
+  if (pale === 0) return [r, g, b].map(Math.round).join(',');
+  const s2 = s < 0.06 ? s : Math.min(0.8, Math.max(0.35, s * 1.2));
+  const deep = hsl2rgb(h, s2, 0.3);
+  return [r, g, b].map((v, i) => Math.round(v + (deep[i] - v) * pale)).join(',');
+}
+
+function rgb2hsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+  else if (max === g) h = ((b - r) / d + 2) * 60;
+  else h = ((r - g) / d + 4) * 60;
+  return [h, s, l];
+}
+
+function hsl2rgb(h, s, l) {
+  const c = (1 - Math.abs(2 * l - 1)) * s, hp = h / 60, x = c * (1 - Math.abs((hp % 2) - 1)), m = l - c / 2;
+  let rgb;
+  if (hp < 1) rgb = [c, x, 0]; else if (hp < 2) rgb = [x, c, 0]; else if (hp < 3) rgb = [0, c, x];
+  else if (hp < 4) rgb = [0, x, c]; else if (hp < 5) rgb = [x, 0, c]; else rgb = [c, 0, x];
+  return rgb.map((v) => (v + m) * 255);
 }
 
 function hexToRgb(hex) {
