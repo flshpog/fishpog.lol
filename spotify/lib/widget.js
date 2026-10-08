@@ -138,18 +138,35 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     // that row and fades across to SolSeekers blue, so the art bleeds into the
     // card instead of meeting one flat averaged colour.
     const x0 = cvX + cvS;
-    const col = ctx.getImageData(Math.round(x0) - 1, Math.round(cvY), 1, Math.round(cvS)).data;
     const rows = Math.round(cvS);
-    const smooth = Math.round(2.4 * S); // light vertical blur so noisy pixels don't band
+    // Sample a strip (the rightmost ~8% of the cover) rather than one column, then
+    // blur it vertically with a wide gaussian so the fade reads as smooth tones
+    // instead of stripes of individual pixel rows.
+    const stripW = Math.max(1, Math.round(cvS * 0.08));
+    const strip = ctx.getImageData(Math.round(x0) - stripW, Math.round(cvY), stripW, rows).data;
+    const rowRgb = new Float64Array(rows * 3);
+    for (let r = 0; r < rows; r++) {
+      let R = 0, G = 0, B = 0;
+      for (let c = 0; c < stripW; c++) {
+        const i = (r * stripW + c) * 4;
+        R += strip[i]; G += strip[i + 1]; B += strip[i + 2];
+      }
+      rowRgb[r * 3] = R / stripW; rowRgb[r * 3 + 1] = G / stripW; rowRgb[r * 3 + 2] = B / stripW;
+    }
+    const sigma = 6 * S; // ~15px at full size
+    const radius = Math.round(sigma * 3);
+    const weights = [];
+    for (let k = -radius; k <= radius; k++) weights.push(Math.exp(-(k * k) / (2 * sigma * sigma)));
     const target = hexToRgb(THEMES.solseekers.color);
     ctx.save();
     roundRect(ctx, 0, 0, W, H, 12 * S);
     ctx.clip();
     for (let r = 0; r < rows; r++) {
       let R = 0, G = 0, B = 0, n = 0;
-      for (let k = -smooth; k <= smooth; k++) {
+      for (let k = -radius; k <= radius; k++) {
         const rr = Math.min(rows - 1, Math.max(0, r + k));
-        R += col[rr * 4]; G += col[rr * 4 + 1]; B += col[rr * 4 + 2]; n++;
+        const w = weights[k + radius];
+        R += rowRgb[rr * 3] * w; G += rowRgb[rr * 3 + 1] * w; B += rowRgb[rr * 3 + 2] * w; n += w;
       }
       const g = ctx.createLinearGradient(x0, 0, W, 0);
       g.addColorStop(0, `rgb(${Math.round(R / n)},${Math.round(G / n)},${Math.round(B / n)})`);
