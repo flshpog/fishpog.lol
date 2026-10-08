@@ -59,7 +59,7 @@ export function widgetSize(layout = 'tall', width = MAX_WIDTH) {
 export const THEMES = { spotify: {}, solseekers: { color: '#6896aa' } };
 // Bump whenever the painted output changes: it's put in every media URL so
 // Vercel's CDN and Discord's image cache stop serving the old picture.
-export const RENDER_VERSION = 9;
+export const RENDER_VERSION = 10;
 let logoPromise;
 function solseekersLogo() {
   return (logoPromise ||= loadImage(fileURLToPath(new URL('../assets/solseekerslogo.png', import.meta.url))));
@@ -190,7 +190,7 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     const cut = Math.max(ease, light);
     if (process.env.DEBUG_WIDGET) console.log(`edge: hStd=${hStd.toFixed(1)} busy=${ease.toFixed(2)} avgL=${avgL.toFixed(2)} cut=${cut.toFixed(2)}`);
 
-    const sigma = (6 + 20 * ease) * S; // ~15px calm .. ~65px busy at full size
+    const sigma = (6 + 20 * cut) * S; // ~15px calm .. ~65px busy or very light, at full size
     const radius = Math.round(sigma * 3);
     const weights = [];
     for (let k = -radius; k <= radius; k++) weights.push(Math.exp(-(k * k) / (2 * sigma * sigma)));
