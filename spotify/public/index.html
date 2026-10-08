@@ -100,6 +100,60 @@
 
     footer { margin-top: 48px; color: #555; font-size: .85rem; }
     footer a { color: #777; }
+
+    /* ---- Discord-style preview ---- */
+    .preview { margin-top: 28px; display: none; }
+    .preview.show { display: block; }
+    .preview label { margin-bottom: 10px; }
+    .dc {
+      --dc-bg: #313338; --dc-embed: #2b2d31; --dc-border: #1e1f22; --dc-text: #dbdee1;
+      --dc-muted: #949ba4; --dc-link: #00a8fc; --dc-header: #f2f3f5;
+      background: var(--dc-bg); border-radius: 12px; padding: 14px 16px 16px;
+      font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-weight: 400; color: var(--dc-text); line-height: 1.375; overflow: hidden;
+    }
+    .dc-msg { display: grid; grid-template-columns: 40px 1fr; gap: 16px; align-items: start; }
+    .dc-avatar { width: 40px; height: 40px; border-radius: 50%; background: #1db954 url(https://fishpog.lol/images/pogger.png) center/cover; }
+    .dc-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px; }
+    .dc-name { color: var(--dc-header); font-weight: 500; font-size: 1rem; }
+    .dc-time { color: var(--dc-muted); font-size: .75rem; }
+    .dc-text { font-size: 1rem; color: var(--dc-text); word-break: break-all; }
+    .dc-text a { color: var(--dc-link); text-decoration: none; }
+    .dc-text a:hover { text-decoration: underline; }
+
+    .embed {
+      margin-top: 4px; max-width: 432px; background: var(--dc-embed);
+      border-left: 4px solid var(--dc-border); border-radius: 4px;
+      padding: 8px 16px 16px 12px; display: grid; grid-template-columns: 1fr auto; column-gap: 16px;
+    }
+    .embed.plain { grid-template-columns: 1fr; }
+    .embed .e-provider { font-size: .75rem; color: var(--dc-text); margin-top: 8px; grid-column: 1; }
+    .embed .e-title { font-size: 1rem; font-weight: 600; color: var(--dc-link); margin-top: 8px; grid-column: 1; text-decoration: none; }
+    .embed .e-title:hover { text-decoration: underline; }
+    .embed .e-desc { font-size: .875rem; color: var(--dc-text); margin-top: 8px; grid-column: 1; white-space: pre-wrap; }
+    .embed .e-thumb {
+      grid-column: 2; grid-row: 1 / span 3; margin-top: 8px;
+      width: 80px; height: 80px; border-radius: 4px; object-fit: cover; background: #1e1f22;
+    }
+    .embed .e-video {
+      grid-column: 1; margin-top: 16px; position: relative; width: 100%; max-width: 400px;
+      aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden; background: #000;
+    }
+    .embed .e-video img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .embed .e-video .play {
+      position: absolute; inset: 0; margin: auto; width: 50px; height: 50px; border-radius: 50%;
+      background: rgba(0,0,0,.6); display: grid; place-items: center;
+    }
+    .embed .e-video .play::after {
+      content: ''; width: 0; height: 0; margin-left: 4px;
+      border-left: 16px solid #fff; border-top: 10px solid transparent; border-bottom: 10px solid transparent;
+    }
+    .embed .e-video .pill {
+      position: absolute; left: 8px; bottom: 8px; background: rgba(0,0,0,.7); color: #fff;
+      font-size: .75rem; padding: 2px 6px; border-radius: 3px;
+    }
+    .preview-note { color: var(--muted); font-size: .85rem; margin: 10px 4px 0; }
+    .skel { color: var(--dc-muted); font-size: .9rem; padding: 8px 0; }
   </style>
 </head>
 <body>
@@ -120,6 +174,21 @@
     </div>
     <div class="err" id="err"></div>
     <div class="out" id="out"><a id="outlink" href="#" target="_blank" rel="noopener"></a></div>
+
+    <section class="preview" id="preview">
+      <label>how it should look on Discord</label>
+      <div class="dc">
+        <div class="dc-msg">
+          <div class="dc-avatar"></div>
+          <div>
+            <div class="dc-head"><span class="dc-name">fishpog</span><span class="dc-time" id="dc-time">Today at 4:20 PM</span></div>
+            <div class="dc-text"><a id="dc-link" href="#"></a></div>
+            <div id="dc-embed"></div>
+          </div>
+        </div>
+      </div>
+      <p class="preview-note" id="preview-note"></p>
+    </section>
 
     <section class="modes">
       <h2>embed styles</h2>
@@ -159,28 +228,105 @@
     const RE = /(?:open\.spotify\.com|(?:open|spotify)\.fishpog\.lol)\/(?:(?:card|video|rich|player)\/)?(?:intl-[a-z-]+\/)?(?:embed(?:-podcast)?\/)?(track|album|playlist|artist|episode|show)\/([A-Za-z0-9]{22})/i;
     const SHORT = /spotify\.link\/([A-Za-z0-9]+)/i;
 
-    function convert(raw) {
+    // Returns { path: "track/ID" | "link/CODE" } or null.
+    function parse(raw) {
       const s = raw.trim();
       let m = s.match(RE);
-      if (m) return `${BASE}${mode ? mode + '/' : ''}${m[1].toLowerCase()}/${m[2]}`;
+      if (m) return { path: `${m[1].toLowerCase()}/${m[2]}` };
       m = s.match(SHORT);
-      if (m) return `${BASE}${mode ? mode + '/' : ''}link/${m[1]}`;
+      if (m) return { path: `link/${m[1]}` };
       m = s.match(/^spotify:(track|album|playlist|artist|episode|show):([A-Za-z0-9]{22})$/i);
-      if (m) return `${BASE}${mode ? mode + '/' : ''}${m[1].toLowerCase()}/${m[2]}`;
+      if (m) return { path: `${m[1].toLowerCase()}/${m[2]}` };
       return null;
+    }
+
+    function convert(raw) {
+      const p = parse(raw);
+      return p ? `${BASE}${mode ? mode + '/' : ''}${p.path}` : null;
     }
 
     function update() {
       const v = input.value.trim();
-      const result = v ? convert(v) : null;
+      const parsed = v ? parse(v) : null;
+      const result = parsed ? convert(v) : null;
       go.disabled = !result;
       err.textContent = v && !result ? "that doesn't look like a Spotify link" : '';
       if (result) {
         outlink.textContent = result;
         outlink.href = result;
         out.classList.add('show');
+        showPreview(parsed.path, result);
       } else {
         out.classList.remove('show');
+        preview.classList.remove('show');
+      }
+    }
+
+    // ---- Discord-style preview ----
+    const preview = document.getElementById('preview');
+    const dcLink = document.getElementById('dc-link');
+    const dcEmbed = document.getElementById('dc-embed');
+    const previewNote = document.getElementById('preview-note');
+    const metaCache = new Map();
+    let previewSeq = 0;
+
+    document.getElementById('dc-time').textContent =
+      'Today at ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+    function escapeHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    async function fetchMeta(path) {
+      if (metaCache.has(path)) return metaCache.get(path);
+      const p = fetch(`/api/meta/${path}`).then(async (r) => {
+        const body = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(body.error || `HTTP ${r.status}`);
+        return body;
+      });
+      metaCache.set(path, p);
+      p.catch(() => metaCache.delete(path));
+      return p;
+    }
+
+    async function showPreview(path, link) {
+      const seq = ++previewSeq;
+      preview.classList.add('show');
+      dcLink.textContent = link;
+      dcLink.href = link;
+      dcEmbed.innerHTML = '<div class="skel">fetching from Spotify…</div>';
+      previewNote.textContent = '';
+      let meta;
+      try {
+        meta = await fetchMeta(path);
+      } catch (e) {
+        if (seq !== previewSeq) return;
+        dcEmbed.innerHTML = `<div class="skel">couldn't load this one (${escapeHtml(e.message)}). Spotify may be having a moment.</div>`;
+        return;
+      }
+      if (seq !== previewSeq) return;
+      renderEmbed(meta);
+    }
+
+    function renderEmbed(meta) {
+      const type = (meta.url.match(/\/(track|album|playlist|artist|episode|show)\//) || [])[1];
+      const id = meta.url.split('/').pop();
+      const videoOk = mode === 'video' && meta.audio;
+      const title = `<a class="e-title" href="${escapeHtml(meta.url)}" target="_blank" rel="noopener">${escapeHtml(meta.title)}</a>`;
+      const desc = meta.description ? `<div class="e-desc">${escapeHtml(meta.description)}</div>` : '';
+      const provider = '<div class="e-provider">Spotify</div>';
+
+      if (videoOk) {
+        const poster = `/media/${type}/${id}.jpg`;
+        dcEmbed.innerHTML = `<div class="embed plain">${provider}${title}${desc}
+          <div class="e-video"><img src="${poster}" alt=""><div class="play"></div><div class="pill">0:30</div></div></div>`;
+        previewNote.textContent = 'Clicking play in Discord plays the 30 second preview inline.';
+      } else {
+        const thumb = meta.image ? `<img class="e-thumb" src="${escapeHtml(meta.image)}" alt="">` : '';
+        dcEmbed.innerHTML = `<div class="embed${meta.image ? '' : ' plain'}">${provider}${title}${desc}${thumb}</div>`;
+        if (mode === 'video') previewNote.textContent = 'No 30 second preview exists for this one, so Discord gets the card instead.';
+        else if (mode === 'rich' || mode === 'player') previewNote.textContent = 'Experimental: if Discord accepts the handoff you also get its native play button. Otherwise it looks like this.';
+        else previewNote.textContent = 'This is a mock-up. Discord may differ slightly, and it caches embeds per link for a while.';
       }
     }
 
@@ -202,8 +348,14 @@
         outlink.focus();
       }
     });
-    // Shortcut: ?u=<spotify url> prefill
-    const u = new URLSearchParams(location.search).get('u');
+    // Shortcuts: ?u=<spotify url> prefills the box, ?m=<mode> picks a style.
+    const params = new URLSearchParams(location.search);
+    const m = params.get('m');
+    if (['card', 'video', 'rich', 'player'].includes(m)) {
+      mode = m === 'card' ? '' : m;
+      document.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c.dataset.mode === mode));
+    }
+    const u = params.get('u');
     if (u) { input.value = u; update(); }
   </script>
 </body>

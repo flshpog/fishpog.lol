@@ -475,8 +475,14 @@ async function oembed(url, origin) {
 
 async function apiMeta(segs) {
   const target = parseTarget(segs);
-  if (!target?.type) return json({ error: 'bad path' }, 400);
-  const meta = await getMeta(target.type, target.id);
+  if (!target) return json({ error: 'bad path' }, 400);
+  let { type, id } = target;
+  if (target.link) {
+    const resolved = await resolveShortLink(target.link);
+    if (!resolved) return json({ error: 'short link did not resolve' }, 404);
+    ({ type, id } = resolved);
+  }
+  const meta = await getMeta(type, id);
   return meta ? json(meta, 200, CACHE_HTML) : json({ error: 'not found' }, 404);
 }
 

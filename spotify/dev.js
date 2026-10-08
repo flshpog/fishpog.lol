@@ -11,8 +11,10 @@ const PUBLIC = path.join(import.meta.dirname, 'public');
 
 http
   .createServer(async (req, res) => {
+    console.log(req.method, req.url);
     try {
-      if (req.url === '/' || req.url === '/index.html') {
+      const pathname = new URL(req.url, `http://localhost:${PORT}`).pathname;
+      if (pathname === '/' || pathname === '/index.html') {
         res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
         res.end(await readFile(path.join(PUBLIC, 'index.html')));
         return;
