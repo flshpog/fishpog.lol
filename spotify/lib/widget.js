@@ -59,7 +59,7 @@ export function widgetSize(layout = 'tall', width = MAX_WIDTH) {
 export const THEMES = { spotify: {}, solseekers: { color: '#6896aa' } };
 // Bump whenever the painted output changes: it's put in every media URL so
 // Vercel's CDN and Discord's image cache stop serving the old picture.
-export const RENDER_VERSION = 6;
+export const RENDER_VERSION = 7;
 let logoPromise;
 function solseekersLogo() {
   return (logoPromise ||= loadImage(fileURLToPath(new URL('../assets/solseekerslogo.png', import.meta.url))));
@@ -188,6 +188,10 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     const weights = [];
     for (let k = -radius; k <= radius; k++) weights.push(Math.exp(-(k * k) / (2 * sigma * sigma)));
     const target = hexToRgb(THEMES.solseekers.color);
+    // Busy multicoloured edges average to grey. For those, lean on the cover's
+    // dominant tint (the Spotify-style histogram pick passed in as `background`)
+    // instead of the averaged rows; calm edges keep the row-by-row melt.
+    const dom = hexToRgb(/^#[0-9a-f]{6}$/i.test(background) ? background : '#282828');
     // Dissolve the cover's right edge into its own averaged colour over this many
     // px, so there's no hard vertical seam where the picture stops.
     const fadeW = cvS * (0.35 - 0.29 * ease);
@@ -207,11 +211,12 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
       // Muted or washed-out edges (pale sky, khaki, grey) make mud when stretched.
       // Keep the row's hue but push it to a rich, darker tone, like Spotify's tints,
       // and glide into that just after the cover so the melt stays seamless.
-      const rich = richTone(R / n, G / n, B / n);
+      const rich = richTone(R / n, G / n, B / n).split(',').map(Number);
+      const mid = [dom.r, dom.g, dom.b].map((dv, i) => Math.round(rich[i] + (dv - rich[i]) * ease)).join(',');
       const g = ctx.createLinearGradient(xs, 0, W, 0);
       g.addColorStop(0, `rgba(${c},0)`);
       g.addColorStop(fadeStop, `rgb(${c})`);
-      g.addColorStop(Math.min(0.98, fadeStop + 0.22), `rgb(${rich})`);
+      g.addColorStop(Math.min(0.98, fadeStop + 0.22), `rgb(${mid})`);
       g.addColorStop(1, `rgb(${target.r},${target.g},${target.b})`);
       ctx.fillStyle = g;
       ctx.fillRect(xs, cvY + r, W - xs, 1.5);
