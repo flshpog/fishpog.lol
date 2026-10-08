@@ -76,11 +76,14 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     ? { pad: 16, cover: 120, coverR: 6, glyph: 21, textX: 152, titleY: 42, titleSize: 20, subY: 64, subSize: 14, pill: { y: 78, h: 18, size: 10, padX: 7, baseline: 13, r: 4 }, playR: 18, dotR: 2, dotGap: 7, dotOff: 18 }
     : { pad: 12, cover: 56, coverR: 4, glyph: 16, textX: 80, titleY: 30, titleSize: 16, subY: 46, subSize: 12, pill: { y: 54, h: 14, size: 9, padX: 6, baseline: 10.5, r: 3 }, playR: 12, dotR: 1.6, dotGap: 6, dotOff: 14 };
 
-  // Cover art.
+  // Cover art, centre-cropped to a square (YouTube thumbnails are 16:9).
+  const side = Math.min(art.width, art.height);
+  const sx = (art.width - side) / 2;
+  const sy = (art.height - side) / 2;
   ctx.save();
   roundRect(ctx, d.pad * S, d.pad * S, d.cover * S, d.cover * S, d.coverR * S);
   ctx.clip();
-  ctx.drawImage(art, d.pad * S, d.pad * S, d.cover * S, d.cover * S);
+  ctx.drawImage(art, sx, sy, side, side, d.pad * S, d.pad * S, d.cover * S, d.cover * S);
   ctx.restore();
 
   // Spotify glyph, top right.

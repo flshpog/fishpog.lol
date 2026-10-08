@@ -189,9 +189,9 @@
       <code class="new"><span class="host">open.fishpog.lol</span>/track/…</code>
     </div>
 
-    <label for="in">paste a Spotify link</label>
+    <label for="in">paste a Spotify, YouTube, SoundCloud or Apple Music link</label>
     <div class="row">
-      <input id="in" type="url" placeholder="https://open.spotify.com/track/4PTG3Z6ehGkBFwjybzWkR8?si=…" autocomplete="off" spellcheck="false">
+      <input id="in" type="url" placeholder="https://open.spotify.com/track/… or youtube.com/watch?v=… or soundcloud.com/…" autocomplete="off" spellcheck="false">
       <button id="go" disabled>copy</button>
     </div>
     <div class="err" id="err"></div>
@@ -240,7 +240,7 @@
       </dl>
     </section>
 
-    <footer>works for tracks, albums, playlists, artists, episodes, shows and spotify.link short links · <a href="https://fishpog.lol">fishpog.lol</a></footer>
+    <footer>spotify tracks, albums, playlists, artists, episodes, shows and short links · youtube videos · soundcloud tracks and sets · apple music songs and albums · <a href="https://fishpog.lol">fishpog.lol</a></footer>
   </main>
 
   <script>
@@ -262,14 +262,36 @@
     const SHORT = /spotify\.link\/([A-Za-z0-9]+)/i;
 
     // Returns { path: "track/ID" | "link/CODE" } or null.
+    // Our own links, with any mode/size tokens, so pasting a fishpog link back in works.
+    const OURS = /(?:open|spotify)\.fishpog\.lol\/(?:(?:widget|preview|card|video|rich|player|tall|compact|w\d{3})\/)*((?:yt|sc|am)\/[\w\/-]+|(?:track|album|playlist|artist|episode|show)\/[A-Za-z0-9]{22})/i;
+    const YT = /(?:youtu\.be\/|(?:www\.|m\.|music\.)?youtube\.com\/(?:watch\?(?:[^#\s]*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/i;
+    const SC = /(?:www\.|m\.)?soundcloud\.com\/([\w-]+)\/(sets\/)?([\w-]+)/i;
+    const SC_SHORT = /on\.soundcloud\.com\/([\w-]+)/i;
+    const AM = /music\.apple\.com\/([a-z]{2})\/(?:album|song|playlist)\/[^\/?#\s]*\/?(?:pl\.)?([\w.-]+)(?:\?[^#\s]*?(?:^|[?&])i=(\d+))?/i;
+
     function parse(raw) {
       const s = raw.trim();
-      let m = s.match(RE);
+      let m = s.match(OURS);
+      if (m) return { path: m[1].replace(/\/+$/, '') };
+      m = s.match(RE);
       if (m) return { path: `${m[1].toLowerCase()}/${m[2]}` };
       m = s.match(SHORT);
       if (m) return { path: `link/${m[1]}` };
       m = s.match(/^spotify:(track|album|playlist|artist|episode|show):([A-Za-z0-9]{22})$/i);
       if (m) return { path: `${m[1].toLowerCase()}/${m[2]}` };
+      m = s.match(YT);
+      if (m) return { path: `yt/${m[1]}` };
+      m = s.match(SC_SHORT);
+      if (m) return { path: `sc/on/${m[1]}` };
+      m = s.match(SC);
+      if (m && !['discover', 'search', 'stream', 'you', 'upload', 'pages'].includes(m[1].toLowerCase())) {
+        return { path: `sc/${m[1]}/${m[2] ? 'sets/' : ''}${m[3]}` };
+      }
+      m = s.match(AM);
+      if (m) {
+        const id = m[3] || m[2]; // ?i=<track> wins over the album id in the path
+        if (/^\d+$/.test(id)) return { path: `am/${m[1].toLowerCase()}/${id}` };
+      }
       return null;
     }
 
@@ -292,7 +314,7 @@
       const parsed = v ? parse(v) : null;
       const result = parsed ? convert(v) : null;
       go.disabled = !result;
-      err.textContent = v && !result ? "that doesn't look like a Spotify link" : '';
+      err.textContent = v && !result ? "that doesn't look like a Spotify, YouTube, SoundCloud or Apple Music link" : '';
       if (result) {
         outlink.textContent = result;
         outlink.href = result;
@@ -351,8 +373,7 @@
     }
 
     function renderEmbed(meta) {
-      const type = (meta.url.match(/\/(track|album|playlist|artist|episode|show)\//) || [])[1];
-      const id = meta.url.split('/').pop();
+      const mediaPath = meta.path; // e.g. track/ID, yt/ID, sc/user/slug, am/us/ID
       const videoOk = mode === 'video' && meta.audio;
       const previewOk = mode === 'preview' && meta.audio;
 
@@ -360,12 +381,12 @@
         const overlay = previewOk ? '<div class="play"></div>' : '';
         const l = mode === '' ? layout : 'tall';
         const w = mode === '' ? width : 400;
-        dcEmbed.innerHTML = `<div class="e-widget${l === 'compact' ? ' compact' : ''}" style="width:${w}px"><img src="/media/${type}/${id}.widget.png?layout=${l}&w=${w}" alt="">${overlay}</div>`;
+        dcEmbed.innerHTML = `<div class="e-widget${l === 'compact' ? ' compact' : ''}" style="width:${w}px"><img src="/media/${mediaPath}.widget.png?layout=${l}&w=${w}" alt="">${overlay}</div>`;
         previewNote.textContent = previewOk
           ? 'Discord draws its own play button over the picture. Click it and the 30 second preview plays in place.'
           : mode === 'preview'
             ? 'No 30 second preview exists for this one, so it falls back to the plain widget.'
-            : 'A picture of the widget, same as Discord shows for a working Spotify link. Clicking the link above opens Spotify.';
+            : 'A picture of the widget, same as Discord shows for a working Spotify link. Clicking the link above opens the original page.';
         return;
       }
       const title = `<a class="e-title" href="${escapeHtml(meta.url)}" target="_blank" rel="noopener">${escapeHtml(meta.title)}</a>`;
@@ -373,7 +394,7 @@
       const provider = '<div class="e-provider">Spotify</div>';
 
       if (videoOk) {
-        const poster = `/media/${type}/${id}.jpg`;
+        const poster = `/media/${mediaPath}.jpg`;
         dcEmbed.innerHTML = `<div class="embed plain">${provider}${title}${desc}
           <div class="e-video"><img src="${poster}" alt=""><div class="play"></div><div class="pill">0:30</div></div></div>`;
         previewNote.textContent = 'Clicking play in Discord plays the 30 second preview inline.';

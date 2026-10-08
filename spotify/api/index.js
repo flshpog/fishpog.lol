@@ -26,6 +26,7 @@ import { chmod, copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { LAYOUTS, MAX_WIDTH, MIN_WIDTH, renderWidget, widgetSize } from '../lib/widget.js';
+import { fromAppleMusic, fromSoundCloud, fromYouTube, resolveSoundCloudShort } from '../lib/providers.js';
 
 const SPOTIFY = 'https://open.spotify.com';
 const TYPES = new Set(['track', 'album', 'playlist', 'artist', 'episode', 'show']);
@@ -70,25 +71,22 @@ async function handle(request) {
   if (segs[0] === 'api' && segs[1] === 'meta') return apiMeta(segs.slice(2));
   if (segs.length === 0) return redirect(origin + '/'); // landing is static; shouldn't hit here
 
-  const target = parseTarget(segs);
-  if (!target) {
+  const parsed = parseTarget(segs);
+  if (!parsed) {
     // Not something we understand: behave like open.spotify.com would.
     return redirect(`${SPOTIFY}/${segs.join('/')}${url.search ? stripOurParams(url) : ''}`);
   }
 
-  let { mode, type, id } = target;
-  if (target.link) {
-    const resolved = await resolveShortLink(target.link);
-    if (!resolved) return redirect(`https://spotify.link/${target.link}`);
-    ({ type, id } = resolved);
-  }
+  const target = await resolveTarget(parsed);
+  if (!target) return redirect(parsed.link ? `https://spotify.link/${parsed.link}` : `https://on.soundcloud.com/${parsed.scShort}`);
 
-  const meta = await getMeta(type, id);
-  if (!meta) return notFound(origin, type, id);
+  let { mode } = target;
+  const meta = await getMeta(target);
+  if (!meta) return notFound(origin, target);
 
   if (mode === 'preview' && !meta.audio) mode = 'widget';
   if (mode === 'video' && !meta.audio) mode = 'card';
-  const html = renderEmbedPage({ meta, mode, type, id, origin, layout: target.layout, width: target.width });
+  const html = renderEmbedPage({ meta, mode, target, origin });
   return new Response(html, {
     status: 200,
     headers: {
@@ -121,11 +119,39 @@ function parseTarget(input) {
     else break;
   }
   const opts = { mode, layout, width: Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, width)) };
-  if (segs[0] === 'link' && segs[1]) return { ...opts, link: segs[1] };
-  if (segs.length >= 2 && TYPES.has(segs[0]) && /^[A-Za-z0-9]{22}$/.test(segs[1])) {
-    return { ...opts, type: segs[0], id: segs[1] };
+  const [a, b, c, d] = segs;
+  // Spotify
+  if (a === 'link' && b) return { ...opts, provider: 'spotify', link: b };
+  if (segs.length >= 2 && TYPES.has(a) && /^[A-Za-z0-9]{22}$/.test(b)) {
+    return { ...opts, provider: 'spotify', type: a, id: b, path: `${a}/${b}` };
+  }
+  // YouTube: /yt/<videoId>
+  if (a === 'yt' && b && /^[\w-]{11}$/.test(b)) return { ...opts, provider: 'yt', type: 'track', id: b, path: `yt/${b}` };
+  // SoundCloud: /sc/<user>/<slug>, /sc/<user>/sets/<slug>, /sc/on/<code>
+  if (a === 'sc' && b === 'on' && c) return { ...opts, provider: 'sc', scShort: c };
+  if (a === 'sc' && b && c && /^[\w-]+$/.test(b)) {
+    if (c === 'sets' && d && /^[\w-]+$/.test(d)) return { ...opts, provider: 'sc', type: 'playlist', id: `${b}/sets/${d}`, path: `sc/${b}/sets/${d}` };
+    if (/^[\w-]+$/.test(c)) return { ...opts, provider: 'sc', type: 'track', id: `${b}/${c}`, path: `sc/${b}/${c}` };
+  }
+  // Apple Music: /am/<id> or /am/<cc>/<id>
+  if (a === 'am' && b && /^\d+$/.test(b)) return { ...opts, provider: 'am', type: 'track', id: b, country: 'us', path: `am/${b}` };
+  if (a === 'am' && b && /^[a-z]{2}$/i.test(b) && c && /^\d+$/.test(c)) {
+    return { ...opts, provider: 'am', type: 'track', id: c, country: b.toLowerCase(), path: `am/${b.toLowerCase()}/${c}` };
   }
   return null;
+}
+
+// Turn short links into real targets. Returns null if they don't resolve.
+async function resolveTarget(t) {
+  if (t.link) {
+    const r = await resolveShortLink(t.link);
+    return r ? { ...t, link: undefined, type: r.type, id: r.id, path: `${r.type}/${r.id}` } : null;
+  }
+  if (t.scShort) {
+    const p = await resolveSoundCloudShort(t.scShort).catch(warn('soundcloud short'));
+    return p ? { ...t, scShort: undefined, type: /\/sets\//.test(p) ? 'playlist' : 'track', id: p, path: `sc/${p}` } : null;
+  }
+  return t;
 }
 
 function publicOrigin(request, url) {
@@ -164,11 +190,22 @@ async function resolveShortLink(code) {
 const metaCache = new Map();
 const META_TTL = 60 * 60 * 1000;
 
-async function getMeta(type, id) {
-  const key = `${type}/${id}`;
+async function getMeta(target) {
+  const key = target.path;
   const hit = metaCache.get(key);
   if (hit && hit.expires > Date.now()) return hit.value;
 
+  let value = null;
+  if (target.provider === 'yt') value = await fromYouTube(target.id).catch(warn('youtube'));
+  else if (target.provider === 'sc') value = await fromSoundCloud(target.id).catch(warn('soundcloud'));
+  else if (target.provider === 'am') value = await fromAppleMusic(target.id, target.country).catch(warn('apple'));
+  else value = await getSpotifyMeta(target.type, target.id);
+
+  if (value) metaCache.set(key, { value, expires: Date.now() + META_TTL });
+  return value;
+}
+
+async function getSpotifyMeta(type, id) {
   const [page, embed] = await Promise.all([
     fromPage(type, id).catch(warn('page')),
     fromEmbed(type, id).catch(warn('embed')),
@@ -192,7 +229,7 @@ async function getMeta(type, id) {
   } else {
     value = await fromOEmbed(type, id).catch(warn('oembed'));
   }
-  if (value) metaCache.set(key, { value, expires: Date.now() + META_TTL });
+  if (value) value.pill = Boolean(value.audio);
   return value;
 }
 
@@ -330,10 +367,11 @@ async function fetchWithTimeout(url, init = {}, ms = FETCH_TIMEOUT_MS) {
 // HTML rendering
 // ---------------------------------------------------------------------------
 
-function renderEmbedPage({ meta, mode, type, id, origin, layout = 'tall', width = MAX_WIDTH }) {
-  const spotifyUrl = meta.url;
-  const ourUrl = `${origin}/${mode === DEFAULT_MODE ? '' : mode + '/'}${type}/${id}`;
-  const oembedUrl = `${origin}/oembed?url=${encodeURIComponent(ourUrl)}&mode=${mode}&type=${type}&id=${id}`;
+function renderEmbedPage({ meta, mode, target, origin }) {
+  const { path, layout = 'tall', width = MAX_WIDTH } = target;
+  const spotifyUrl = meta.url; // where humans end up (Spotify, YouTube, SoundCloud or Apple)
+  const ourUrl = `${origin}/${mode === DEFAULT_MODE ? '' : mode + '/'}${path}`;
+  const oembedUrl = `${origin}/oembed?url=${encodeURIComponent(ourUrl)}`;
   const bare = mode === 'widget' || mode === 'preview';
 
   const tags = [];
@@ -342,7 +380,7 @@ function renderEmbedPage({ meta, mode, type, id, origin, layout = 'tall', width 
     // Bare image embed, no text: a painted copy of Spotify's player widget.
     // Any title/description would make Discord wrap it in a card.
     const size = widgetSize(layout, width);
-    const poster = `${origin}/media/${type}/${id}.widget.png?layout=${size.layout}&w=${size.width}`;
+    const poster = `${origin}/media/${path}.widget.png?layout=${size.layout}&w=${size.width}`;
     tags.push(
       ['property', 'og:image', poster],
       ['property', 'og:image:type', 'image/png'],
@@ -355,8 +393,8 @@ function renderEmbedPage({ meta, mode, type, id, origin, layout = 'tall', width 
     // Same picture as the poster of a bare video with the 30s preview.
     // Discord's player has a ~150px minimum height, so this is always the tall layout.
     const size = widgetSize('tall', MAX_WIDTH);
-    const mp4 = `${origin}/media/${type}/${id}.widget.mp4`;
-    const poster = `${origin}/media/${type}/${id}.widget.png`;
+    const mp4 = `${origin}/media/${path}.widget.mp4`;
+    const poster = `${origin}/media/${path}.widget.png`;
     tags.push(
       ['property', 'og:type', 'video.other'],
       ['property', 'og:image', poster],
@@ -392,8 +430,8 @@ function renderEmbedPage({ meta, mode, type, id, origin, layout = 'tall', width 
   if (bare) {
     // handled above
   } else if (mode === 'video') {
-    const mp4 = `${origin}/media/${type}/${id}.mp4`;
-    const poster = `${origin}/media/${type}/${id}.jpg`;
+    const mp4 = `${origin}/media/${path}.mp4`;
+    const poster = `${origin}/media/${path}.jpg`;
     tags.push(
       ['property', 'og:image', poster],
       ['property', 'og:image:width', '1280'],
@@ -474,17 +512,27 @@ function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function notFound(origin, type, id) {
+// Where a human should land if we couldn't get metadata for a target.
+function originalUrl(t) {
+  if (t.provider === 'yt') return `https://www.youtube.com/watch?v=${t.id}`;
+  if (t.provider === 'sc') return `https://soundcloud.com/${t.id}`;
+  if (t.provider === 'am') return `https://music.apple.com/${t.country || 'us'}/song/${t.id}`;
+  return `${SPOTIFY}/${t.type}/${t.id}`;
+}
+
+function notFound(origin, target) {
+  const back = originalUrl(target);
+  const site = { yt: 'YouTube', sc: 'SoundCloud', am: 'Apple Music' }[target.provider] || 'Spotify';
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <title>Not found</title>
 <meta property="og:site_name" content="${esc(SITE_NAME)}">
-<meta property="og:title" content="Couldn't load this ${esc(type)}">
-<meta property="og:description" content="Spotify didn't return anything for this link. It may not exist, or Spotify is having a moment.">
-<meta property="og:url" content="${esc(SPOTIFY)}/${esc(type)}/${esc(id)}">
+<meta property="og:title" content="Couldn't load this ${esc(target.type)}">
+<meta property="og:description" content="${esc(site)} didn't return anything for this link. It may not exist, or ${esc(site)} is having a moment.">
+<meta property="og:url" content="${esc(back)}">
 <meta name="twitter:card" content="summary">
-<meta http-equiv="refresh" content="0;url=${esc(SPOTIFY)}/${esc(type)}/${esc(id)}">
+<meta http-equiv="refresh" content="0;url=${esc(back)}">
 </head><body style="background:#0a0a0a;color:#eee;font-family:system-ui;padding:40px">
-<p>Couldn't load this ${esc(type)}. <a style="color:#1db954" href="${esc(SPOTIFY)}/${esc(type)}/${esc(id)}">Open on Spotify</a></p>
+<p>Couldn't load this ${esc(target.type)}. <a style="color:#1db954" href="${esc(back)}">Open on ${esc(site)}</a></p>
 </body></html>`;
   return new Response(html, {
     status: 404,
@@ -497,16 +545,11 @@ function notFound(origin, type, id) {
 // ---------------------------------------------------------------------------
 
 async function oembed(url, origin) {
-  const mode = url.searchParams.get('mode') || DEFAULT_MODE;
-  let type = url.searchParams.get('type');
-  let id = url.searchParams.get('id');
-  if (!type || !id) {
-    const target = parseTarget(new URL(url.searchParams.get('url') || '/', origin).pathname.split('/').filter(Boolean));
-    if (target && target.type) ({ type, id } = target);
-  }
-  if (!type || !id) return json({ error: 'bad url' }, 400);
+  const parsed = parseTarget(new URL(url.searchParams.get('url') || '/', origin).pathname.split('/').filter(Boolean));
+  const target = parsed ? await resolveTarget(parsed) : null;
+  if (!target) return json({ error: 'bad url' }, 400);
 
-  const meta = await getMeta(type, id);
+  const meta = await getMeta(target);
   if (!meta) return json({ error: 'not found' }, 404);
   return json(
     {
@@ -525,16 +568,12 @@ async function oembed(url, origin) {
 }
 
 async function apiMeta(segs) {
-  const target = parseTarget(segs);
-  if (!target) return json({ error: 'bad path' }, 400);
-  let { type, id } = target;
-  if (target.link) {
-    const resolved = await resolveShortLink(target.link);
-    if (!resolved) return json({ error: 'short link did not resolve' }, 404);
-    ({ type, id } = resolved);
-  }
-  const meta = await getMeta(type, id);
-  return meta ? json(meta, 200, CACHE_HTML) : json({ error: 'not found' }, 404);
+  const parsed = parseTarget(segs);
+  if (!parsed) return json({ error: 'bad path' }, 400);
+  const target = await resolveTarget(parsed);
+  if (!target) return json({ error: 'short link did not resolve' }, 404);
+  const meta = await getMeta(target);
+  return meta ? json({ ...meta, path: target.path, provider: target.provider }, 200, CACHE_HTML) : json({ error: 'not found' }, 404);
 }
 
 // ---------------------------------------------------------------------------
@@ -542,14 +581,18 @@ async function apiMeta(segs) {
 // poster + the 30s preview, so Discord gets a real inline player.
 // ---------------------------------------------------------------------------
 
+// /media/<target path>[.widget].(png|jpg|mp4), e.g. /media/track/ID.widget.png, /media/sc/user/slug.widget.png
 async function media(segs, params) {
-  const m = segs.length === 2 && TYPES.has(segs[0]) ? segs[1].match(/^([A-Za-z0-9]{22})(\.widget)?\.(mp4|jpg|png)$/) : null;
+  const last = segs[segs.length - 1] || '';
+  const m = last.match(/^(.+?)(\.widget)?\.(mp4|jpg|png)$/);
   if (!m) return text('not found', 404);
-  const [type, id, widget, ext] = [segs[0], m[1], Boolean(m[2]), m[3]];
+  const [widget, ext] = [Boolean(m[2]), m[3]];
+  const target = parseTarget([...segs.slice(0, -1), m[1]]);
+  if (!target || !target.path) return text('not found', 404);
   // ?layout=compact&w=320 only applies to the PNG; the video poster is always tall/400.
   const size = ext === 'png' ? widgetSize(params.get('layout') || 'tall', params.get('w') || MAX_WIDTH) : widgetSize('tall', MAX_WIDTH);
   if ((widget && ext === 'jpg') || (!widget && ext === 'png')) return text('not found', 404);
-  const meta = await getMeta(type, id);
+  const meta = await getMeta(target);
   if (!meta || !meta.image) return text('not found', 404);
   if (ext === 'mp4' && !meta.audio) return text('no preview available for this item', 404);
 
@@ -568,7 +611,7 @@ async function media(segs, params) {
         subtitle: meta.subtitle || '',
         background: meta.color || undefined,
         subdued: meta.subdued || undefined,
-        preview: Boolean(meta.audio),
+        preview: Boolean(meta.pill),
         layout: size.layout,
         width: size.width,
       });

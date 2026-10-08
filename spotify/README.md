@@ -28,6 +28,21 @@ Prefix the path with a mode. Bare paths use `DEFAULT_MODE` (env var, defaults to
 Neither the widget nor the preview page carries a title or description: any text makes
 Discord wrap the media in a card instead of showing it bare.
 
+## Other services, dressed as Spotify
+
+YouTube, SoundCloud and Apple Music links get the same treatment: metadata comes from
+each service's public endpoint, a Spotify-style tint is derived from the artwork
+(`lib/color.js`), and the result goes through the exact same widget and card renderers.
+Humans who click are sent to the original service.
+
+| source | our path | metadata from |
+| --- | --- | --- |
+| `youtube.com/watch?v=ID`, `youtu.be/ID`, shorts, music.youtube.com | `/yt/ID` | YouTube oEmbed + `i.ytimg.com` thumbnail (centre-cropped square) |
+| `soundcloud.com/user/slug`, `.../user/sets/slug`, `on.soundcloud.com/code` | `/sc/user/slug`, `/sc/user/sets/slug`, `/sc/on/code` | SoundCloud oEmbed |
+| `music.apple.com/cc/album/.../ID?i=TRACK`, `.../song/.../ID` | `/am/cc/ID` (or `/am/ID`, US) | iTunes lookup API (also gives a 30 s preview, so `preview` and `video` work) |
+
+Mode and size tokens go in front as usual: `/compact/w300/yt/dQw4w9WgXcQ`.
+
 Also handled: `/intl-xx/` prefixes, `/embed/` paths, `?si=` junk, `spotify.link` short
 links as `/link/CODE`, and albums / playlists / artists / episodes / shows. Anything else
 redirects to the same path on `open.spotify.com`.
@@ -39,7 +54,7 @@ redirects to the same path on `open.spotify.com`.
 - `/media/track/ID.mp4` poster + 30 s preview, h264/aac
 - `/media/track/ID.widget.png?layout=tall|compact&w=160..400` painted Spotify widget
 - `/media/track/ID.widget.mp4` widget + 30 s preview
-- `/api/meta/track/ID` the resolved metadata as JSON (debugging)
+- `/api/meta/<path>` the resolved metadata as JSON for any target (debugging, and the landing page preview)
 
 ## How metadata is resolved
 
