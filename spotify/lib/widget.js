@@ -101,21 +101,26 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     : { pad: 12, cover: 56, coverR: 4, glyph: 16, textX: 80, titleY: 30, titleSize: 16, subY: 46, subSize: 12, pill: { y: 54, h: 14, size: 9, padX: 6, baseline: 10.5, r: 3 }, playR: 12, dotR: 1.6, dotGap: 6, dotOff: 14 };
 
   // Cover art, centre-cropped to a square (YouTube thumbnails are 16:9).
+  // SolSeekers: the cover fills the whole left side, flush inside the card outline.
+  const cvX = ss ? outline : d.pad * S;
+  const cvY = ss ? outline : d.pad * S;
+  const cvS = ss ? H - 2 * outline : d.cover * S;
   ctx.save();
-  roundRect(ctx, d.pad * S, d.pad * S, d.cover * S, d.cover * S, d.coverR * S);
+  if (ss) leftRoundRect(ctx, cvX, cvY, cvS, cvS, 12 * S - outline);
+  else roundRect(ctx, cvX, cvY, cvS, cvS, d.coverR * S);
   ctx.clip();
   if (art) {
     const side = Math.min(art.width, art.height);
     const sx = (art.width - side) / 2;
     const sy = (art.height - side) / 2;
-    ctx.drawImage(art, sx, sy, side, side, d.pad * S, d.pad * S, d.cover * S, d.cover * S);
+    ctx.drawImage(art, sx, sy, side, side, cvX, cvY, cvS, cvS);
   } else {
     // No artwork: a quiet placeholder with a drawn music note (the font has no ♪ glyph).
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
-    ctx.fillRect(d.pad * S, d.pad * S, d.cover * S, d.cover * S);
-    const cx = (d.pad + d.cover / 2) * S;
-    const cy0 = (d.pad + d.cover / 2) * S;
-    const u = d.cover * S * 0.06; // unit
+    ctx.fillRect(cvX, cvY, cvS, cvS);
+    const cx = cvX + cvS / 2;
+    const cy0 = cvY + cvS / 2;
+    const u = cvS * 0.06; // unit
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
     ctx.beginPath();
     ctx.ellipse(cx - 2.2 * u, cy0 + 3.2 * u, 2.2 * u, 1.6 * u, -0.35, 0, Math.PI * 2);
@@ -133,13 +138,6 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     ctx.stroke();
   }
   ctx.restore();
-  if (ss) {
-    // Same outline around the cover, drawn inside its rounded edge.
-    roundRect(ctx, d.pad * S + outline / 2, d.pad * S + outline / 2, d.cover * S - outline, d.cover * S - outline, Math.max(1, d.coverR * S - outline / 2));
-    ctx.lineWidth = outline;
-    ctx.strokeStyle = '#ffffff';
-    ctx.stroke();
-  }
 
   // Top right: Spotify glyph, or the SolSeekers logo filling the right edge.
   let rightReserve;
@@ -160,7 +158,7 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   }
 
   // Text column.
-  const x = d.textX * S;
+  const x = ss ? cvX + cvS + 14 * S : d.textX * S;
   const maxText = W - x - rightReserve - 12 * S;
   ctx.textBaseline = 'alphabetic';
   // SolSeekers: no PREVIEW pill, so centre the two lines vertically in the 80px card.
@@ -217,6 +215,18 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
 
 function clamp(n, lo, hi) {
   return Math.min(hi, Math.max(lo, n));
+}
+
+// Rounded on the left corners only (cover art flush against the card's left edge).
+function leftRoundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w, y);
+  ctx.lineTo(x + w, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
 }
 
 function roundRect(ctx, x, y, w, h, r) {
