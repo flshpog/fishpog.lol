@@ -86,6 +86,16 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   }
   ctx.fill();
 
+  // SolSeekers: white outline on the card, matching the logo's stroke weight
+  // (the logo's outer ring is ~9px of its 128px, about 4.4 design units here).
+  const outline = 4.4 * S;
+  if (ss) {
+    roundRect(ctx, outline / 2, outline / 2, W - outline, H - outline, 12 * S - outline / 2);
+    ctx.lineWidth = outline;
+    ctx.strokeStyle = '#ffffff';
+    ctx.stroke();
+  }
+
   const d = size.layout === 'tall'
     ? { pad: 16, cover: 120, coverR: 6, glyph: 21, textX: 152, titleY: 42, titleSize: 20, subY: 64, subSize: 14, pill: { y: 78, h: 18, size: 10, padX: 7, baseline: 13, r: 4 }, playR: 18, dotR: 2, dotGap: 7, dotOff: 18 }
     : { pad: 12, cover: 56, coverR: 4, glyph: 16, textX: 80, titleY: 30, titleSize: 16, subY: 46, subSize: 12, pill: { y: 54, h: 14, size: 9, padX: 6, baseline: 10.5, r: 3 }, playR: 12, dotR: 1.6, dotGap: 6, dotOff: 14 };
@@ -123,6 +133,13 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     ctx.stroke();
   }
   ctx.restore();
+  if (ss) {
+    // Same outline around the cover, drawn inside its rounded edge.
+    roundRect(ctx, d.pad * S + outline / 2, d.pad * S + outline / 2, d.cover * S - outline, d.cover * S - outline, Math.max(1, d.coverR * S - outline / 2));
+    ctx.lineWidth = outline;
+    ctx.strokeStyle = '#ffffff';
+    ctx.stroke();
+  }
 
   // Top right: Spotify glyph, or the SolSeekers logo filling the right edge.
   let rightReserve;
