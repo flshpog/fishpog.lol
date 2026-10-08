@@ -25,7 +25,7 @@ import { spawn } from 'node:child_process';
 import { chmod, copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { WIDGET_HEIGHT, WIDGET_WIDTH, renderWidget } from '../lib/widget.js';
+import { LAYOUTS, MAX_WIDTH, MIN_WIDTH, renderWidget, widgetSize } from '../lib/widget.js';
 
 const SPOTIFY = 'https://open.spotify.com';
 const TYPES = new Set(['track', 'album', 'playlist', 'artist', 'episode', 'show']);
@@ -66,7 +66,7 @@ async function handle(request) {
   const segs = ('/' + rawPath).split('/').filter(Boolean);
 
   if (segs[0] === 'oembed') return oembed(url, origin);
-  if (segs[0] === 'media') return media(segs.slice(1), origin);
+  if (segs[0] === 'media') return media(segs.slice(1), url.searchParams);
   if (segs[0] === 'api' && segs[1] === 'meta') return apiMeta(segs.slice(2));
   if (segs.length === 0) return redirect(origin + '/'); // landing is static; shouldn't hit here
 
@@ -88,7 +88,7 @@ async function handle(request) {
 
   if (mode === 'preview' && !meta.audio) mode = 'widget';
   if (mode === 'video' && !meta.audio) mode = 'card';
-  const html = renderEmbedPage({ meta, mode, type, id, origin });
+  const html = renderEmbedPage({ meta, mode, type, id, origin, layout: target.layout, width: target.width });
   return new Response(html, {
     status: 200,
     headers: {
@@ -103,16 +103,27 @@ async function handle(request) {
 // Routing helpers
 // ---------------------------------------------------------------------------
 
+// Path shape: /[mode]/[compact|tall]/[w<160-400>]/[intl-xx]/[embed]/<type>/<id>
+// Mode, layout and width tokens may appear in any order before the type.
 function parseTarget(input) {
   const segs = [...input];
   let mode = DEFAULT_MODE;
-  if (segs.length && MODES.has(segs[0])) mode = segs.shift();
-  else if (segs[0] === 'rich' || segs[0] === 'player') { segs.shift(); mode = 'card'; } // retired modes
-  if (segs[0] && /^intl-[a-z]{2}(-[a-z]+)?$/i.test(segs[0])) segs.shift();
-  if (segs[0] === 'embed' || segs[0] === 'embed-podcast') segs.shift();
-  if (segs[0] === 'link' && segs[1]) return { mode, link: segs[1] };
+  let layout = 'tall';
+  let width = MAX_WIDTH;
+  for (;;) {
+    const s = segs[0];
+    if (s && MODES.has(s)) mode = segs.shift();
+    else if (s === 'rich' || s === 'player') { segs.shift(); mode = 'card'; } // retired modes
+    else if (s && LAYOUTS[s]) layout = segs.shift();
+    else if (s && /^w\d{3}$/.test(s)) width = Number(segs.shift().slice(1));
+    else if (s && /^intl-[a-z]{2}(-[a-z]+)?$/i.test(s)) segs.shift();
+    else if (s === 'embed' || s === 'embed-podcast') segs.shift();
+    else break;
+  }
+  const opts = { mode, layout, width: Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, width)) };
+  if (segs[0] === 'link' && segs[1]) return { ...opts, link: segs[1] };
   if (segs.length >= 2 && TYPES.has(segs[0]) && /^[A-Za-z0-9]{22}$/.test(segs[1])) {
-    return { mode, type: segs[0], id: segs[1] };
+    return { ...opts, type: segs[0], id: segs[1] };
   }
   return null;
 }
@@ -319,7 +330,7 @@ async function fetchWithTimeout(url, init = {}, ms = FETCH_TIMEOUT_MS) {
 // HTML rendering
 // ---------------------------------------------------------------------------
 
-function renderEmbedPage({ meta, mode, type, id, origin }) {
+function renderEmbedPage({ meta, mode, type, id, origin, layout = 'tall', width = MAX_WIDTH }) {
   const spotifyUrl = meta.url;
   const ourUrl = `${origin}/${mode === DEFAULT_MODE ? '' : mode + '/'}${type}/${id}`;
   const oembedUrl = `${origin}/oembed?url=${encodeURIComponent(ourUrl)}&mode=${mode}&type=${type}&id=${id}`;
@@ -330,35 +341,38 @@ function renderEmbedPage({ meta, mode, type, id, origin }) {
   if (mode === 'widget') {
     // Bare image embed, no text: a painted copy of Spotify's player widget.
     // Any title/description would make Discord wrap it in a card.
-    const poster = `${origin}/media/${type}/${id}.widget.png`;
+    const size = widgetSize(layout, width);
+    const poster = `${origin}/media/${type}/${id}.widget.png?layout=${size.layout}&w=${size.width}`;
     tags.push(
       ['property', 'og:image', poster],
       ['property', 'og:image:type', 'image/png'],
-      ['property', 'og:image:width', String(WIDGET_WIDTH)],
-      ['property', 'og:image:height', String(WIDGET_HEIGHT)],
+      ['property', 'og:image:width', String(size.canvas.width)],
+      ['property', 'og:image:height', String(size.canvas.height)],
       ['name', 'twitter:card', 'summary_large_image'],
       ['name', 'twitter:image', poster],
     );
   } else if (mode === 'preview') {
     // Same picture as the poster of a bare video with the 30s preview.
+    // Discord's player has a ~150px minimum height, so this is always the tall layout.
+    const size = widgetSize('tall', MAX_WIDTH);
     const mp4 = `${origin}/media/${type}/${id}.widget.mp4`;
     const poster = `${origin}/media/${type}/${id}.widget.png`;
     tags.push(
       ['property', 'og:type', 'video.other'],
       ['property', 'og:image', poster],
-      ['property', 'og:image:width', String(WIDGET_WIDTH)],
-      ['property', 'og:image:height', String(WIDGET_HEIGHT)],
+      ['property', 'og:image:width', String(size.canvas.width)],
+      ['property', 'og:image:height', String(size.canvas.height)],
       ['property', 'og:video', mp4],
       ['property', 'og:video:secure_url', mp4],
       ['property', 'og:video:type', 'video/mp4'],
-      ['property', 'og:video:width', String(WIDGET_WIDTH)],
-      ['property', 'og:video:height', String(WIDGET_HEIGHT)],
+      ['property', 'og:video:width', String(size.canvas.width)],
+      ['property', 'og:video:height', String(size.canvas.height)],
       // No title/description on purpose: any text makes Discord wrap the video in a card.
       ['name', 'twitter:card', 'player'],
       ['name', 'twitter:image', poster],
       ['name', 'twitter:player', mp4],
-      ['name', 'twitter:player:width', String(WIDGET_WIDTH)],
-      ['name', 'twitter:player:height', String(WIDGET_HEIGHT)],
+      ['name', 'twitter:player:width', String(size.canvas.width)],
+      ['name', 'twitter:player:height', String(size.canvas.height)],
       ['name', 'twitter:player:stream', mp4],
       ['name', 'twitter:player:stream:content_type', 'video/mp4'],
     );
@@ -528,10 +542,12 @@ async function apiMeta(segs) {
 // poster + the 30s preview, so Discord gets a real inline player.
 // ---------------------------------------------------------------------------
 
-async function media(segs, origin) {
+async function media(segs, params) {
   const m = segs.length === 2 && TYPES.has(segs[0]) ? segs[1].match(/^([A-Za-z0-9]{22})(\.widget)?\.(mp4|jpg|png)$/) : null;
   if (!m) return text('not found', 404);
   const [type, id, widget, ext] = [segs[0], m[1], Boolean(m[2]), m[3]];
+  // ?layout=compact&w=320 only applies to the PNG; the video poster is always tall/400.
+  const size = ext === 'png' ? widgetSize(params.get('layout') || 'tall', params.get('w') || MAX_WIDTH) : widgetSize('tall', MAX_WIDTH);
   if ((widget && ext === 'jpg') || (!widget && ext === 'png')) return text('not found', 404);
   const meta = await getMeta(type, id);
   if (!meta || !meta.image) return text('not found', 404);
@@ -553,6 +569,8 @@ async function media(segs, origin) {
         background: meta.color || undefined,
         subdued: meta.subdued || undefined,
         preview: Boolean(meta.audio),
+        layout: size.layout,
+        width: size.width,
       });
       await writeFile(posterPath, png);
     } else {
