@@ -31,4 +31,4 @@ http
       res.end(String(err));
     }
   })
-  .listen(PORT, () => console.log(`spotify.fishpog.lol dev -> http://localhost:${PORT}`));
+  .listen(PORT, () => console.log(`open.fishpog.lol dev -> http://localhost:${PORT}`));

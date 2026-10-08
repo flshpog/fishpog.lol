@@ -1,11 +1,12 @@
-// spotify.fishpog.lol - a drop-in replacement for open.spotify.com links that
-// gives Discord (and Twitter/Telegram/etc.) a proper embed even when Spotify's
-// own unfurl is broken.
+// open.fishpog.lol (alias: spotify.fishpog.lol) - a drop-in replacement for
+// open.spotify.com links that gives Discord (and Twitter/Telegram/etc.) a proper
+// embed even when Spotify's own unfurl is broken.
 //
-// Usage: swap "open.spotify.com" for "spotify.fishpog.lol" in any link.
+// Usage: swap "open.spotify.com" for "open.fishpog.lol" in any link.
+// Nothing here hardcodes the host; every URL is built from the request.
 //
-//   https://spotify.fishpog.lol/track/4PTG3Z6ehGkBFwjybzWkR8
-//   https://spotify.fishpog.lol/video/track/4PTG3Z6ehGkBFwjybzWkR8   (mode prefix)
+//   https://open.fishpog.lol/track/4PTG3Z6ehGkBFwjybzWkR8
+//   https://open.fishpog.lol/video/track/4PTG3Z6ehGkBFwjybzWkR8   (mode prefix)
 //
 // Modes (prefix the path, or set DEFAULT_MODE env for bare paths):
 //   card    mirror Spotify's own metadata 1:1 (provider "Spotify", title,

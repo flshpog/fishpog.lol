@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>spotify.fishpog.lol</title>
-  <meta name="description" content="Swap open.spotify.com for spotify.fishpog.lol and your Spotify links embed properly on Discord again.">
+  <title>open.fishpog.lol</title>
+  <meta name="description" content="Swap open.spotify.com for open.fishpog.lol and your Spotify links embed properly on Discord again.">
   <meta property="og:site_name" content="fishpog">
-  <meta property="og:title" content="spotify.fishpog.lol">
-  <meta property="og:description" content="Spotify links that actually embed on Discord. Replace open.spotify.com with spotify.fishpog.lol.">
+  <meta property="og:title" content="open.fishpog.lol">
+  <meta property="og:description" content="Spotify links that actually embed on Discord. Replace open.spotify.com with open.fishpog.lol.">
   <meta name="theme-color" content="#1db954">
   <link rel="icon" type="image/png" href="https://fishpog.lol/images/pogger.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -104,13 +104,13 @@
 </head>
 <body>
   <main>
-    <h1>spotify.<span>fishpog</span>.lol</h1>
+    <h1 id="title">open.<span>fishpog</span>.lol</h1>
     <p class="lead">Spotify links that actually embed on Discord. No bots, no logins, just a different domain.</p>
 
     <div class="how">
       <code>open.spotify.com/track/…</code>
       <span class="arrow">→</span>
-      <code class="new">spotify.fishpog.lol/track/…</code>
+      <code class="new"><span class="host">open.fishpog.lol</span>/track/…</code>
     </div>
 
     <label for="in">paste a Spotify link</label>
@@ -149,17 +149,24 @@
     const err = document.getElementById('err');
     let mode = '';
 
-    const RE = /(?:open\.spotify\.com|spotify\.fishpog\.lol)\/(?:(?:card|video|rich|player)\/)?(?:intl-[a-z-]+\/)?(?:embed(?:-podcast)?\/)?(track|album|playlist|artist|episode|show)\/([A-Za-z0-9]{22})/i;
+    // Serve the same page on open.fishpog.lol and spotify.fishpog.lol; links use whichever host you're on.
+    const HOST = /\.fishpog\.lol$/.test(location.hostname) ? location.hostname : 'open.fishpog.lol';
+    const BASE = `https://${HOST}/`;
+    document.title = HOST;
+    document.querySelectorAll('.host').forEach((el) => (el.textContent = HOST));
+    document.getElementById('title').innerHTML = HOST.replace('fishpog', '<span>fishpog</span>');
+
+    const RE = /(?:open\.spotify\.com|(?:open|spotify)\.fishpog\.lol)\/(?:(?:card|video|rich|player)\/)?(?:intl-[a-z-]+\/)?(?:embed(?:-podcast)?\/)?(track|album|playlist|artist|episode|show)\/([A-Za-z0-9]{22})/i;
     const SHORT = /spotify\.link\/([A-Za-z0-9]+)/i;
 
     function convert(raw) {
       const s = raw.trim();
       let m = s.match(RE);
-      if (m) return `https://spotify.fishpog.lol/${mode ? mode + '/' : ''}${m[1].toLowerCase()}/${m[2]}`;
+      if (m) return `${BASE}${mode ? mode + '/' : ''}${m[1].toLowerCase()}/${m[2]}`;
       m = s.match(SHORT);
-      if (m) return `https://spotify.fishpog.lol/${mode ? mode + '/' : ''}link/${m[1]}`;
+      if (m) return `${BASE}${mode ? mode + '/' : ''}link/${m[1]}`;
       m = s.match(/^spotify:(track|album|playlist|artist|episode|show):([A-Za-z0-9]{22})$/i);
-      if (m) return `https://spotify.fishpog.lol/${mode ? mode + '/' : ''}${m[1].toLowerCase()}/${m[2]}`;
+      if (m) return `${BASE}${mode ? mode + '/' : ''}${m[1].toLowerCase()}/${m[2]}`;
       return null;
     }
 

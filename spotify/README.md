@@ -1,11 +1,13 @@
-# spotify.fishpog.lol
+# open.fishpog.lol
 
 Drop-in replacement for `open.spotify.com` links so they embed properly on Discord
 (and Twitter, Telegram, Slack, iMessage...) even while Spotify's own unfurl is broken.
+`spotify.fishpog.lol` is an alias; the code builds every URL from the request host, so
+any domain pointed at the project works.
 
 ```
 https://open.spotify.com/track/4PTG3Z6ehGkBFwjybzWkR8
-https://spotify.fishpog.lol/track/4PTG3Z6ehGkBFwjybzWkR8
+https://open.fishpog.lol/track/4PTG3Z6ehGkBFwjybzWkR8
 ```
 
 Humans who click the link are bounced straight to Spotify. Crawlers get a page whose
@@ -54,8 +56,10 @@ Results are cached per warm function instance for an hour, and every response ca
 
 1. Push this repo. In Vercel, **Add New Project** → import `fishpog.lol` → set
    **Root Directory** to `spotify`. Framework preset: Other. Deploy.
-2. Project → Settings → Domains → add `spotify.fishpog.lol`.
-3. In Spaceship DNS for `fishpog.lol`, add a record:
+2. Project → Settings → Domains → add `open.fishpog.lol` (and `spotify.fishpog.lol` if you
+   want the alias).
+3. In Spaceship DNS for `fishpog.lol`, add a record per domain:
+   `CNAME  open     →  cname.vercel-dns.com`
    `CNAME  spotify  →  cname.vercel-dns.com`
 4. Optional env vars: `DEFAULT_MODE` (`card` | `video` | `rich` | `player`),
    `SITE_NAME` (the provider text at the top of the embed, default `Spotify`).
