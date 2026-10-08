@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>spotify.fishpog.lol</title>
+  <meta name="description" content="Swap open.spotify.com for spotify.fishpog.lol and your Spotify links embed properly on Discord again.">
+  <meta property="og:site_name" content="fishpog">
+  <meta property="og:title" content="spotify.fishpog.lol">
+  <meta property="og:description" content="Spotify links that actually embed on Discord. Replace open.spotify.com with spotify.fishpog.lol.">
+  <meta name="theme-color" content="#1db954">
+  <link rel="icon" type="image/png" href="https://fishpog.lol/images/pogger.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --panel: #141414;
+      --line: #262626;
+      --text: #f5f5f5;
+      --muted: #9a9a9a;
+      --green: #1db954;
+      --green-bright: #1ed760;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+      font-weight: 600;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px 64px;
+    }
+    main { width: 100%; max-width: 640px; }
+    h1 {
+      font-weight: 800;
+      font-size: clamp(2rem, 7vw, 3.2rem);
+      letter-spacing: -0.02em;
+      margin: 0 0 8px;
+      line-height: 1.05;
+    }
+    h1 span { color: var(--green-bright); }
+    .lead { color: var(--muted); margin: 0 0 32px; font-size: 1.05rem; }
+
+    .how {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+      padding: 16px 18px; margin-bottom: 20px; font-size: 1rem;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: #1e1e1e; border: 1px solid var(--line); border-radius: 6px;
+      padding: 2px 7px; font-size: .92em;
+    }
+    .how .arrow { color: var(--muted); }
+    .how code.new { border-color: rgba(30,215,96,.5); color: var(--green-bright); }
+
+    label { display: block; font-size: .85rem; color: var(--muted); margin: 0 0 8px 4px; }
+    .row { display: flex; gap: 8px; }
+    input {
+      flex: 1; min-width: 0;
+      background: var(--panel); border: 1px solid var(--line); color: var(--text);
+      border-radius: 12px; padding: 14px 16px; font: inherit; font-size: 1rem;
+      outline: none; transition: border-color .15s;
+    }
+    input:focus { border-color: var(--green); }
+    button {
+      background: var(--green); color: #000; border: 0; border-radius: 12px;
+      padding: 0 20px; font: inherit; font-weight: 800; cursor: pointer;
+      transition: transform .12s, background .15s; white-space: nowrap;
+    }
+    button:hover { background: var(--green-bright); transform: translateY(-1px); }
+    button:active { transform: translateY(0) scale(.98); }
+    button:disabled { opacity: .4; cursor: default; transform: none; }
+
+    .out {
+      margin-top: 12px; display: none;
+      background: var(--panel); border: 1px solid rgba(30,215,96,.35); border-radius: 12px;
+      padding: 12px 14px; word-break: break-all; font-size: .95rem;
+    }
+    .out.show { display: block; }
+    .out a { color: var(--green-bright); text-decoration: none; }
+    .out a:hover { text-decoration: underline; }
+    .err { color: #ff6b6b; font-size: .9rem; margin: 10px 4px 0; min-height: 1.2em; }
+
+    .modes { margin-top: 36px; }
+    .modes h2 { font-size: 1.1rem; margin: 0 0 6px; }
+    .modes p { color: var(--muted); margin: 0 0 14px; font-size: .95rem; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .chip {
+      background: var(--panel); border: 1px solid var(--line); color: var(--text);
+      border-radius: 999px; padding: 6px 14px; font-size: .9rem; cursor: pointer; font-weight: 700;
+    }
+    .chip.on { border-color: var(--green); color: var(--green-bright); }
+    dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: .92rem; }
+    dt { color: var(--green-bright); font-weight: 800; }
+    dd { margin: 0; color: var(--muted); }
+
+    footer { margin-top: 48px; color: #555; font-size: .85rem; }
+    footer a { color: #777; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>spotify.<span>fishpog</span>.lol</h1>
+    <p class="lead">Spotify links that actually embed on Discord. No bots, no logins, just a different domain.</p>
+
+    <div class="how">
+      <code>open.spotify.com/track/…</code>
+      <span class="arrow">→</span>
+      <code class="new">spotify.fishpog.lol/track/…</code>
+    </div>
+
+    <label for="in">paste a Spotify link</label>
+    <div class="row">
+      <input id="in" type="url" placeholder="https://open.spotify.com/track/4PTG3Z6ehGkBFwjybzWkR8?si=…" autocomplete="off" spellcheck="false">
+      <button id="go" disabled>copy</button>
+    </div>
+    <div class="err" id="err"></div>
+    <div class="out" id="out"><a id="outlink" href="#" target="_blank" rel="noopener"></a></div>
+
+    <section class="modes">
+      <h2>embed styles</h2>
+      <p>Pick one. It just adds a prefix to the path.</p>
+      <div class="chips" id="chips">
+        <button class="chip on" data-mode="">card</button>
+        <button class="chip" data-mode="video">video</button>
+        <button class="chip" data-mode="rich">rich</button>
+        <button class="chip" data-mode="player">player</button>
+      </div>
+      <dl>
+        <dt>card</dt><dd>Looks like Spotify's own embed: title, artist · album · year, cover art. Default.</dd>
+        <dt>video</dt><dd>Same card plus a playable 30 second preview inline (tracks and podcast episodes).</dd>
+        <dt>rich</dt><dd>Card that also hands Discord Spotify's real player. Experimental.</dd>
+        <dt>player</dt><dd>Card with a Twitter-style player tag. Experimental.</dd>
+      </dl>
+    </section>
+
+    <footer>works for tracks, albums, playlists, artists, episodes, shows and spotify.link short links · <a href="https://fishpog.lol">fishpog.lol</a></footer>
+  </main>
+
+  <script>
+    const input = document.getElementById('in');
+    const go = document.getElementById('go');
+    const out = document.getElementById('out');
+    const outlink = document.getElementById('outlink');
+    const err = document.getElementById('err');
+    let mode = '';
+
+    const RE = /(?:open\.spotify\.com|spotify\.fishpog\.lol)\/(?:(?:card|video|rich|player)\/)?(?:intl-[a-z-]+\/)?(?:embed(?:-podcast)?\/)?(track|album|playlist|artist|episode|show)\/([A-Za-z0-9]{22})/i;
+    const SHORT = /spotify\.link\/([A-Za-z0-9]+)/i;
+
+    function convert(raw) {
+      const s = raw.trim();
+      let m = s.match(RE);
+      if (m) return `https://spotify.fishpog.lol/${mode ? mode + '/' : ''}${m[1].toLowerCase()}/${m[2]}`;
+      m = s.match(SHORT);
+      if (m) return `https://spotify.fishpog.lol/${mode ? mode + '/' : ''}link/${m[1]}`;
+      m = s.match(/^spotify:(track|album|playlist|artist|episode|show):([A-Za-z0-9]{22})$/i);
+      if (m) return `https://spotify.fishpog.lol/${mode ? mode + '/' : ''}${m[1].toLowerCase()}/${m[2]}`;
+      return null;
+    }
+
+    function update() {
+      const v = input.value.trim();
+      const result = v ? convert(v) : null;
+      go.disabled = !result;
+      err.textContent = v && !result ? "that doesn't look like a Spotify link" : '';
+      if (result) {
+        outlink.textContent = result;
+        outlink.href = result;
+        out.classList.add('show');
+      } else {
+        out.classList.remove('show');
+      }
+    }
+
+    input.addEventListener('input', update);
+    input.addEventListener('paste', () => setTimeout(update, 0));
+    document.getElementById('chips').addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      mode = chip.dataset.mode;
+      document.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c === chip));
+      update();
+    });
+    go.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(outlink.href);
+        go.textContent = 'copied!';
+        setTimeout(() => (go.textContent = 'copy'), 1200);
+      } catch {
+        outlink.focus();
+      }
+    });
+    // Shortcut: ?u=<spotify url> prefill
+    const u = new URLSearchParams(location.search).get('u');
+    if (u) { input.value = u; update(); }
+  </script>
+</body>
+</html>

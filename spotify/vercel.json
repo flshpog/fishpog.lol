@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/:path*", "destination": "/api/index?p=:path*" }
+  ],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30,
+      "memory": 1024,
+      "includeFiles": "node_modules/ffmpeg-static/**"
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "x-content-type-options", "value": "nosniff" }
+      ]
+    }
+  ]
+}
