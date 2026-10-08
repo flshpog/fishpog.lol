@@ -207,18 +207,16 @@
       <h2>embed styles</h2>
       <p>Pick one. It just adds a prefix to the path.</p>
       <div class="chips" id="chips">
-        <button class="chip on" data-mode="">card</button>
-        <button class="chip" data-mode="widget">widget</button>
+        <button class="chip on" data-mode="">widget</button>
+        <button class="chip" data-mode="preview">preview</button>
+        <button class="chip" data-mode="card">card</button>
         <button class="chip" data-mode="video">video</button>
-        <button class="chip" data-mode="rich">rich</button>
-        <button class="chip" data-mode="player">player</button>
       </div>
       <dl>
-        <dt>card</dt><dd>Spotify's own metadata: title, artist · album · year, cover art. Default.</dd>
-        <dt>widget</dt><dd>A copy of Spotify's player widget, the thing Discord normally shows, with the 30 second preview playable inline (tracks and episodes).</dd>
+        <dt>widget</dt><dd>A copy of Spotify's player widget, the thing Discord normally shows. Just a picture, nothing to click. Default.</dd>
+        <dt>preview</dt><dd>The same widget, but the 30 second preview plays inline. Discord puts its own play button in the middle (tracks and episodes).</dd>
+        <dt>card</dt><dd>Spotify's own metadata: title, artist · album · year, cover art on the right.</dd>
         <dt>video</dt><dd>Card plus a playable 30 second preview inline (tracks and podcast episodes).</dd>
-        <dt>rich</dt><dd>Card that also hands Discord Spotify's real player. Experimental.</dd>
-        <dt>player</dt><dd>Card with a Twitter-style player tag. Experimental.</dd>
       </dl>
     </section>
 
@@ -240,7 +238,7 @@
     document.querySelectorAll('.host').forEach((el) => (el.textContent = HOST));
     document.getElementById('title').innerHTML = HOST.replace('fishpog', '<span>fishpog</span>');
 
-    const RE = /(?:open\.spotify\.com|(?:open|spotify)\.fishpog\.lol)\/(?:(?:card|widget|video|rich|player)\/)?(?:intl-[a-z-]+\/)?(?:embed(?:-podcast)?\/)?(track|album|playlist|artist|episode|show)\/([A-Za-z0-9]{22})/i;
+    const RE = /(?:open\.spotify\.com|(?:open|spotify)\.fishpog\.lol)\/(?:(?:widget|preview|card|video|rich|player)\/)?(?:intl-[a-z-]+\/)?(?:embed(?:-podcast)?\/)?(track|album|playlist|artist|episode|show)\/([A-Za-z0-9]{22})/i;
     const SHORT = /spotify\.link\/([A-Za-z0-9]+)/i;
 
     // Returns { path: "track/ID" | "link/CODE" } or null.
@@ -327,11 +325,16 @@
       const type = (meta.url.match(/\/(track|album|playlist|artist|episode|show)\//) || [])[1];
       const id = meta.url.split('/').pop();
       const videoOk = mode === 'video' && meta.audio;
-      const widgetOk = mode === 'widget' && meta.audio;
+      const previewOk = mode === 'preview' && meta.audio;
 
-      if (widgetOk) {
-        dcEmbed.innerHTML = `<div class="e-widget"><img src="/media/${type}/${id}.widget.png" alt=""><div class="play"></div></div>`;
-        previewNote.textContent = "Discord draws its own play button over the poster. Click it and the 30 second preview plays in place.";
+      if (mode === '' || mode === 'preview') {
+        const overlay = previewOk ? '<div class="play"></div>' : '';
+        dcEmbed.innerHTML = `<div class="e-widget"><img src="/media/${type}/${id}.widget.png" alt="">${overlay}</div>`;
+        previewNote.textContent = previewOk
+          ? 'Discord draws its own play button over the picture. Click it and the 30 second preview plays in place.'
+          : mode === 'preview'
+            ? 'No 30 second preview exists for this one, so it falls back to the plain widget.'
+            : 'A picture of the widget, same as Discord shows for a working Spotify link. Clicking the link above opens Spotify.';
         return;
       }
       const title = `<a class="e-title" href="${escapeHtml(meta.url)}" target="_blank" rel="noopener">${escapeHtml(meta.title)}</a>`;
@@ -346,8 +349,7 @@
       } else {
         const thumb = meta.image ? `<img class="e-thumb" src="${escapeHtml(meta.image)}" alt="">` : '';
         dcEmbed.innerHTML = `<div class="embed${meta.image ? '' : ' plain'}">${provider}${title}${desc}${thumb}</div>`;
-        if (mode === 'video' || mode === 'widget') previewNote.textContent = 'No 30 second preview exists for this one, so Discord gets the card instead.';
-        else if (mode === 'rich' || mode === 'player') previewNote.textContent = 'Experimental: if Discord accepts the handoff you also get its native play button. Otherwise it looks like this.';
+        if (mode === 'video') previewNote.textContent = 'No 30 second preview exists for this one, so Discord gets the card instead.';
         else previewNote.textContent = 'This is a mock-up. Discord may differ slightly, and it caches embeds per link for a while.';
       }
     }
@@ -373,8 +375,8 @@
     // Shortcuts: ?u=<spotify url> prefills the box, ?m=<mode> picks a style.
     const params = new URLSearchParams(location.search);
     const m = params.get('m');
-    if (['card', 'widget', 'video', 'rich', 'player'].includes(m)) {
-      mode = m === 'card' ? '' : m;
+    if (['widget', 'preview', 'card', 'video'].includes(m)) {
+      mode = m === 'widget' ? '' : m;
       document.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c.dataset.mode === mode));
     }
     const u = params.get('u');

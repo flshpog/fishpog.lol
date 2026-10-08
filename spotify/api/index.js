@@ -9,13 +9,14 @@
 //   https://open.fishpog.lol/video/track/4PTG3Z6ehGkBFwjybzWkR8   (mode prefix)
 //
 // Modes (prefix the path, or set DEFAULT_MODE env for bare paths):
+//   widget  a painted copy of Spotify's player widget as a bare image. This is
+//           what Discord shows for native Spotify links. Not playable. Default.
+//   preview same picture as the poster of a bare video with the 30s preview, so
+//           it plays inline. Discord draws its own play button over it.
+//           Tracks and episodes only.
 //   card    mirror Spotify's own metadata 1:1 (provider "Spotify", title,
-//           "Artist · Album · Song · Year", square cover). Default.
-//   rich    card + proxies Spotify's real oEmbed (type "rich" with the
-//           open.spotify.com iframe). Discord may or may not honor it.
-//   player  card + twitter:player pointing at the Spotify embed iframe.
-//   video   card + a generated MP4 (cover art + 30s preview) so the embed has
-//           a real inline play button. Tracks and episodes only.
+//           "Artist · Album · Song · Year", square cover on the right).
+//   video   card + a 16:9 MP4 (cover art + 30s preview). Tracks and episodes.
 //
 // Everyone gets the same HTML (bots read the tags, humans are bounced to
 // open.spotify.com by meta refresh + JS) so responses are safely CDN-cached.
@@ -28,8 +29,8 @@ import { WIDGET_HEIGHT, WIDGET_WIDTH, renderWidget } from '../lib/widget.js';
 
 const SPOTIFY = 'https://open.spotify.com';
 const TYPES = new Set(['track', 'album', 'playlist', 'artist', 'episode', 'show']);
-const MODES = new Set(['card', 'rich', 'player', 'video', 'widget']);
-const DEFAULT_MODE = MODES.has(process.env.DEFAULT_MODE) ? process.env.DEFAULT_MODE : 'card';
+const MODES = new Set(['widget', 'preview', 'card', 'video']);
+const DEFAULT_MODE = MODES.has(process.env.DEFAULT_MODE) ? process.env.DEFAULT_MODE : 'widget';
 const SITE_NAME = process.env.SITE_NAME || 'Spotify';
 // Spotify only server-renders OG tags for crawlers; browser UAs get the JS app shell.
 const BROWSER_UA = 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)';
@@ -85,7 +86,8 @@ async function handle(request) {
   const meta = await getMeta(type, id);
   if (!meta) return notFound(origin, type, id);
 
-  if ((mode === 'video' || mode === 'widget') && !meta.audio) mode = 'card';
+  if (mode === 'preview' && !meta.audio) mode = 'widget';
+  if (mode === 'video' && !meta.audio) mode = 'card';
   const html = renderEmbedPage({ meta, mode, type, id, origin });
   return new Response(html, {
     status: 200,
@@ -105,6 +107,7 @@ function parseTarget(input) {
   const segs = [...input];
   let mode = DEFAULT_MODE;
   if (segs.length && MODES.has(segs[0])) mode = segs.shift();
+  else if (segs[0] === 'rich' || segs[0] === 'player') { segs.shift(); mode = 'card'; } // retired modes
   if (segs[0] && /^intl-[a-z]{2}(-[a-z]+)?$/i.test(segs[0])) segs.shift();
   if (segs[0] === 'embed' || segs[0] === 'embed-podcast') segs.shift();
   if (segs[0] === 'link' && segs[1]) return { mode, link: segs[1] };
@@ -168,6 +171,8 @@ async function getMeta(type, id) {
       subdued: embed?.subdued || null,
       // Widget line two: artists for tracks, otherwise the first " · " segment of Spotify's description.
       subtitle: embed?.subtitle || page.description.split(' · ')[0] || '',
+      // Spotify's og:title for albums is "Name - Single by Artist | Spotify"; the widget wants the bare name.
+      name: embed?.title || page.title,
       audio: page.audio || embed?.audio || null,
       image: page.image || embed?.image || null,
     };
@@ -318,14 +323,24 @@ function renderEmbedPage({ meta, mode, type, id, origin }) {
   const spotifyUrl = meta.url;
   const ourUrl = `${origin}/${mode === DEFAULT_MODE ? '' : mode + '/'}${type}/${id}`;
   const oembedUrl = `${origin}/oembed?url=${encodeURIComponent(ourUrl)}&mode=${mode}&type=${type}&id=${id}`;
-  const embedIframe = `${SPOTIFY}/embed/${type}/${id}`;
-  const playerHeight = type === 'track' || type === 'episode' ? 152 : 352;
+  const bare = mode === 'widget' || mode === 'preview';
 
   const tags = [];
 
   if (mode === 'widget') {
-    // Bare video embed, no text: a painted copy of Spotify's player widget as the
-    // poster, with the 30s preview as the video. This is what Discord shows natively.
+    // Bare image embed, no text: a painted copy of Spotify's player widget.
+    // Any title/description would make Discord wrap it in a card.
+    const poster = `${origin}/media/${type}/${id}.widget.png`;
+    tags.push(
+      ['property', 'og:image', poster],
+      ['property', 'og:image:type', 'image/png'],
+      ['property', 'og:image:width', String(WIDGET_WIDTH)],
+      ['property', 'og:image:height', String(WIDGET_HEIGHT)],
+      ['name', 'twitter:card', 'summary_large_image'],
+      ['name', 'twitter:image', poster],
+    );
+  } else if (mode === 'preview') {
+    // Same picture as the poster of a bare video with the 30s preview.
     const mp4 = `${origin}/media/${type}/${id}.widget.mp4`;
     const poster = `${origin}/media/${type}/${id}.widget.png`;
     tags.push(
@@ -360,7 +375,7 @@ function renderEmbedPage({ meta, mode, type, id, origin }) {
     );
   }
 
-  if (mode === 'widget') {
+  if (bare) {
     // handled above
   } else if (mode === 'video') {
     const mp4 = `${origin}/media/${type}/${id}.mp4`;
@@ -391,16 +406,7 @@ function renderEmbedPage({ meta, mode, type, id, origin }) {
         ['name', 'twitter:image', meta.image],
       );
     }
-    if (mode === 'player') {
-      tags.push(
-        ['name', 'twitter:card', 'player'],
-        ['name', 'twitter:player', embedIframe],
-        ['name', 'twitter:player:width', '456'],
-        ['name', 'twitter:player:height', String(playerHeight)],
-      );
-    } else {
-      tags.push(['name', 'twitter:card', 'summary']);
-    }
+    tags.push(['name', 'twitter:card', 'summary']);
     if (meta.audio) tags.push(['property', 'og:audio', meta.audio], ['property', 'og:audio:type', 'audio/mpeg']);
   }
 
@@ -418,7 +424,7 @@ function renderEmbedPage({ meta, mode, type, id, origin }) {
 <title>${esc(meta.title)}</title>
 <meta http-equiv="refresh" content="0;url=${esc(spotifyUrl)}">
 <link rel="canonical" href="${esc(spotifyUrl)}">
-${mode === 'widget' ? '' : `<link rel="alternate" type="application/json+oembed" href="${esc(oembedUrl)}" title="${esc(meta.title)}">`}
+${bare ? '' : `<link rel="alternate" type="application/json+oembed" href="${esc(oembedUrl)}" title="${esc(meta.title)}">`}
 ${metaHtml}
 <style>
   html,body{margin:0;min-height:100%;background:#0a0a0a;color:#f5f5f5;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -486,12 +492,6 @@ async function oembed(url, origin) {
   }
   if (!type || !id) return json({ error: 'bad url' }, 400);
 
-  if (mode === 'rich') {
-    // Hand back Spotify's genuine oEmbed document (type "rich", iframe html).
-    const real = await fetchSpotifyOEmbed(`${SPOTIFY}/${type}/${id}`).catch(warn('oembed proxy'));
-    if (real) return json(real, 200, CACHE_HTML);
-  }
-
   const meta = await getMeta(type, id);
   if (!meta) return json({ error: 'not found' }, 404);
   return json(
@@ -548,10 +548,11 @@ async function media(segs, origin) {
     if (widget) {
       const png = await renderWidget({
         cover: art,
-        title: meta.title,
+        title: meta.name || meta.title,
         subtitle: meta.subtitle || '',
         background: meta.color || undefined,
         subdued: meta.subdued || undefined,
+        preview: Boolean(meta.audio),
       });
       await writeFile(posterPath, png);
     } else {

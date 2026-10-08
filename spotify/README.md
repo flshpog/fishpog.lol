@@ -16,20 +16,17 @@ provider "Spotify", the title, "Artist · Album · Song · Year", and the square
 
 ## Embed styles
 
-Prefix the path with a mode. Bare paths use `DEFAULT_MODE` (env var, defaults to `card`).
+Prefix the path with a mode. Bare paths use `DEFAULT_MODE` (env var, defaults to `widget`).
 
 | mode | url | what Discord gets |
 | --- | --- | --- |
-| `card` | `/track/ID` | Spotify's own metadata, 1:1. Compact card, cover on the right. |
-| `widget` | `/widget/track/ID` | A painted copy of Spotify's 152px player widget (Discord shows the real one natively, via iframe) as the poster of a bare video embed, with the 30 s preview as the video. Rendered with `@napi-rs/canvas` using Spotify's own tint colours. No title tags, since any text makes Discord wrap the video in a card. Tracks and episodes only. |
-| `video` | `/video/track/ID` | Same card plus a generated MP4 (cover art on Spotify's tinted background + the 30 s preview) so there's a real inline play button. Tracks and episodes only; other types fall back to `card`. |
-| `rich` | `/rich/track/ID` | Card, but the oEmbed document handed to Discord is Spotify's genuine one (`type: rich` with the `open.spotify.com/embed` iframe). Experimental. |
-| `player` | `/player/track/ID` | Card plus `twitter:card=player` pointing at the Spotify embed iframe. Experimental. |
+| `widget` | `/track/ID` | A painted copy of Spotify's 152px player widget as a bare image. That is what Discord shows for a working native Spotify link, minus the ability to click play. Rendered with `@napi-rs/canvas` in Spotify's own tint colours. Works for every type. Default. |
+| `preview` | `/preview/track/ID` | The same picture as the poster of a bare video embed with the 30 s preview, so it plays inline. Discord draws its own play button in the middle. Tracks and episodes only; otherwise falls back to `widget`. |
+| `card` | `/card/track/ID` | Spotify's own metadata, 1:1. Compact card, cover on the right. |
+| `video` | `/video/track/ID` | Card plus a 16:9 MP4 (cover art on Spotify's tinted background + the 30 s preview). Tracks and episodes only; otherwise falls back to `card`. |
 
-`rich` and `player` are attempts to get Discord to show its native Spotify player from a
-third-party domain. Discord has stated it won't render arbitrary iframes, so expect them to
-look identical to `card`. Test all four in a Discord channel and set `DEFAULT_MODE` to the
-winner.
+Neither the widget nor the preview page carries a title or description: any text makes
+Discord wrap the media in a card instead of showing it bare.
 
 Also handled: `/intl-xx/` prefixes, `/embed/` paths, `?si=` junk, `spotify.link` short
 links as `/link/CODE`, and albums / playlists / artists / episodes / shows. Anything else
@@ -64,7 +61,7 @@ Results are cached per warm function instance for an hour, and every response ca
 3. In Spaceship DNS for `fishpog.lol`, add a record per domain:
    `CNAME  open     →  cname.vercel-dns.com`
    `CNAME  spotify  →  cname.vercel-dns.com`
-4. Optional env vars: `DEFAULT_MODE` (`card` | `widget` | `video` | `rich` | `player`),
+4. Optional env vars: `DEFAULT_MODE` (`widget` | `preview` | `card` | `video`),
    `SITE_NAME` (the provider text at the top of the embed, default `Spotify`).
 
 `ffmpeg-static`, the `assets/` fonts and `lib/` are bundled via `includeFiles` in `vercel.json` for the video and widget modes. If the
