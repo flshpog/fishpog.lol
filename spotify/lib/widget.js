@@ -59,13 +59,13 @@ export function widgetSize(layout = 'tall', width = MAX_WIDTH) {
 export const THEMES = { spotify: {}, solseekers: { color: '#6896aa' } };
 // Bump whenever the painted output changes: it's put in every media URL so
 // Vercel's CDN and Discord's image cache stop serving the old picture.
-export const RENDER_VERSION = 10;
+export const RENDER_VERSION = 11;
 let logoPromise;
 function solseekersLogo() {
   return (logoPromise ||= loadImage(fileURLToPath(new URL('../assets/solseekerslogo.png', import.meta.url))));
 }
 
-export async function renderWidget({ cover, title, subtitle, background = '#282828', subdued = '#b3b3b3', preview = true, layout = 'tall', width = MAX_WIDTH, theme = 'spotify', accent = null }) {
+export async function renderWidget({ cover, title, subtitle, background = '#282828', subdued = '#b3b3b3', preview = true, layout = 'tall', width = MAX_WIDTH, theme = 'spotify' }) {
   ensureFonts();
   const ss = theme === 'solseekers'; // SolSeekers: compact only, gradient to the game colour, logo instead of controls
   const size = widgetSize(ss ? 'compact' : layout, width);
@@ -136,16 +136,16 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   }
   ctx.restore();
 
+  let ssTextDark = false;
   if (ss) {
-    // Background: every row starts from the colour at the cover's right edge on
-    // that row and fades across to SolSeekers blue, so the art bleeds into the
-    // card instead of meeting one flat averaged colour.
+    // Background: the colour at the cover's right edge, row by row, fading to
+    // SolSeekers blue. No tint guessing: a white edge gives a white start, a red
+    // edge gives red. The only processing is a vertical blur so pixel rows don't
+    // band, and a short dissolve so the cover melts into its own edge colour
+    // instead of stopping at a hard line.
     const x0 = cvX + cvS;
     const rows = Math.round(cvS);
-    // Sample a strip (the rightmost ~8% of the cover) rather than one column, then
-    // blur it vertically with a wide gaussian so the fade reads as smooth tones
-    // instead of stripes of individual pixel rows.
-    const stripW = Math.max(4, Math.round(cvS * 0.12));
+    const stripW = Math.max(4, Math.round(cvS * 0.1));
     const strip = ctx.getImageData(Math.round(x0) - stripW, Math.round(cvY), stripW, rows).data;
     const rowRgb = new Float64Array(rows * 3);
     for (let r = 0; r < rows; r++) {
@@ -156,71 +156,11 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
       }
       rowRgb[r * 3] = R / stripW; rowRgb[r * 3 + 1] = G / stripW; rowRgb[r * 3 + 2] = B / stripW;
     }
-    // How busy is the edge? Calm edges (a wall, a sky) get a wide dissolve and a
-    // light blur so the scene seems to continue. Busy edges (buildings, text)
-    // keep the art crisp and get a heavy blur, so the background is a few broad
-    // tones taken from the cover rather than smeared detail.
-    // The signal that matters is horizontal structure inside the strip: if the
-    // colour changes a lot left-to-right within the edge (windows, letters,
-    // objects), stretching it sideways produces smears. Measured on 4px blocks
-    // so film grain doesn't count. A plain wall or sky scores ~3, a painting ~20.
-    const blk = 4;
-    const bw = Math.max(1, Math.floor(stripW / blk));
-    const bh = Math.max(1, Math.floor(rows / blk));
-    let hStd = 0;
-    for (let by = 0; by < bh; by++) {
-      const bl = [];
-      for (let bx = 0; bx < bw; bx++) {
-        const m = [0, 0, 0];
-        for (let y = 0; y < blk; y++) for (let x = 0; x < blk; x++) for (let ch = 0; ch < 3; ch++) m[ch] += strip[((by * blk + y) * stripW + bx * blk + x) * 4 + ch] / (blk * blk);
-        bl.push(m);
-      }
-      const mean = [0, 1, 2].map((ch) => bl.reduce((a, b) => a + b[ch], 0) / bw);
-      hStd += Math.sqrt(bl.reduce((a, b) => a + ((b[0] - mean[0]) ** 2 + (b[1] - mean[1]) ** 2 + (b[2] - mean[2]) ** 2) / 3, 0) / bw);
-    }
-    hStd /= bh;
-    const busy = Math.min(1, Math.max(0, (hStd - 6) / 12)); // 0 calm (<=6) .. 1 busy (>=18)
-    const ease = busy * busy * (3 - 2 * busy);
-    // A very light edge (white paper, pale sky) can't "continue" into a dark card
-    // without a grey smudge, so it gets a crisp cut like a busy edge does.
-    let avgL = 0;
-    for (let r = 0; r < rows; r++) avgL += (0.299 * rowRgb[r * 3] + 0.587 * rowRgb[r * 3 + 1] + 0.114 * rowRgb[r * 3 + 2]) / 255;
-    avgL /= rows;
-    const light = Math.min(1, Math.max(0, (avgL - 0.62) / 0.2));
-    const cut = Math.max(ease, light);
-    if (process.env.DEBUG_WIDGET) console.log(`edge: hStd=${hStd.toFixed(1)} busy=${ease.toFixed(2)} avgL=${avgL.toFixed(2)} cut=${cut.toFixed(2)}`);
-
-    const sigma = (6 + 20 * cut) * S; // ~15px calm .. ~65px busy or very light, at full size
+    const sigma = 9 * S; // ~22px at full size
     const radius = Math.round(sigma * 3);
     const weights = [];
     for (let k = -radius; k <= radius; k++) weights.push(Math.exp(-(k * k) / (2 * sigma * sigma)));
-    const target = hexToRgb(THEMES.solseekers.color);
-    // Busy multicoloured edges average to grey. For those, lean on the cover's
-    // dominant tint (the Spotify-style histogram pick passed in as `background`)
-    // instead of the averaged rows; calm edges keep the row-by-row melt.
-    // Prefer the colour that covers the most of the artwork (neutrals included,
-    // so a black-on-white cover gives a black card). Fall back to the hue tint,
-    // and for monochrome art without an accent, to the slate the greys deepen to.
-    let dom;
-    const a = accent && /^#[0-9a-f]{6}$/i.test(accent) ? hexToRgb(accent) : null;
-    const ah = a ? rgb2hsl(a.r, a.g, a.b) : null;
-    // Use the area winner when it's clearly a colour or clearly dark (black ink);
-    // a muddy mid-grey winner (pastel line art) is worse than the hue tint.
-    if (a && (ah[1] >= 0.12 || ah[2] <= 0.25)) {
-      const [r, g, b] = richTone(a.r, a.g, a.b).split(',').map(Number);
-      dom = { r, g, b };
-    } else {
-      dom = hexToRgb(/^#[0-9a-f]{6}$/i.test(background) ? background : '#282828');
-      if (rgb2hsl(dom.r, dom.g, dom.b)[1] < 0.06) { const [r, g, b] = hsl2rgb(203, 0.18, 0.26).map(Math.round); dom = { r, g, b }; }
-    }
-    // Dissolve the cover's right edge into its own averaged colour over this many
-    // px, so there's no hard vertical seam where the picture stops.
-    const fadeW = cvS * (0.35 - 0.31 * cut);
-    const xs = x0 - fadeW;
-    const fadeStop = fadeW / (W - xs);
-    ctx.save();
-    roundRect(ctx, 0, 0, W, H, 12 * S);
-    ctx.clip();
+    const smooth = new Float64Array(rows * 3);
     for (let r = 0; r < rows; r++) {
       let R = 0, G = 0, B = 0, n = 0;
       for (let k = -radius; k <= radius; k++) {
@@ -228,23 +168,37 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
         const w = weights[k + radius];
         R += rowRgb[rr * 3] * w; G += rowRgb[rr * 3 + 1] * w; B += rowRgb[rr * 3 + 2] * w; n += w;
       }
-      const c = `${Math.round(R / n)},${Math.round(G / n)},${Math.round(B / n)}`;
-      // Muted or washed-out edges (pale sky, khaki, grey) make mud when stretched.
-      // Keep the row's hue but push it to a rich, darker tone, like Spotify's tints,
-      // and glide into that just after the cover so the melt stays seamless.
-      const rich = richTone(R / n, G / n, B / n).split(',').map(Number);
-      const mid = [dom.r, dom.g, dom.b].map((dv, i) => Math.round(rich[i] + (dv - rich[i]) * ease)).join(',');
+      smooth[r * 3] = R / n; smooth[r * 3 + 1] = G / n; smooth[r * 3 + 2] = B / n;
+    }
+
+    const target = hexToRgb(THEMES.solseekers.color);
+    const fadeW = cvS * 0.22;           // how far into the cover the melt starts
+    const xs = x0 - fadeW;
+    const fadeStop = fadeW / (W - xs);  // where the cover has fully become its edge colour
+    const hold = fadeStop + 0.1;        // keep that colour briefly before fading to blue
+    ctx.save();
+    roundRect(ctx, 0, 0, W, H, 12 * S);
+    ctx.clip();
+    for (let r = 0; r < rows; r++) {
+      const c = `${Math.round(smooth[r * 3])},${Math.round(smooth[r * 3 + 1])},${Math.round(smooth[r * 3 + 2])}`;
       const g = ctx.createLinearGradient(xs, 0, W, 0);
       g.addColorStop(0, `rgba(${c},0)`);
       g.addColorStop(fadeStop, `rgb(${c})`);
-      // Calm edges glide into the deep tone over ~22% of the card; cut edges (busy
-      // or very light) get there almost immediately so there's no pale smear.
-      g.addColorStop(Math.min(0.98, fadeStop + 0.03 + 0.19 * (1 - cut)), `rgb(${mid})`);
+      g.addColorStop(hold, `rgb(${c})`);
       g.addColorStop(1, `rgb(${target.r},${target.g},${target.b})`);
       ctx.fillStyle = g;
       ctx.fillRect(xs, cvY + r, W - xs, 1.5);
     }
     ctx.restore();
+
+    // Text colour follows what is actually painted behind the text: dark text on
+    // a light background, white otherwise. This is how a white cover stays white.
+    const tx = Math.round(x0 + 14 * S), ty = Math.round(22 * S);
+    const tw = Math.max(1, Math.round(Math.min(W - 95 * S, x0 + 240 * S) - tx)), th = Math.round(40 * S);
+    const px = ctx.getImageData(tx, ty, tw, th).data;
+    let lum = 0;
+    for (let i = 0; i < px.length; i += 4) lum += (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) / 255;
+    ssTextDark = lum / (px.length / 4) > 0.6;
 
     // Card outline on top of everything painted so far.
     roundRect(ctx, outline / 2, outline / 2, W - outline, H - outline, 12 * S - outline / 2);
@@ -278,11 +232,11 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   // SolSeekers: no PREVIEW pill, so centre the two lines vertically in the 80px card.
   const titleY = ss ? 36 * S : d.titleY * S;
   const subY = ss ? 54 * S : d.subY * S;
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = ssTextDark ? '#141414' : '#ffffff';
   ctx.font = `${d.titleSize * S}px "Figtree Bold"`;
   ctx.fillText(ellipsize(ctx, title, maxText), x, titleY);
 
-  ctx.fillStyle = subdued;
+  ctx.fillStyle = ssTextDark ? 'rgba(20,20,20,0.65)' : subdued;
   ctx.font = `${d.subSize * S}px "Figtree Medium"`;
   ctx.fillText(ellipsize(ctx, subtitle, maxText), x, subY);
 
@@ -329,19 +283,6 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
 
 function clamp(n, lo, hi) {
   return Math.min(hi, Math.max(lo, n));
-}
-
-// Same hue, but saturated and in a dark-mid lightness band: beige -> warm brown,
-// pale sky -> deep blue, near-grey stays a dark neutral.
-function richTone(r, g, b) {
-  const [h, s, l] = rgb2hsl(r, g, b);
-  // How much to intervene: nothing for dark colours, fully for pale/washed ones.
-  const pale = Math.min(1, Math.max(0, (l - 0.32) / 0.25));
-  if (pale === 0) return [r, g, b].map(Math.round).join(',');
-  // Neutral greys/whites deepen to a dark slate leaning toward SolSeekers blue
-  // rather than flat grey, so the fade into the blue reads as one family.
-  const deep = s < 0.06 ? hsl2rgb(203, 0.18, 0.26) : hsl2rgb(h, Math.min(0.8, Math.max(0.35, s * 1.2)), 0.3);
-  return [r, g, b].map((v, i) => Math.round(v + (deep[i] - v) * pale)).join(',');
 }
 
 function rgb2hsl(r, g, b) {

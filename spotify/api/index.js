@@ -772,15 +772,6 @@ async function media(segs, params) {
       ext === 'mp4' ? fetchBuffer(meta.audio) : null,
     ]);
     if (widget) {
-      // SolSeekers: saturated colour wins whenever the art has any (that's what
-      // people call "the dominant colour"). Only for genuinely monochrome art do
-      // we fall back to the colour covering the most area, so black-on-white
-      // covers get a black card instead of generic slate.
-      let accent = null;
-      if (theme === 'solseekers' && art) {
-        const cc = await coverColors(art).catch(() => null);
-        if (cc && cc.background === '#3a3a3a') accent = cc.accent || null; // '#3a3a3a' is coverColors' monochrome verdict
-      }
       const png = await renderWidget({
         cover: art,
         title: meta.name || meta.title,
@@ -791,7 +782,6 @@ async function media(segs, params) {
         layout: size.layout,
         width: size.width,
         theme,
-        accent,
       });
       await writeFile(posterPath, png);
     } else {
