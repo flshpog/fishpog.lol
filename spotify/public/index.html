@@ -152,6 +152,19 @@
       position: absolute; left: 8px; bottom: 8px; background: rgba(0,0,0,.7); color: #fff;
       font-size: .75rem; padding: 2px 6px; border-radius: 3px;
     }
+    .e-widget {
+      position: relative; margin-top: 4px; width: 400px; max-width: 100%; aspect-ratio: 5 / 1;
+      border-radius: 12px; overflow: hidden; background: #282828;
+    }
+    .e-widget img { width: 100%; height: 100%; display: block; }
+    .e-widget .play {
+      position: absolute; inset: 0; margin: auto; width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(0,0,0,.6); display: grid; place-items: center;
+    }
+    .e-widget .play::after {
+      content: ''; width: 0; height: 0; margin-left: 3px;
+      border-left: 14px solid #fff; border-top: 9px solid transparent; border-bottom: 9px solid transparent;
+    }
     .preview-note { color: var(--muted); font-size: .85rem; margin: 10px 4px 0; }
     .skel { color: var(--dc-muted); font-size: .9rem; padding: 8px 0; }
   </style>
@@ -195,13 +208,15 @@
       <p>Pick one. It just adds a prefix to the path.</p>
       <div class="chips" id="chips">
         <button class="chip on" data-mode="">card</button>
+        <button class="chip" data-mode="widget">widget</button>
         <button class="chip" data-mode="video">video</button>
         <button class="chip" data-mode="rich">rich</button>
         <button class="chip" data-mode="player">player</button>
       </div>
       <dl>
-        <dt>card</dt><dd>Looks like Spotify's own embed: title, artist · album · year, cover art. Default.</dd>
-        <dt>video</dt><dd>Same card plus a playable 30 second preview inline (tracks and podcast episodes).</dd>
+        <dt>card</dt><dd>Spotify's own metadata: title, artist · album · year, cover art. Default.</dd>
+        <dt>widget</dt><dd>A copy of Spotify's player widget, the thing Discord normally shows, with the 30 second preview playable inline (tracks and episodes).</dd>
+        <dt>video</dt><dd>Card plus a playable 30 second preview inline (tracks and podcast episodes).</dd>
         <dt>rich</dt><dd>Card that also hands Discord Spotify's real player. Experimental.</dd>
         <dt>player</dt><dd>Card with a Twitter-style player tag. Experimental.</dd>
       </dl>
@@ -225,7 +240,7 @@
     document.querySelectorAll('.host').forEach((el) => (el.textContent = HOST));
     document.getElementById('title').innerHTML = HOST.replace('fishpog', '<span>fishpog</span>');
 
-    const RE = /(?:open\.spotify\.com|(?:open|spotify)\.fishpog\.lol)\/(?:(?:card|video|rich|player)\/)?(?:intl-[a-z-]+\/)?(?:embed(?:-podcast)?\/)?(track|album|playlist|artist|episode|show)\/([A-Za-z0-9]{22})/i;
+    const RE = /(?:open\.spotify\.com|(?:open|spotify)\.fishpog\.lol)\/(?:(?:card|widget|video|rich|player)\/)?(?:intl-[a-z-]+\/)?(?:embed(?:-podcast)?\/)?(track|album|playlist|artist|episode|show)\/([A-Za-z0-9]{22})/i;
     const SHORT = /spotify\.link\/([A-Za-z0-9]+)/i;
 
     // Returns { path: "track/ID" | "link/CODE" } or null.
@@ -312,6 +327,13 @@
       const type = (meta.url.match(/\/(track|album|playlist|artist|episode|show)\//) || [])[1];
       const id = meta.url.split('/').pop();
       const videoOk = mode === 'video' && meta.audio;
+      const widgetOk = mode === 'widget' && meta.audio;
+
+      if (widgetOk) {
+        dcEmbed.innerHTML = `<div class="e-widget"><img src="/media/${type}/${id}.widget.png" alt=""><div class="play"></div></div>`;
+        previewNote.textContent = "Discord draws its own play button over the poster. Click it and the 30 second preview plays in place.";
+        return;
+      }
       const title = `<a class="e-title" href="${escapeHtml(meta.url)}" target="_blank" rel="noopener">${escapeHtml(meta.title)}</a>`;
       const desc = meta.description ? `<div class="e-desc">${escapeHtml(meta.description)}</div>` : '';
       const provider = '<div class="e-provider">Spotify</div>';
@@ -324,7 +346,7 @@
       } else {
         const thumb = meta.image ? `<img class="e-thumb" src="${escapeHtml(meta.image)}" alt="">` : '';
         dcEmbed.innerHTML = `<div class="embed${meta.image ? '' : ' plain'}">${provider}${title}${desc}${thumb}</div>`;
-        if (mode === 'video') previewNote.textContent = 'No 30 second preview exists for this one, so Discord gets the card instead.';
+        if (mode === 'video' || mode === 'widget') previewNote.textContent = 'No 30 second preview exists for this one, so Discord gets the card instead.';
         else if (mode === 'rich' || mode === 'player') previewNote.textContent = 'Experimental: if Discord accepts the handoff you also get its native play button. Otherwise it looks like this.';
         else previewNote.textContent = 'This is a mock-up. Discord may differ slightly, and it caches embeds per link for a while.';
       }
@@ -351,7 +373,7 @@
     // Shortcuts: ?u=<spotify url> prefills the box, ?m=<mode> picks a style.
     const params = new URLSearchParams(location.search);
     const m = params.get('m');
-    if (['card', 'video', 'rich', 'player'].includes(m)) {
+    if (['card', 'widget', 'video', 'rich', 'player'].includes(m)) {
       mode = m === 'card' ? '' : m;
       document.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c.dataset.mode === mode));
     }

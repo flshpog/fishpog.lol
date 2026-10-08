@@ -24,10 +24,11 @@ import { spawn } from 'node:child_process';
 import { chmod, copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { WIDGET_HEIGHT, WIDGET_WIDTH, renderWidget } from '../lib/widget.js';
 
 const SPOTIFY = 'https://open.spotify.com';
 const TYPES = new Set(['track', 'album', 'playlist', 'artist', 'episode', 'show']);
-const MODES = new Set(['card', 'rich', 'player', 'video']);
+const MODES = new Set(['card', 'rich', 'player', 'video', 'widget']);
 const DEFAULT_MODE = MODES.has(process.env.DEFAULT_MODE) ? process.env.DEFAULT_MODE : 'card';
 const SITE_NAME = process.env.SITE_NAME || 'Spotify';
 // Spotify only server-renders OG tags for crawlers; browser UAs get the JS app shell.
@@ -84,7 +85,7 @@ async function handle(request) {
   const meta = await getMeta(type, id);
   if (!meta) return notFound(origin, type, id);
 
-  if (mode === 'video' && !meta.audio) mode = 'card';
+  if ((mode === 'video' || mode === 'widget') && !meta.audio) mode = 'card';
   const html = renderEmbedPage({ meta, mode, type, id, origin });
   return new Response(html, {
     status: 200,
@@ -164,6 +165,9 @@ async function getMeta(type, id) {
     value = {
       ...page,
       color: embed?.color || null,
+      subdued: embed?.subdued || null,
+      // Widget line two: artists for tracks, otherwise the first " · " segment of Spotify's description.
+      subtitle: embed?.subtitle || page.description.split(' · ')[0] || '',
       audio: page.audio || embed?.audio || null,
       image: page.image || embed?.image || null,
     };
@@ -227,14 +231,17 @@ async function fromEmbed(type, id) {
   const label = { track: 'Song', album: 'Album', playlist: 'Playlist', artist: 'Artist', episode: 'Episode', show: 'Podcast' }[type];
   const description = [artists || entity.subtitle, label, year].filter(Boolean).join(' · ');
 
+  const sub = entity.visualIdentity?.textSubdued;
   return {
     title: entity.title || entity.name || '',
     description,
+    subtitle: artists || entity.subtitle || '',
     image: best?.url || null,
     imageWidth: best?.maxWidth || best?.width || 640,
     imageHeight: best?.maxHeight || best?.height || 640,
     audio: entity.audioPreview?.url || null,
     color,
+    subdued: sub ? rgbToHex(sub.red, sub.green, sub.blue) : null,
     ogType: ogTypeFor(type),
     url: `${SPOTIFY}/${type}/${id}`,
     source: 'embed',
@@ -314,18 +321,48 @@ function renderEmbedPage({ meta, mode, type, id, origin }) {
   const embedIframe = `${SPOTIFY}/embed/${type}/${id}`;
   const playerHeight = type === 'track' || type === 'episode' ? 152 : 352;
 
-  const tags = [
-    ['property', 'og:site_name', SITE_NAME],
-    ['property', 'og:title', meta.title],
-    ['property', 'og:description', meta.description],
-    ['property', 'og:url', spotifyUrl],
-    ['property', 'og:type', meta.ogType],
-    ['name', 'twitter:site', '@spotify'],
-    ['name', 'twitter:title', meta.title],
-    ['name', 'twitter:description', meta.description],
-  ];
+  const tags = [];
 
-  if (mode === 'video') {
+  if (mode === 'widget') {
+    // Bare video embed, no text: a painted copy of Spotify's player widget as the
+    // poster, with the 30s preview as the video. This is what Discord shows natively.
+    const mp4 = `${origin}/media/${type}/${id}.widget.mp4`;
+    const poster = `${origin}/media/${type}/${id}.widget.png`;
+    tags.push(
+      ['property', 'og:type', 'video.other'],
+      ['property', 'og:image', poster],
+      ['property', 'og:image:width', String(WIDGET_WIDTH)],
+      ['property', 'og:image:height', String(WIDGET_HEIGHT)],
+      ['property', 'og:video', mp4],
+      ['property', 'og:video:secure_url', mp4],
+      ['property', 'og:video:type', 'video/mp4'],
+      ['property', 'og:video:width', String(WIDGET_WIDTH)],
+      ['property', 'og:video:height', String(WIDGET_HEIGHT)],
+      ['name', 'twitter:card', 'player'],
+      ['name', 'twitter:title', meta.title],
+      ['name', 'twitter:image', poster],
+      ['name', 'twitter:player', mp4],
+      ['name', 'twitter:player:width', String(WIDGET_WIDTH)],
+      ['name', 'twitter:player:height', String(WIDGET_HEIGHT)],
+      ['name', 'twitter:player:stream', mp4],
+      ['name', 'twitter:player:stream:content_type', 'video/mp4'],
+    );
+  } else {
+    tags.push(
+      ['property', 'og:site_name', SITE_NAME],
+      ['property', 'og:title', meta.title],
+      ['property', 'og:description', meta.description],
+      ['property', 'og:url', spotifyUrl],
+      ['property', 'og:type', meta.ogType],
+      ['name', 'twitter:site', '@spotify'],
+      ['name', 'twitter:title', meta.title],
+      ['name', 'twitter:description', meta.description],
+    );
+  }
+
+  if (mode === 'widget') {
+    // handled above
+  } else if (mode === 'video') {
     const mp4 = `${origin}/media/${type}/${id}.mp4`;
     const poster = `${origin}/media/${type}/${id}.jpg`;
     tags.push(
@@ -381,7 +418,7 @@ function renderEmbedPage({ meta, mode, type, id, origin }) {
 <title>${esc(meta.title)}</title>
 <meta http-equiv="refresh" content="0;url=${esc(spotifyUrl)}">
 <link rel="canonical" href="${esc(spotifyUrl)}">
-<link rel="alternate" type="application/json+oembed" href="${esc(oembedUrl)}" title="${esc(meta.title)}">
+${mode === 'widget' ? '' : `<link rel="alternate" type="application/json+oembed" href="${esc(oembedUrl)}" title="${esc(meta.title)}">`}
 ${metaHtml}
 <style>
   html,body{margin:0;min-height:100%;background:#0a0a0a;color:#f5f5f5;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -492,9 +529,10 @@ async function apiMeta(segs) {
 // ---------------------------------------------------------------------------
 
 async function media(segs, origin) {
-  const m = segs.length === 2 && TYPES.has(segs[0]) ? segs[1].match(/^([A-Za-z0-9]{22})\.(mp4|jpg)$/) : null;
+  const m = segs.length === 2 && TYPES.has(segs[0]) ? segs[1].match(/^([A-Za-z0-9]{22})(\.widget)?\.(mp4|jpg|png)$/) : null;
   if (!m) return text('not found', 404);
-  const [type, id, ext] = [segs[0], m[1], m[2]];
+  const [type, id, widget, ext] = [segs[0], m[1], Boolean(m[2]), m[3]];
+  if ((widget && ext === 'jpg') || (!widget && ext === 'png')) return text('not found', 404);
   const meta = await getMeta(type, id);
   if (!meta || !meta.image) return text('not found', 404);
   if (ext === 'mp4' && !meta.audio) return text('no preview available for this item', 404);
@@ -502,16 +540,27 @@ async function media(segs, origin) {
   const dir = await mkdtemp(path.join(tmpdir(), 'fishpog-'));
   try {
     const artPath = path.join(dir, 'art.jpg');
-    const posterPath = path.join(dir, 'poster.jpg');
+    const posterPath = path.join(dir, widget ? 'poster.png' : 'poster.jpg');
     const [art, audio] = await Promise.all([
       fetchBuffer(meta.image),
       ext === 'mp4' ? fetchBuffer(meta.audio) : null,
     ]);
-    await writeFile(artPath, art);
-    await makePoster(artPath, posterPath, meta.color || '#282828');
-    if (ext === 'jpg') {
+    if (widget) {
+      const png = await renderWidget({
+        cover: art,
+        title: meta.title,
+        subtitle: meta.subtitle || '',
+        background: meta.color || undefined,
+        subdued: meta.subdued || undefined,
+      });
+      await writeFile(posterPath, png);
+    } else {
+      await writeFile(artPath, art);
+      await makePoster(artPath, posterPath, meta.color || '#282828');
+    }
+    if (ext !== 'mp4') {
       return new Response(await readFile(posterPath), {
-        headers: { 'content-type': 'image/jpeg', 'cache-control': CACHE_MEDIA },
+        headers: { 'content-type': widget ? 'image/png' : 'image/jpeg', 'cache-control': CACHE_MEDIA },
       });
     }
     const audioPath = path.join(dir, 'preview.mp3');

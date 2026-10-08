@@ -21,6 +21,7 @@ Prefix the path with a mode. Bare paths use `DEFAULT_MODE` (env var, defaults to
 | mode | url | what Discord gets |
 | --- | --- | --- |
 | `card` | `/track/ID` | Spotify's own metadata, 1:1. Compact card, cover on the right. |
+| `widget` | `/widget/track/ID` | A painted copy of Spotify's 80px player widget (what Discord shows natively, via iframe) as the poster of a bare video embed, with the 30 s preview as the video. Rendered with `@napi-rs/canvas` using Spotify's own tint colours. Tracks and episodes only. |
 | `video` | `/video/track/ID` | Same card plus a generated MP4 (cover art on Spotify's tinted background + the 30 s preview) so there's a real inline play button. Tracks and episodes only; other types fall back to `card`. |
 | `rich` | `/rich/track/ID` | Card, but the oEmbed document handed to Discord is Spotify's genuine one (`type: rich` with the `open.spotify.com/embed` iframe). Experimental. |
 | `player` | `/player/track/ID` | Card plus `twitter:card=player` pointing at the Spotify embed iframe. Experimental. |
@@ -39,6 +40,8 @@ redirects to the same path on `open.spotify.com`.
 - `/oembed?url=...` oEmbed document (provider name/url for Discord)
 - `/media/track/ID.jpg` 1280x720 poster
 - `/media/track/ID.mp4` poster + 30 s preview, h264/aac
+- `/media/track/ID.widget.png` 1000x200 painted Spotify widget
+- `/media/track/ID.widget.mp4` widget + 30 s preview
 - `/api/meta/track/ID` the resolved metadata as JSON (debugging)
 
 ## How metadata is resolved
@@ -61,10 +64,10 @@ Results are cached per warm function instance for an hour, and every response ca
 3. In Spaceship DNS for `fishpog.lol`, add a record per domain:
    `CNAME  open     →  cname.vercel-dns.com`
    `CNAME  spotify  →  cname.vercel-dns.com`
-4. Optional env vars: `DEFAULT_MODE` (`card` | `video` | `rich` | `player`),
+4. Optional env vars: `DEFAULT_MODE` (`card` | `widget` | `video` | `rich` | `player`),
    `SITE_NAME` (the provider text at the top of the embed, default `Spotify`).
 
-`ffmpeg-static` is bundled via `includeFiles` in `vercel.json` for the video mode. If the
+`ffmpeg-static`, the `assets/` fonts and `lib/` are bundled via `includeFiles` in `vercel.json` for the video and widget modes. If the
 function ever logs `EACCES` for ffmpeg, the handler copies the binary to `/tmp` and chmods it.
 
 ## Local dev

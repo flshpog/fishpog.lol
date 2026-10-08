@@ -11,6 +11,7 @@
     "dev": "node dev.js"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^1.0.10",
     "ffmpeg-static": "^5.2.0"
   }
 }
