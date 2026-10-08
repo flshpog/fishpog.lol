@@ -146,15 +146,18 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   const x = d.textX * S;
   const maxText = W - x - rightReserve - 12 * S;
   ctx.textBaseline = 'alphabetic';
+  // SolSeekers: no PREVIEW pill, so centre the two lines vertically in the 80px card.
+  const titleY = ss ? 36 * S : d.titleY * S;
+  const subY = ss ? 54 * S : d.subY * S;
   ctx.fillStyle = '#ffffff';
   ctx.font = `${d.titleSize * S}px "Figtree Bold"`;
-  ctx.fillText(ellipsize(ctx, title, maxText), x, d.titleY * S);
+  ctx.fillText(ellipsize(ctx, title, maxText), x, titleY);
 
   ctx.fillStyle = subdued;
   ctx.font = `${d.subSize * S}px "Figtree Medium"`;
-  ctx.fillText(ellipsize(ctx, subtitle, maxText), x, d.subY * S);
+  ctx.fillText(ellipsize(ctx, subtitle, maxText), x, subY);
 
-  if (preview) {
+  if (preview && !ss) {
     const p = d.pill;
     ctx.font = `${p.size * S}px "Figtree Bold"`;
     const label = 'PREVIEW';
