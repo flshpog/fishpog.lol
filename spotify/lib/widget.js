@@ -59,13 +59,13 @@ export function widgetSize(layout = 'tall', width = MAX_WIDTH) {
 export const THEMES = { spotify: {}, solseekers: { color: '#6896aa' } };
 // Bump whenever the painted output changes: it's put in every media URL so
 // Vercel's CDN and Discord's image cache stop serving the old picture.
-export const RENDER_VERSION = 8;
+export const RENDER_VERSION = 9;
 let logoPromise;
 function solseekersLogo() {
   return (logoPromise ||= loadImage(fileURLToPath(new URL('../assets/solseekerslogo.png', import.meta.url))));
 }
 
-export async function renderWidget({ cover, title, subtitle, background = '#282828', subdued = '#b3b3b3', preview = true, layout = 'tall', width = MAX_WIDTH, theme = 'spotify' }) {
+export async function renderWidget({ cover, title, subtitle, background = '#282828', subdued = '#b3b3b3', preview = true, layout = 'tall', width = MAX_WIDTH, theme = 'spotify', accent = null }) {
   ensureFonts();
   const ss = theme === 'solseekers'; // SolSeekers: compact only, gradient to the game colour, logo instead of controls
   const size = widgetSize(ss ? 'compact' : layout, width);
@@ -198,10 +198,21 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     // Busy multicoloured edges average to grey. For those, lean on the cover's
     // dominant tint (the Spotify-style histogram pick passed in as `background`)
     // instead of the averaged rows; calm edges keep the row-by-row melt.
-    let dom = hexToRgb(/^#[0-9a-f]{6}$/i.test(background) ? background : '#282828');
-    // Monochrome art gets a neutral grey tint from coverColors; on this card use
-    // the slate that the grey tones also deepen to, so everything is one family.
-    if (rgb2hsl(dom.r, dom.g, dom.b)[1] < 0.06) { const [r, g, b] = hsl2rgb(203, 0.18, 0.26).map(Math.round); dom = { r, g, b }; }
+    // Prefer the colour that covers the most of the artwork (neutrals included,
+    // so a black-on-white cover gives a black card). Fall back to the hue tint,
+    // and for monochrome art without an accent, to the slate the greys deepen to.
+    let dom;
+    const a = accent && /^#[0-9a-f]{6}$/i.test(accent) ? hexToRgb(accent) : null;
+    const ah = a ? rgb2hsl(a.r, a.g, a.b) : null;
+    // Use the area winner when it's clearly a colour or clearly dark (black ink);
+    // a muddy mid-grey winner (pastel line art) is worse than the hue tint.
+    if (a && (ah[1] >= 0.12 || ah[2] <= 0.25)) {
+      const [r, g, b] = richTone(a.r, a.g, a.b).split(',').map(Number);
+      dom = { r, g, b };
+    } else {
+      dom = hexToRgb(/^#[0-9a-f]{6}$/i.test(background) ? background : '#282828');
+      if (rgb2hsl(dom.r, dom.g, dom.b)[1] < 0.06) { const [r, g, b] = hsl2rgb(203, 0.18, 0.26).map(Math.round); dom = { r, g, b }; }
+    }
     // Dissolve the cover's right edge into its own averaged colour over this many
     // px, so there's no hard vertical seam where the picture stops.
     const fadeW = cvS * (0.35 - 0.31 * cut);

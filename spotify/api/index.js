@@ -772,6 +772,9 @@ async function media(segs, params) {
       ext === 'mp4' ? fetchBuffer(meta.audio) : null,
     ]);
     if (widget) {
+      // SolSeekers wants the colour that covers the most of the art, which the
+      // Spotify metadata doesn't carry; measure it from the cover we just fetched.
+      const accent = theme === 'solseekers' && art ? (await coverColors(art).catch(() => ({}))).accent || null : null;
       const png = await renderWidget({
         cover: art,
         title: meta.name || meta.title,
@@ -782,6 +785,7 @@ async function media(segs, params) {
         layout: size.layout,
         width: size.width,
         theme,
+        accent,
       });
       await writeFile(posterPath, png);
     } else {

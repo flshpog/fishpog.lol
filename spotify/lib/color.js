@@ -10,13 +10,14 @@ import { createCanvas, loadImage } from '@napi-rs/canvas';
 
 const SAMPLE = 40;
 
-/** @param {Buffer} image @returns {Promise<{background: string, subdued: string}>} */
+/** @param {Buffer} image @returns {Promise<{background: string, subdued: string, accent: string|null}>} */
 export async function coverColors(image) {
   const img = await loadImage(image);
   const canvas = createCanvas(SAMPLE, SAMPLE);
   const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0, SAMPLE, SAMPLE);
   const { data } = ctx.getImageData(0, 0, SAMPLE, SAMPLE);
+  const accent = dominantByArea(data);
 
   // Pass 1: weighted hue histogram. Weight by saturation and by being mid-toned
   // (near-black/white pixels say nothing about hue). The biggest bin wins, so a
@@ -38,7 +39,7 @@ export async function coverColors(image) {
   const avgSat = satSum / Math.max(1, n);
   if (wsum < 0.02 * n || avgSat < 0.08) {
     // Grey/monochrome artwork: Spotify falls back to a neutral dark card.
-    return { background: '#3a3a3a', subdued: '#b3b3b3' };
+    return { background: '#3a3a3a', subdued: '#b3b3b3', accent };
   }
   let best = 0;
   for (let b = 1; b < BINS; b++) if (bins[b] + bins[(b + 1) % BINS] > bins[best] + bins[(best + 1) % BINS]) best = b;
@@ -62,7 +63,41 @@ export async function coverColors(image) {
   return {
     background: hslToHex(hue, bgSat, 0.22),
     subdued: hslToHex(hue, 0.5, 0.76),
+    accent,
   };
+}
+
+// The colour that covers the most area, neutrals included. Quantised to 6 levels
+// per channel, the winning bin's pixels averaged back out.
+//   - If the overall winner has a hue (a pastel pink, a blue sea) it wins; the
+//     renderer deepens pale colours itself.
+//   - If the overall winner is neutral (white paper, grey), use the winner among
+//     darker pixels instead, so a black-on-white cover yields a black card.
+// Null if nothing qualifies.
+function dominantByArea(data) {
+  const Q = 6;
+  const all = new Map(), dark = new Map();
+  const add = (map, key, r, g, b) => {
+    const e = map.get(key) || { n: 0, r: 0, g: 0, b: 0 };
+    e.n++; e.r += r; e.g += g; e.b += b;
+    map.set(key, e);
+  };
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    const key = (Math.floor((r * Q) / 256) * Q + Math.floor((g * Q) / 256)) * Q + Math.floor((b * Q) / 256);
+    add(all, key, r, g, b);
+    if ((0.299 * r + 0.587 * g + 0.114 * b) / 255 <= 0.72) add(dark, key, r, g, b);
+  }
+  const top = (map) => { let best = null; for (const e of map.values()) if (!best || e.n > best.n) best = e; return best; };
+  const toHex = (e) => '#' + [e.r, e.g, e.b].map((v) => Math.round(v / e.n).toString(16).padStart(2, '0')).join('');
+  const minN = (data.length / 4) * 0.04;
+  const overall = top(all);
+  if (!overall) return null;
+  const [, s] = rgbToHsl(overall.r / overall.n, overall.g / overall.n, overall.b / overall.n);
+  if (s >= 0.12) return toHex(overall);
+  const d = top(dark);
+  if (d && d.n >= minN) return toHex(d);
+  return overall.n >= minN ? toHex(overall) : null;
 }
 
 function rgbToHsl(r, g, b) {
