@@ -91,6 +91,8 @@
     .custom[open] summary::before { content: '–'; }
     .custom .grid { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; padding-bottom: 4px; }
     .custom .grid input:last-child { grid-column: 1 / -1; }
+    #trackgrid input:last-child { grid-column: auto; }
+    #tracks { margin-top: 10px; }
     .custom input { padding: 10px 12px; font-size: .95rem; }
     .muted { color: var(--muted); font-weight: 600; }
     .chips.disabled { opacity: .35; pointer-events: none; }
@@ -236,6 +238,10 @@
         <input id="cc" type="url" placeholder="cover image url (https://…)" maxlength="500" autocomplete="off">
       </div>
       <p class="muted small">Leave the link box empty and fill these in to make one from scratch.</p>
+      <div id="tracks" hidden>
+        <p class="muted small">Rows on the album / playlist card. Leave a box empty to keep what Spotify says.</p>
+        <div class="grid" id="trackgrid"></div>
+      </div>
     </details>
 
     <section class="preview" id="preview">
@@ -271,6 +277,12 @@
           <label for="w">width</label>
           <input id="w" type="range" min="160" max="400" step="10" value="400">
           <output id="wout">400px</output>
+        </div>
+        <div class="row2" id="listrow" hidden>
+          <div class="chips" id="lists">
+            <button class="chip on" data-list="scroll">scrolling tracks</button>
+            <button class="chip" data-list="static">static tracks</button>
+          </div>
         </div>
       </div>
       <dl>
@@ -308,12 +320,12 @@
     document.querySelectorAll('.host').forEach((el) => (el.textContent = HOST));
     document.getElementById('title').innerHTML = HOST.replace('fishpog', '<span>fishpog</span>');
 
-    const RE = /(?:open\.spotify\.com|(?:open|spotify)\.fishpog\.lol)\/(?:(?:widget|preview|card|video|rich|player|tall|compact|w\d{3})\/)*(?:intl-[a-z-]+\/)?(?:embed(?:-podcast)?\/)?(track|album|playlist|artist|episode|show)\/([A-Za-z0-9]{22})/i;
+    const RE = /(?:open\.spotify\.com|(?:open|spotify)\.fishpog\.lol)\/(?:(?:widget|preview|card|video|rich|player|tall|compact|static|w\d{3})\/)*(?:intl-[a-z-]+\/)?(?:embed(?:-podcast)?\/)?(track|album|playlist|artist|episode|show)\/([A-Za-z0-9]{22})/i;
     const SHORT = /spotify\.link\/([A-Za-z0-9]+)/i;
 
     // Returns { path: "track/ID" | "link/CODE" } or null.
     // Our own links, with any mode/size tokens, so pasting a fishpog link back in works.
-    const OURS = /(?:open|spotify)\.fishpog\.lol\/(?:(?:widget|preview|card|video|rich|player|tall|compact|w\d{3})\/)*((?:yt|sc|am)\/[\w\/-]+|(?:track|album|playlist|artist|episode|show)\/[A-Za-z0-9]{22})/i;
+    const OURS = /(?:open|spotify)\.fishpog\.lol\/(?:(?:widget|preview|card|video|rich|player|tall|compact|static|w\d{3})\/)*((?:yt|sc|am)\/[\w\/-]+|(?:track|album|playlist|artist|episode|show)\/[A-Za-z0-9]{22})/i;
     const YT = /(?:youtu\.be\/|(?:www\.|m\.|music\.)?youtube\.com\/(?:watch\?(?:[^#\s]*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/i;
     const SC = /(?:www\.|m\.)?soundcloud\.com\/([\w-]+)\/(sets\/)?([\w-]+)/i;
     const SC_SHORT = /on\.soundcloud\.com\/([\w-]+)/i;
@@ -353,6 +365,46 @@
     const ovTitle = document.getElementById('ct');
     const ovArtist = document.getElementById('ca');
     const ovCover = document.getElementById('cc');
+    // Album / playlist rows: one title + artist box per row, built once the metadata
+    // arrives. Values live here so they survive the boxes being rebuilt.
+    const trackBox = document.getElementById('tracks');
+    const trackGrid = document.getElementById('trackgrid');
+    let trackPath = '';      // which target the boxes were built for
+    let trackCount = 0;      // rows the server knows about
+    let trackOv = [];        // [{ t, a }] typed overrides by row
+    function buildTrackBoxes(meta) {
+      const tracks = Array.isArray(meta.tracks) ? meta.tracks : [];
+      // Only rebuild for a new target: the preview refetches on every keystroke and
+      // the boxes must not be replaced under the cursor. Placeholders stay as the
+      // source had them, which is what the user wants to see while editing.
+      if (meta.path === trackPath && tracks.length === trackCount) return;
+      if (meta.path !== trackPath) { trackOv = []; trackPath = meta.path; }
+      trackCount = tracks.length;
+      if (!tracks.length) { trackBox.hidden = true; trackGrid.innerHTML = ''; return; }
+      trackGrid.innerHTML = tracks.map((t, i) => `
+        <input type="text" maxlength="200" autocomplete="off" data-row="${i}" data-k="t" placeholder="${escapeHtml(t.title)}" value="${escapeHtml(trackOv[i]?.t || '')}">
+        <input type="text" maxlength="200" autocomplete="off" data-row="${i}" data-k="a" placeholder="${escapeHtml(t.subtitle || 'artist')}" value="${escapeHtml(trackOv[i]?.a || '')}">`).join('');
+      trackBox.hidden = false;
+    }
+    trackGrid.addEventListener('input', (e) => {
+      const el = e.target;
+      if (!el.dataset.row) return;
+      const i = Number(el.dataset.row);
+      trackOv[i] = trackOv[i] || {};
+      trackOv[i][el.dataset.k] = el.value.trim();
+      update();
+    });
+    // Album / playlist list: cycle through the rows (GIF) or hold the first three (PNG).
+    let listMode = 'scroll';
+    document.getElementById('lists').addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      listMode = chip.dataset.list;
+      document.querySelectorAll('#lists .chip').forEach((c) => c.classList.toggle('on', c === chip));
+      update();
+    });
+    const listQ = () => (mode === '' && !solseekers && listMode === 'static' ? '&list=static' : '');
+
     // Packed into one opaque ?o= value so the custom text isn't readable in the link.
     function packedOverrides() {
       const obj = {};
@@ -360,6 +412,17 @@
       if (ovArtist.value.trim()) obj.a = ovArtist.value.trim();
       const c = ovCover.value.trim();
       if (/^https?:\/\//i.test(c)) obj.c = c;
+      if (trackCount) {
+        const tr = [];
+        for (let i = 0; i < trackCount; i++) {
+          const e = {};
+          if (trackOv[i]?.t) e.t = trackOv[i].t;
+          if (trackOv[i]?.a) e.a = trackOv[i].a;
+          tr.push(e);
+        }
+        while (tr.length && !Object.keys(tr[tr.length - 1]).length) tr.pop();
+        if (tr.length) obj.tr = tr;
+      }
       if (!Object.keys(obj).length) return '';
       const bytes = new TextEncoder().encode(JSON.stringify(obj));
       let bin = '';
@@ -381,6 +444,7 @@
       if (mode === '' && solseekers) tokens.push('solseekers');
       else if (mode === '' && layout !== 'tall') tokens.push(layout);
       if (mode === '' && width !== 400) tokens.push('w' + width);
+      if (listQ() && trackCount > 3) tokens.push('static');
       return `${BASE}${tokens.map((t) => t + '/').join('')}${path}${q ? '?' + q : ''}`;
     }
 
@@ -444,13 +508,19 @@
       if (seq !== previewSeq) return;
       let meta;
       try {
-        meta = await fetchMeta(path, q);
+        // Tell the server which widget we'll show, so it can say whether the text overflows (GIF marquee).
+        const ss0 = mode === '' && solseekers;
+        const sizeQ = `layout=${ss0 ? 'compact' : layout}&w=${mode === '' ? width : 400}${ss0 ? '&theme=solseekers' : ''}${listQ()}`;
+        meta = await fetchMeta(path, q ? sizeQ + '&' + q : sizeQ);
       } catch (e) {
         if (seq !== previewSeq) return;
         dcEmbed.innerHTML = `<div class="skel">couldn't load this one (${escapeHtml(e.message)}). The source may be having a moment, or fill in the text yourself below.</div>`;
         return;
       }
       if (seq !== previewSeq) return;
+      buildTrackBoxes(meta);
+      // The scrolling / static choice only means something for a list with more rows than fit.
+      document.getElementById('listrow').hidden = !(mode === '' && !solseekers && layout === 'tall' && (meta.tracks || []).length > 3);
       renderEmbed(meta, q);
     }
 
@@ -466,7 +536,7 @@
         const l = ss ? 'compact' : mode === '' ? layout : 'tall';
         const w = mode === '' ? width : 400;
         const tq = ss ? '&theme=solseekers' : '';
-        dcEmbed.innerHTML = `<div class="e-widget${l === 'compact' ? ' compact' : ''}" style="width:${w}px"><img src="/media/${mediaPath}.widget.png?layout=${l}&w=${w}${tq}&v=${meta.v || 0}${oq}" alt="">${overlay}</div>`;
+        dcEmbed.innerHTML = `<div class="e-widget${l === 'compact' ? ' compact' : ''}" style="width:${w}px"><img src="/media/${mediaPath}.widget.${mode === '' && meta.ext === 'gif' ? 'gif' : 'png'}?layout=${l}&w=${w}${tq}${listQ()}&v=${meta.v || 0}${oq}" alt="">${overlay}</div>`;
         previewNote.textContent = previewOk
           ? 'Discord draws its own play button over the picture. Click it and the 30 second preview plays in place.'
           : mode === 'preview'

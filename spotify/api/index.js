@@ -25,7 +25,8 @@ import { spawn } from 'node:child_process';
 import { chmod, copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { LAYOUTS, MAX_WIDTH, MIN_WIDTH, RENDER_VERSION, THEMES, renderWidget, widgetSize } from '../lib/widget.js';
+import { LAYOUTS, LIST_ROWS, MAX_WIDTH, MIN_WIDTH, RENDER_VERSION, THEMES, renderWidget, textMetrics, widgetSize } from '../lib/widget.js';
+import { renderListGif, renderMarqueeGif } from '../lib/marquee.js';
 import { fromAppleMusic, fromSoundCloud, fromYouTube, resolveSoundCloudShort } from '../lib/providers.js';
 import { coverColors } from '../lib/color.js';
 
@@ -115,17 +116,20 @@ async function handle(request) {
 // Routing helpers
 // ---------------------------------------------------------------------------
 
-// Path shape: /[mode]/[compact|tall]/[w<160-400>]/[intl-xx]/[embed]/<type>/<id>
+// Path shape: /[mode]/[compact|tall]/[w<160-400>]/[static]/[intl-xx]/[embed]/<type>/<id>
 // Mode, layout and width tokens may appear in any order before the type.
+// `static` keeps the album / playlist track list from cycling.
 function parseTarget(input) {
   const segs = [...input];
   let mode = DEFAULT_MODE;
   let layout = 'tall';
   let width = MAX_WIDTH;
   let theme = 'spotify';
+  let list = 'scroll';
   for (;;) {
     const s = segs[0];
     if (s && MODES.has(s)) mode = segs.shift();
+    else if (s === 'static') { segs.shift(); list = 'static'; }
     else if (s === 'rich' || s === 'player') { segs.shift(); mode = 'card'; } // retired modes
     else if (s && LAYOUTS[s]) layout = segs.shift();
     else if (s === 'solseekers' || s === 'ss') { segs.shift(); theme = 'solseekers'; layout = 'compact'; }
@@ -134,7 +138,7 @@ function parseTarget(input) {
     else if (s === 'embed' || s === 'embed-podcast') segs.shift();
     else break;
   }
-  const opts = { mode, layout, theme, width: Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, width)) };
+  const opts = { mode, layout, theme, list, width: Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, width)) };
   const [a, b, c, d] = segs;
   // Hand-made: everything comes from ?t= ?a= ?c= ?u=
   if (a === 'custom' && segs.length === 1) return { ...opts, provider: 'custom', type: 'track', id: 'custom', path: 'custom' };
@@ -194,11 +198,16 @@ function readOverrides(params) {
   }
   const c = clean(params.get('c') || packed.c);
   const u = clean(params.get('u') || packed.u);
+  // Album / playlist rows: [{ t, a }] by position, only through the packed form.
+  const tracks = Array.isArray(packed.tr)
+    ? packed.tr.slice(0, MAX_LIST_TRACKS).map((x) => ({ title: clean(x?.t), artist: clean(x?.a) }))
+    : [];
   return {
     title: clean(params.get('t') || packed.t),
     artist: clean(params.get('a') || packed.a),
     cover: /^https?:\/\//i.test(c) ? c : '',
     url: /^https?:\/\//i.test(u) ? u : '',
+    tracks: tracks.some((x) => x.title || x.artist) ? tracks : [],
   };
 }
 
@@ -208,6 +217,14 @@ function packOverrides(over) {
   if (over.artist) obj.a = over.artist;
   if (over.cover) obj.c = over.cover;
   if (over.url) obj.u = over.url;
+  if (over.tracks?.length) {
+    obj.tr = over.tracks.map((x) => {
+      const e = {};
+      if (x.title) e.t = x.title;
+      if (x.artist) e.a = x.artist;
+      return e;
+    });
+  }
   if (!Object.keys(obj).length) return '';
   return Buffer.from(JSON.stringify(obj), 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
@@ -269,8 +286,14 @@ async function shorten(request, origin) {
 
 async function applyOverrides(meta, over) {
   if (!meta) return meta;
-  if (!over.title && !over.artist && !over.cover && !over.url) return meta;
+  if (!over.title && !over.artist && !over.cover && !over.url && !over.tracks?.length) return meta;
   const out = { ...meta };
+  if (over.tracks?.length && Array.isArray(meta.tracks)) {
+    out.tracks = meta.tracks.map((t, i) => ({
+      title: over.tracks[i]?.title || t.title,
+      subtitle: over.tracks[i]?.artist || t.subtitle,
+    }));
+  }
   const segs = (meta.description || '').split(' · ').filter(Boolean);
   if (over.title) { out.title = over.title; out.name = over.title; }
   if (over.artist) { out.subtitle = over.artist; if (segs.length) segs[0] = over.artist; else segs.push(over.artist, 'Song'); }
@@ -358,6 +381,9 @@ async function getMeta(target) {
   return value;
 }
 
+// How many album / playlist tracks the list widget cycles through (file size grows with it).
+const MAX_LIST_TRACKS = 10;
+
 async function getSpotifyMeta(type, id) {
   const [page, embed] = await Promise.all([
     fromPage(type, id).catch(warn('page')),
@@ -376,6 +402,7 @@ async function getSpotifyMeta(type, id) {
       name: embed?.title || page.title,
       audio: page.audio || embed?.audio || null,
       image: page.image || embed?.image || null,
+      tracks: embed?.tracks || [],
     };
   } else if (embed) {
     value = embed;
@@ -438,10 +465,19 @@ async function fromEmbed(type, id) {
   const description = [artists || entity.subtitle, label, year].filter(Boolean).join(' · ');
 
   const sub = entity.visualIdentity?.textSubdued;
+  // Albums and playlists: the first few tracks for the list widget. The embed
+  // only gives "Artist A, Artist B" as text, so "first artist" is a text split.
+  const tracks = type === 'album' || type === 'playlist'
+    ? (entity.trackList || [])
+        .slice(0, MAX_LIST_TRACKS)
+        .map((t) => ({ title: String(t.title || '').trim(), subtitle: String(t.subtitle || '').split(', ')[0].trim() }))
+        .filter((t) => t.title)
+    : [];
   return {
     title: entity.title || entity.name || '',
     description,
     subtitle: artists || entity.subtitle || '',
+    tracks,
     image: best?.url || null,
     imageWidth: best?.maxWidth || best?.width || 640,
     imageHeight: best?.maxHeight || best?.height || 640,
@@ -535,10 +571,13 @@ function renderEmbedPage({ meta, mode, target, origin, over = {} }) {
     // Any title/description would make Discord wrap it in a card.
     const size = widgetSize(layout, width);
     const themeQ = (target.theme && target.theme !== 'spotify' ? `&theme=${target.theme}` : '') + `&v=${RENDER_VERSION}`;
-    const poster = `${origin}/media/${path}.widget.png?layout=${size.layout}&w=${size.width}${themeQ}${oq}`;
+    // Text that doesn't fit gets an animated GIF marquee instead of an ellipsis.
+    const ext = widgetExt(meta, target);
+    const listQ = target.list === 'static' ? '&list=static' : '';
+    const poster = `${origin}/media/${path}.widget.${ext}?layout=${size.layout}&w=${size.width}${themeQ}${listQ}${oq}`;
     tags.push(
       ['property', 'og:image', poster],
-      ['property', 'og:image:type', 'image/png'],
+      ['property', 'og:image:type', `image/${ext}`],
       ['property', 'og:image:width', String(size.canvas.width)],
       ['property', 'og:image:height', String(size.canvas.height)],
       ['name', 'twitter:card', 'summary_large_image'],
@@ -738,7 +777,27 @@ async function apiMeta(segs, params) {
   const target = await resolveTarget(parsed);
   if (!target) return json({ error: 'short link did not resolve' }, 404);
   const meta = await applyOverrides(await getMeta(target), readOverrides(params));
-  return meta ? json({ ...meta, path: target.path, provider: target.provider, v: RENDER_VERSION }, 200, CACHE_HTML) : json({ error: 'not found' }, 404);
+  if (!meta) return json({ error: 'not found' }, 404);
+  // The landing page preview asks with the same layout/w/theme it will show, so
+  // it can pick the GIF marquee when text overflows.
+  const pv = { layout: params.get('layout') || 'tall', width: Number(params.get('w')) || MAX_WIDTH, theme: THEMES[params.get('theme')] ? params.get('theme') : 'spotify', list: params.get('list') || 'scroll' };
+  return json({ ...meta, path: target.path, provider: target.provider, v: RENDER_VERSION, ext: widgetExt(meta, pv) }, 200, CACHE_HTML);
+}
+
+function widgetExt(meta, { layout = 'tall', width = MAX_WIDTH, theme = 'spotify', list = 'scroll' }) {
+  try {
+    const tracks = listTracks(meta, layout, theme);
+    // The list card never marquees its title; it animates (or not) through the rows.
+    if (tracks.length) return tracks.length > LIST_ROWS && list !== 'static' ? 'gif' : 'png';
+    return textMetrics({ layout, width, theme, title: meta.name || meta.title, subtitle: meta.subtitle || '' }).overflow ? 'gif' : 'png';
+  } catch {
+    return 'png';
+  }
+}
+
+// The track list only fits the tall Spotify-style card.
+function listTracks(meta, layout, theme) {
+  return layout === 'tall' && theme === 'spotify' && Array.isArray(meta.tracks) ? meta.tracks : [];
 }
 
 // ---------------------------------------------------------------------------
@@ -749,18 +808,19 @@ async function apiMeta(segs, params) {
 // /media/<target path>[.widget].(png|jpg|mp4), e.g. /media/track/ID.widget.png, /media/sc/user/slug.widget.png
 async function media(segs, params) {
   const last = segs[segs.length - 1] || '';
-  const m = last.match(/^(.+?)(\.widget)?\.(mp4|jpg|png)$/);
+  const m = last.match(/^(.+?)(\.widget)?\.(mp4|jpg|png|gif)$/);
   if (!m) return text('not found', 404);
   const [widget, ext] = [Boolean(m[2]), m[3]];
   const target = parseTarget([...segs.slice(0, -1), m[1]]);
   if (!target || !target.path) return text('not found', 404);
-  // ?layout=compact&w=320 only applies to the PNG; the video poster is always tall/400.
+  // ?layout=compact&w=320 only applies to the PNG/GIF; the video poster is always tall/400.
   const theme = THEMES[params.get('theme')] ? params.get('theme') : 'spotify';
-  const size = ext === 'png' ? widgetSize(theme === 'solseekers' ? 'compact' : params.get('layout') || 'tall', params.get('w') || MAX_WIDTH) : widgetSize('tall', MAX_WIDTH);
-  if ((widget && ext === 'jpg') || (!widget && ext === 'png')) return text('not found', 404);
+  const still = ext === 'png' || ext === 'gif';
+  const size = still ? widgetSize(theme === 'solseekers' ? 'compact' : params.get('layout') || 'tall', params.get('w') || MAX_WIDTH) : widgetSize('tall', MAX_WIDTH);
+  if ((widget && ext === 'jpg') || (!widget && still)) return text('not found', 404);
   const meta = await applyOverrides(await getMeta(target), readOverrides(params));
   if (!meta) return text('not found', 404);
-  if (!meta.image && !(widget && ext === 'png')) return text('not found', 404);
+  if (!meta.image && !(widget && still)) return text('not found', 404);
   if (ext === 'mp4' && !meta.audio) return text('no preview available for this item', 404);
 
   const dir = await mkdtemp(path.join(tmpdir(), 'fishpog-'));
@@ -772,7 +832,7 @@ async function media(segs, params) {
       ext === 'mp4' ? fetchBuffer(meta.audio) : null,
     ]);
     if (widget) {
-      const png = await renderWidget({
+      const opts = {
         cover: art,
         title: meta.name || meta.title,
         subtitle: meta.subtitle || '',
@@ -782,7 +842,27 @@ async function media(segs, params) {
         layout: size.layout,
         width: size.width,
         theme,
-      });
+        tracks: listTracks(meta, size.layout, theme),
+      };
+      if (ext === 'gif') {
+        // Album / playlist rows cycle; a track's title marquees when it overflows.
+        // Only worth a GIF if something moves; otherwise a 1-frame GIF would just
+        // be a worse PNG, so serve the PNG bytes under the GIF URL.
+        const png = { headers: { 'content-type': 'image/png', 'cache-control': CACHE_MEDIA } };
+        if (opts.tracks.length) {
+          if (opts.tracks.length > LIST_ROWS && params.get('list') !== 'static') {
+            const gif = await renderListGif(opts, ffmpeg);
+            return new Response(gif, { headers: { 'content-type': 'image/gif', 'cache-control': CACHE_MEDIA } });
+          }
+          return new Response(await renderWidget(opts), png);
+        }
+        if (textMetrics(opts).overflow) {
+          const gif = await renderMarqueeGif(opts, ffmpeg);
+          return new Response(gif, { headers: { 'content-type': 'image/gif', 'cache-control': CACHE_MEDIA } });
+        }
+        return new Response(await renderWidget(opts), { headers: { 'content-type': 'image/png', 'cache-control': CACHE_MEDIA } });
+      }
+      const png = await renderWidget({ ...opts, opaque: ext === 'mp4' });
       await writeFile(posterPath, png);
     } else {
       await writeFile(artPath, art);

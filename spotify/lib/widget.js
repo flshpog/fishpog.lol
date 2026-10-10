@@ -35,12 +35,12 @@ function ensureFonts() {
 }
 
 /** Display size (what Discord will show) and canvas size for a layout/width. */
-export function widgetSize(layout = 'tall', width = MAX_WIDTH) {
+export function widgetSize(layout = 'tall', width = MAX_WIDTH, hiDpi = 2.5) {
   const L = LAYOUTS[layout] ? layout : 'tall';
   const w = clamp(Math.round(Number(width) || MAX_WIDTH), MIN_WIDTH, MAX_WIDTH);
   const scale = w / 400; // design units are the 400-wide widget
   const display = { width: w, height: Math.round(LAYOUTS[L].h * scale) };
-  const S = w >= MAX_WIDTH ? 2.5 : scale;
+  const S = w >= MAX_WIDTH ? hiDpi : scale; // hiDpi: 2.5 for the PNG, lower for GIF frames to keep files small
   return { layout: L, width: w, display, S, canvas: { width: Math.round(400 * S), height: Math.round(LAYOUTS[L].h * S) } };
 }
 
@@ -57,18 +57,62 @@ export function widgetSize(layout = 'tall', width = MAX_WIDTH) {
  * @returns {Promise<Buffer>} PNG
  */
 export const THEMES = { spotify: {}, solseekers: { color: '#6896aa' } };
+export const LIST_ROWS = 3; // track rows visible on the album / playlist card
 // Bump whenever the painted output changes: it's put in every media URL so
 // Vercel's CDN and Discord's image cache stop serving the old picture.
-export const RENDER_VERSION = 11;
+export const RENDER_VERSION = 18;
 let logoPromise;
 function solseekersLogo() {
   return (logoPromise ||= loadImage(fileURLToPath(new URL('../assets/solseekerslogo.png', import.meta.url))));
 }
 
-export async function renderWidget({ cover, title, subtitle, background = '#282828', subdued = '#b3b3b3', preview = true, layout = 'tall', width = MAX_WIDTH, theme = 'spotify' }) {
+/**
+ * Where the text column sits and how wide it is, for a layout/width/theme.
+ * Used both by the renderer and by the marquee to know whether text overflows.
+ */
+export function textMetrics({ layout = 'tall', width = MAX_WIDTH, theme = 'spotify', title = '', subtitle = '', hiDpi = 2.5 }) {
+  ensureFonts();
+  const ss = theme === 'solseekers';
+  const size = widgetSize(ss ? 'compact' : layout, width, hiDpi);
+  const { S } = size;
+  const W = size.canvas.width, H = size.canvas.height;
+  const d = layoutDims(size.layout);
+  let x, rightReserve;
+  if (ss) {
+    const outline = 4.4 * S;
+    x = outline + (H - 2 * outline) + 14 * S;
+    rightReserve = 62 * S + 9 * S;
+  } else {
+    x = d.textX * S;
+    rightReserve = d.pad * S + d.glyph * S;
+  }
+  const maxText = W - x - rightReserve - 12 * S;
+  const ctx = createCanvas(1, 1).getContext('2d');
+  ctx.font = `${d.titleSize * S}px "Figtree Bold"`;
+  const titleW = ctx.measureText(String(title || '')).width;
+  ctx.font = `${d.subSize * S}px "Figtree Medium"`;
+  const subW = ctx.measureText(String(subtitle || '')).width;
+  return { size, S, x, maxText, titleW, subW, overflow: titleW > maxText || subW > maxText };
+}
+
+function layoutDims(layout) {
+  return layout === 'tall'
+    ? { pad: 16, cover: 120, coverR: 6, glyph: 21, textX: 152, titleY: 42, titleSize: 20, subY: 64, subSize: 14, pill: { y: 78, h: 18, size: 10, padX: 7, baseline: 13, r: 4 }, playR: 18, dotR: 2, dotGap: 7, dotOff: 18 }
+    : { pad: 12, cover: 56, coverR: 4, glyph: 16, textX: 80, titleY: 30, titleSize: 16, subY: 46, subSize: 12, pill: { y: 54, h: 14, size: 9, padX: 6, baseline: 10.5, r: 3 }, playR: 12, dotR: 1.6, dotGap: 6, dotOff: 14 };
+}
+
+/**
+ * @param {object} o  see fields below; `shift` = { title, sub } in canvas px scrolls
+ *   the text left instead of ellipsizing (used for marquee frames). `tracks` =
+ *   [{ title, subtitle }] draws a track list under the title (tall layout only)
+ *   in place of the pill and play controls; `listShift`, in rows, scrolls it for
+ *   the list animation frames.
+ * @returns {Promise<Buffer>} PNG with transparent corners
+ */
+export async function renderWidget({ cover, title, subtitle, background = '#282828', subdued = '#b3b3b3', preview = true, layout = 'tall', width = MAX_WIDTH, theme = 'spotify', shift = null, tracks = null, listShift = 0, opaque = false, hiDpi = 2.5, returnCanvas = false }) {
   ensureFonts();
   const ss = theme === 'solseekers'; // SolSeekers: compact only, gradient to the game colour, logo instead of controls
-  const size = widgetSize(ss ? 'compact' : layout, width);
+  const size = widgetSize(ss ? 'compact' : layout, width, hiDpi);
   const { S } = size;
   const W = size.canvas.width;
   const H = size.canvas.height;
@@ -76,8 +120,12 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   const ctx = canvas.getContext('2d');
   const art = cover ? await loadImage(cover) : null;
 
-  ctx.fillStyle = DISCORD_BG;
-  ctx.fillRect(0, 0, W, H);
+  // Corners stay transparent (PNG). Opaque only when the image is bound for a
+  // video poster, where alpha would become black anyway.
+  if (opaque) {
+    ctx.fillStyle = DISCORD_BG;
+    ctx.fillRect(0, 0, W, H);
+  }
   roundRect(ctx, 0, 0, W, H, 12 * S);
   if (ss) {
     const g = ctx.createLinearGradient(0, 0, W, 0);
@@ -93,9 +141,7 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   // (the logo's outer ring is ~9px of its 128px, about 4.4 design units here).
   const outline = 4.4 * S;
 
-  const d = size.layout === 'tall'
-    ? { pad: 16, cover: 120, coverR: 6, glyph: 21, textX: 152, titleY: 42, titleSize: 20, subY: 64, subSize: 14, pill: { y: 78, h: 18, size: 10, padX: 7, baseline: 13, r: 4 }, playR: 18, dotR: 2, dotGap: 7, dotOff: 18 }
-    : { pad: 12, cover: 56, coverR: 4, glyph: 16, textX: 80, titleY: 30, titleSize: 16, subY: 46, subSize: 12, pill: { y: 54, h: 14, size: 9, padX: 6, baseline: 10.5, r: 3 }, playR: 12, dotR: 1.6, dotGap: 6, dotOff: 14 };
+  const d = layoutDims(size.layout);
 
   // Cover art, centre-cropped to a square (YouTube thumbnails are 16:9).
   // SolSeekers: the cover fills the whole left side, flush inside the card outline.
@@ -232,13 +278,99 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   // SolSeekers: no PREVIEW pill, so centre the two lines vertically in the 80px card.
   const titleY = ss ? 36 * S : d.titleY * S;
   const subY = ss ? 54 * S : d.subY * S;
-  ctx.fillStyle = ssTextDark ? '#141414' : '#ffffff';
-  ctx.font = `${d.titleSize * S}px "Figtree Bold"`;
-  ctx.fillText(ellipsize(ctx, title, maxText), x, titleY);
+  const titleColor = ssTextDark ? '#141414' : '#ffffff';
+  const subColor = ssTextDark ? 'rgba(20,20,20,0.65)' : subdued;
+  if (shift) {
+    // Marquee frame: each line is drawn scrolled left on its own offscreen layer
+    // the width of the text column. An end is only softened while text actually
+    // continues past it: at rest the first letter is solid, and at the end of
+    // the scroll the last one is, like Spotify's own marquee.
+    const colW = Math.round(maxText);
+    const edge = 22 * S;
+    const drawLine = (text, font, color, sh, y) => {
+      const layer = createCanvas(colW, H);
+      const lc = layer.getContext('2d');
+      lc.textBaseline = 'alphabetic';
+      lc.font = font;
+      lc.fillStyle = color;
+      const tw = lc.measureText(text).width;
+      lc.fillText(text, -sh, y);
+      const left = Math.min(1, Math.max(0, sh / edge));
+      const right = Math.min(1, Math.max(0, (tw - sh - colW) / edge));
+      if (left > 0 || right > 0) {
+        const mask = lc.createLinearGradient(0, 0, colW, 0);
+        mask.addColorStop(0, `rgba(0,0,0,${1 - left})`);
+        mask.addColorStop(edge / colW, 'rgba(0,0,0,1)');
+        mask.addColorStop(1 - edge / colW, 'rgba(0,0,0,1)');
+        mask.addColorStop(1, `rgba(0,0,0,${1 - right})`);
+        lc.globalCompositeOperation = 'destination-in';
+        lc.fillStyle = mask;
+        lc.fillRect(0, 0, colW, H);
+      }
+      ctx.drawImage(layer, x, 0);
+    };
+    drawLine(String(title || ''), `${d.titleSize * S}px "Figtree Bold"`, titleColor, shift.title, titleY);
+    drawLine(String(subtitle || ''), `${d.subSize * S}px "Figtree Medium"`, subColor, shift.sub, subY);
+  } else {
+    ctx.fillStyle = titleColor;
+    ctx.font = `${d.titleSize * S}px "Figtree Bold"`;
+    ctx.fillText(ellipsize(ctx, title, maxText), x, titleY);
+    ctx.fillStyle = subColor;
+    ctx.font = `${d.subSize * S}px "Figtree Medium"`;
+    ctx.fillText(ellipsize(ctx, subtitle, maxText), x, subY);
+  }
 
-  ctx.fillStyle = ssTextDark ? 'rgba(20,20,20,0.65)' : subdued;
-  ctx.font = `${d.subSize * S}px "Figtree Medium"`;
-  ctx.fillText(ellipsize(ctx, subtitle, maxText), x, subY);
+  const list = !ss && size.layout === 'tall' && Array.isArray(tracks) && tracks.length > 0;
+  if (list) {
+    // Album / playlist: track rows under the title. Drawn on a clipped layer so
+    // rows can slide up through it; while the list cycles, a short fade at the
+    // top and bottom softens rows entering and leaving.
+    const rowH = 20 * S;
+    const top = 72 * S;
+    const colW = Math.round(W - x - d.pad * S);
+    const boxH = Math.round(rowH * LIST_ROWS);
+    const layer = createCanvas(colW, boxH);
+    const lc = layer.getContext('2d');
+    lc.textBaseline = 'alphabetic';
+    const N = tracks.length;
+    const first = Math.floor(listShift);
+    for (let j = first; j <= first + LIST_ROWS; j++) {
+      const idx = ((j % N) + N) % N;
+      const t = tracks[idx];
+      const y = (j - listShift) * rowH;
+      if (y >= boxH || y + rowH <= 0) continue;
+      const base = y + 14 * S;
+      lc.fillStyle = subdued;
+      lc.font = `${11 * S}px "Figtree Medium"`;
+      lc.fillText(String(idx + 1), 0, base);
+      const tx = 20 * S;
+      const avail = colW - tx;
+      const artist = String(t.subtitle || '');
+      lc.fillStyle = '#ffffff';
+      lc.font = `${12 * S}px "Figtree Medium"`;
+      const name = ellipsize(lc, t.title, artist ? avail * 0.6 : avail);
+      lc.fillText(name, tx, base);
+      if (artist) {
+        const ax = tx + lc.measureText(name).width + 8 * S;
+        lc.fillStyle = subdued;
+        lc.font = `${11 * S}px "Figtree Medium"`;
+        lc.fillText(ellipsize(lc, artist, colW - ax), ax, base);
+      }
+    }
+    if (N > LIST_ROWS) {
+      const edge = 5 * S;
+      const mask = lc.createLinearGradient(0, 0, 0, boxH);
+      mask.addColorStop(0, 'rgba(0,0,0,0)');
+      mask.addColorStop(edge / boxH, 'rgba(0,0,0,1)');
+      mask.addColorStop(1 - edge / boxH, 'rgba(0,0,0,1)');
+      mask.addColorStop(1, 'rgba(0,0,0,0)');
+      lc.globalCompositeOperation = 'destination-in';
+      lc.fillStyle = mask;
+      lc.fillRect(0, 0, colW, boxH);
+    }
+    ctx.drawImage(layer, x, top);
+    return returnCanvas ? canvas : canvas.toBuffer('image/png');
+  }
 
   if (preview && !ss) {
     const p = d.pill;
@@ -253,7 +385,7 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
     drawSpaced(ctx, label, x + p.padX * S, (p.y + p.baseline) * S, spacing);
   }
 
-  if (ss) return canvas.toBuffer('image/png'); // no play controls on the SolSeekers card
+  if (ss) return returnCanvas ? canvas : canvas.toBuffer('image/png'); // no play controls on the SolSeekers card
 
   // "···" and the play button, bottom right, aligned with the cover's bottom edge.
   const playR = d.playR * S;
@@ -278,7 +410,7 @@ export async function renderWidget({ cover, title, subtitle, background = '#2828
   ctx.closePath();
   ctx.fill();
 
-  return canvas.toBuffer('image/png');
+  return returnCanvas ? canvas : canvas.toBuffer('image/png');
 }
 
 function clamp(n, lo, hi) {

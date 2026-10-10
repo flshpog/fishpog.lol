@@ -28,6 +28,19 @@ Prefix the path with a mode. Bare paths use `DEFAULT_MODE` (env var, defaults to
 Neither the widget nor the preview page carries a title or description: any text makes
 Discord wrap the media in a card instead of showing it bare.
 
+## Albums and playlists
+
+`/album/ID` and `/playlist/ID` paint the tall card with the cover, the name, and three track
+rows (title + first artist) where a track's PREVIEW pill and play button would be. With more
+than three tracks the card is an animated GIF that holds, slides up one row, and cycles round
+the first ten tracks. Put `static/` in the path (`/static/playlist/ID`) to get a still PNG of
+the first three instead. The list card never marquees its own title; it ellipsizes.
+
+Spotify only gives "Artist A, Artist B" as text per row, so "first artist" is a split on the
+comma: names like "Tyler, The Creator" come out wrong. Row text is editable from the landing
+page's customize panel; the edits travel in the same packed `?o=` as the title / artist / cover
+overrides (`tr: [{ t, a }, ...]` by row position).
+
 ## Other services, dressed as Spotify
 
 YouTube, SoundCloud and Apple Music links get the same treatment: metadata comes from
@@ -81,7 +94,12 @@ redirects to the same path on `open.spotify.com`.
 - `/oembed?url=...` oEmbed document (provider name/url for Discord)
 - `/media/track/ID.jpg` 1280x720 poster
 - `/media/track/ID.mp4` poster + 30 s preview, h264/aac
-- `/media/track/ID.widget.png?layout=tall|compact&w=160..400` painted Spotify widget
+- `/media/track/ID.widget.png?layout=tall|compact&w=160..400` painted Spotify widget (transparent corners)
+- `/media/track/ID.widget.gif?...` same, as an animated GIF marquee when the title or artist line
+  doesn't fit, or the cycling track list for albums / playlists (`&list=static` for a still) (`lib/marquee.js`). The page picks `.gif` or `.png` automatically. If nothing overflows
+  the GIF URL just serves the PNG bytes. ffmpeg only quantises the frames to one palette; the GIF is
+  written by hand as full-canvas frames with unchanged pixels marked transparent ("keep") and a
+  single transparent index, because Discord's image proxy mangles ffmpeg's offset sub-frames.
 - `/media/track/ID.widget.mp4` widget + 30 s preview
 - `/api/meta/<path>` the resolved metadata as JSON for any target (debugging, and the landing page preview)
 
